@@ -205,7 +205,33 @@ public:
     /*
      * Need to  add logic to update max
      */
+     
+    if (ele == max) {
+      while (hold == 0) {
+        if (p == 0) {
+          max = 0;
+          return;
+        } else {
+          p = p - 1;
+          if (visitor_set.has((Key)p)) {
+            hold = visitor_set.get((Key)p);
+          }
+        }
+      }
 
+      i = (sizeof(T) * 8) - 1;
+      ele = (p + 1) * (sizeof(T) * 8) - 1;
+
+      while (i != 0) {
+        if ((hold >> 1) & 1) {
+          max = ele;
+          return;
+        } else {
+          i = i - 1;
+          ele = ele - 1; 
+        }
+      }
+    }
     //if(ele == max):
     // two loops:
     // 1st loop --> finds the correct hold
@@ -235,57 +261,7 @@ public:
     //     ele = ele - 1;
     //   }
     // }
-
-    if (ele == max) {
-      for (;;) { 
-        if (hold == 0) { //first detect if hold is 0
-          if (p == 0) { //then see if p is 0
-            max = 0; //max is nothing
-            return;
-          } else {
-            p = p - 1; //decrement key
-            i = (sizeof(T) * 8) - 1; //reset i;
-            ele = ele - 1; //reset ele;
-            // need to check if this index exists
-            // while (true) {
-            //   if (set.has((Key)p)) {
-            //     break;
-            //   } else {
-            //     p = p - 1;
-            //     if (p)
-            //   }
-            // }
-            // if not, need to keep decrementing till we get there
-            // also need to check for 0 along the way of decrementing p
-            hold = visitor_set.get((Key)p); //reset hold;
-          }
-        } else { //hold is not 0
-          //if hold is not 0, then we check for (ele-1) or (i-1) until i is 0
-          i = i - 1;
-          ele = ele - 1;
-        }
-        if ((hold >> i) & 1) { //if prev ele exists, set max to it and end func
-          max = ele;
-          return;
-        } else {
-          hold = hold & ~(1 << i);//update hold
-        }
-      }
-    }
-    //   if hold is 0: 
-    //     check if key == 0
-    //       if key == 0
-    //         max = 0
-    //       else
-    //         key--, and check for that key
-    //         loop:
-    //           if that key is there: check bits
-    //             if bit is found: set as max
-    //             else, key-- and loop around
-    //           else, key-- and loop around
-    //     
-    //   if hold is not 0: 
-    //     same thing as above basically, but be careful where you key-- 
+    
   }
 
   [[nodiscard]] void erase(const T &&ele) {
@@ -307,27 +283,28 @@ public:
      * Need to  add logic to update max
      */
     if (ele == max) {
-      for (;;) { 
-        if (hold == 0) { //first detect if hold is 0
-          if (p == 0) { //then see if p is 0
-            max = 0; //max is nothing
-            return;
-          } else {
-            p = p - 1; //decrement key
-            i = (sizeof(T) * 8) - 1; //reset i;
-            ele = ele - 1; //reset ele;
-            hold = visitor_set.get((Key)p); //reset hold;
+      while (hold == 0) {
+        if (p == 0) {
+          max = 0;
+          return;
+        } else {
+          p = p - 1;
+          if (visitor_set.has((Key)p)) {
+            hold = visitor_set.get((Key)p);
           }
-        } else { //hold is not 0
-          //if hold is not 0, then we check for (ele-1) or (i-1) until i is 0
-          i = i - 1;
-          ele = ele - 1;
         }
-        if ((hold >> i) & 1) { //if prev ele exists, set max to it and end func
+      }
+
+      i = (sizeof(T) * 8) - 1;
+      ele = (p + 1) * (sizeof(T) * 8) - 1;
+
+      while (i != 0) {
+        if ((hold >> 1) & 1) {
           max = ele;
           return;
         } else {
-          hold = hold & ~(1 << i);//update hold
+          i = i - 1;
+          ele = ele - 1; 
         }
       }
     }
