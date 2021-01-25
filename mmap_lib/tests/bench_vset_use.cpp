@@ -32,11 +32,44 @@ void mmap_vset(int max, std::string_view name) {
 	set.clear();
   set.wht();
 
+  int one, four, ten, twothree, ninenine;
+  one = 1;
+  four = 4;
+  ten = 10;
+  twothree = 23;
+  ninenine = 99;
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
+  
+  set.insert(one);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 1)
+  set.erase(one);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
+
+  set.insert(four);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 4)
+  set.erase(four);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
+  
+  set.insert(ten);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 10)
+  set.erase(ten);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 00)
+  
+  set.insert(twothree);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 23)
+  set.erase(twothree);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 00)
+  
+  set.insert(ninenine);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 99)
+  set.erase(ninenine);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 00)
+  //===================================
+
+  /*
   //Testing vIter declaration:
- /* 
-  mmap_lib::vset<uint32_t, uint32_t>::vIter itt;
-  itt.iter_test();
-  */
+  // mmap_lib::vset<uint32_t, uint32_t>::vIter itt;
+  // itt.iter_test() 
 
   //Messing around with vIter functions and using them in vset functions
   //set.test_begin(); // vset print w/ vIter func
@@ -45,29 +78,29 @@ void mmap_vset(int max, std::string_view name) {
   auto bar = set.begin(); // vset using vIter funcs that call vset funcs
   std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 14
 
-  // Gonna insert 0
-  set.insert(0);
-  bar = set.begin();
-  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 0
-  std::cout << "max is: " << set.get_max() << std::endl;
+  set.insert(0);                                                    // insert 0
+  bar = set.begin();                                                // getting vset begin() (expect 0)
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // print vIter val (expect 0)
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
 
-  set.erase(0);
-  std::cout << "max is: " << set.get_max() << std::endl;
-  set.insert(9);
-  std::cout << "max is: " << set.get_max() << std::endl;
-  bar = set.begin();
-  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 9
+  set.erase(0);                                                     // erase val (0)
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
+  set.insert(9);                                                    // insert (9) 
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 9)
+  bar = set.begin();                                                // getting vset begin() (expect 9)
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // print vIter val (expect 9)
  
-  //bar = ++bar;
-  ++bar;
-  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 10
+  ++bar;                                                            // ++vIter (9 -> 10)
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // print vIter val (expect 10)
   
-  //bar = bar++;
-  bar++;
-  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 11
-  //mmap_lib::Iter<false> viter();
+  bar++;                                                            // vIter++ (10 -> 11)
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // print vIter val (expect 11)
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 11)
+  */
+  
+  //=========================
 
-/*
+  /*
 
 	int conta = 0;
 

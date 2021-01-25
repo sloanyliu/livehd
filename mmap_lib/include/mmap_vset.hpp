@@ -205,6 +205,37 @@ public:
     /*
      * Need to  add logic to update max
      */
+
+    //if(ele == max):
+    // two loops:
+    // 1st loop --> finds the correct hold
+    //
+    // while (hold == 0) {
+    //   if (p == 0) {
+    //     max = 0;
+    //     return;
+    //   } else {
+    //     p = p - 1;
+    //     if (set.has((Key)p)) {
+    //       hold = set.get((Key)p);
+    //     }
+    //   }
+    // }
+    // i = (sizeof(T) * 8) - 1;
+    // ele = ((p + 1) * (sizeof(T)*8) - 1);
+    //
+    // 2nd loop --> updates max within correct hold
+    // 
+    // while (i != 0) {
+    //   if ((hold >> i) & 1) {
+    //     max = ele;
+    //     return;
+    //   } else {
+    //     i = i - 1;
+    //     ele = ele - 1;
+    //   }
+    // }
+
     if (ele == max) {
       for (;;) { 
         if (hold == 0) { //first detect if hold is 0
@@ -215,6 +246,17 @@ public:
             p = p - 1; //decrement key
             i = (sizeof(T) * 8) - 1; //reset i;
             ele = ele - 1; //reset ele;
+            // need to check if this index exists
+            // while (true) {
+            //   if (set.has((Key)p)) {
+            //     break;
+            //   } else {
+            //     p = p - 1;
+            //     if (p)
+            //   }
+            // }
+            // if not, need to keep decrementing till we get there
+            // also need to check for 0 along the way of decrementing p
             hold = visitor_set.get((Key)p); //reset hold;
           }
         } else { //hold is not 0
