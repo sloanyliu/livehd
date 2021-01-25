@@ -30,6 +30,44 @@ void mmap_vset(int max, std::string_view name) {
 	//mmap_lib::map<uint32_t, uint64_t> map("lgdb_bench", name);
 
 	set.clear();
+  set.wht();
+
+  //Testing vIter declaration:
+ /* 
+  mmap_lib::vset<uint32_t, uint32_t>::vIter itt;
+  itt.iter_test();
+  */
+
+  //Messing around with vIter functions and using them in vset functions
+  //set.test_begin(); // vset print w/ vIter func
+  //auto foo = set.test_ret(); // returns a vIter
+  //foo.iter_test(); // vIter print w/ vIter func
+  auto bar = set.begin(); // vset using vIter funcs that call vset funcs
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 14
+
+  // Gonna insert 0
+  set.insert(0);
+  bar = set.begin();
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 0
+  std::cout << "max is: " << set.get_max() << std::endl;
+
+  set.erase(0);
+  std::cout << "max is: " << set.get_max() << std::endl;
+  set.insert(9);
+  std::cout << "max is: " << set.get_max() << std::endl;
+  bar = set.begin();
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 9
+ 
+  //bar = ++bar;
+  ++bar;
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 10
+  
+  //bar = bar++;
+  bar++;
+  std::cout << "value of vIter is: "<< bar.iter_val() << std::endl; // should be 11
+  //mmap_lib::Iter<false> viter();
+
+/*
 
 	int conta = 0;
 
@@ -155,6 +193,7 @@ void mmap_vset(int max, std::string_view name) {
   }
   b.sample("traversal dense");
   printf("inserts random %d\n",conta);
+*/
 
 }
 

@@ -1,5 +1,16 @@
 // Visitor set to LiveHD
-// CSE220 Project
+/*
+ * This is a more optimized set data structure, built using mmap_lib's map.
+ * 
+ * The idea is that there is a hash map under the hood, and each <key,val>
+ * pair's key is a unique index (0 to n), and the val is a bit vector (32 bits) 
+ * that represents the existence (0 or 1) of 32 distinct numbers.
+ *
+ * For example: 
+ * set.insert(100) 
+ * will flip the 4th bit of the val of the 'key = 3' <key,val> pair high.
+ *
+ */
 
 #pragma once
 
@@ -14,13 +25,20 @@ namespace mmap_lib {
 
 template <typename Key, typename T>
 class vset {
+
+private:
+  T max = 0;
+  T min = 0;
+
 public:
   using VisitorSet = typename mmap_lib::map<Key, T>;
   VisitorSet   visitor_set;
   const size_t bucket_len   = sizeof(T) * 8;
 
-  using iterator       = typename VisitorSet::iterator;
-  using const_iterator = typename VisitorSet::const_iterator;
+  using bucket_iterator       = typename VisitorSet::iterator;
+  using const_bucket_iterator = typename VisitorSet::const_iterator;
+
+ 
 
   // What does explicit do?
   explicit vset(std::string_view _set_name) : visitor_set(std::string(_set_name) + "_vs") {}
@@ -32,24 +50,23 @@ public:
   //====
   void   wht() { std::cout << sizeof(T) << std::endl; }
   size_t bucket_size() { return bucket_len; }
-
   size_t num_buckets(size_t ln) { return (ln / (sizeof(T) * 8)); }
   //====
 
-  /* All the buckst_set() functions all returns const_iterator
+  /* All the bucet_set() functions all returns const_iterator
    * These functions set the ENTIRE bitmap at the key inputted
    * If I want to use these, I need to change bits outside of the set()
    */
-  const_iterator bucket_set(Key &&key, T &&bitmap) { return visitor_set.set(key, bitmap); }
-  const_iterator bucket_set(const Key &key, T &&bitmap) { return visitor_set.set(key, bitmap); }
-  const_iterator bucket_set(Key &&key, const T &bitmap) { return visitor_set.set(key, bitmap); }
-  const_iterator bucket_set(const Key &key, const T &bitmap) { return visitor_set.set(key, bitmap); }
+  const_bucket_iterator bucket_set(Key &&key, T &&bitmap) { return visitor_set.set(key, bitmap); }
+  const_bucket_iterator bucket_set(const Key &key, T &&bitmap) { return visitor_set.set(key, bitmap); }
+  const_bucket_iterator bucket_set(Key &&key, const T &bitmap) { return visitor_set.set(key, bitmap); }
+  const_bucket_iterator bucket_set(const Key &key, const T &bitmap) { return visitor_set.set(key, bitmap); }
 
   // returns true/false depending on if the key exists
   [[nodiscard]] bool has_key(const Key &key) const { return visitor_set.has(key); }
 
-  [[nodiscard]] Key get_key(const iterator &it) const { return visitor_set.get_key(it); }
-  [[nodiscard]] Key get_key(const const_iterator &it) const { return visitor_set.get_key(it); }
+  [[nodiscard]] Key get_key(const bucket_iterator &it) const { return visitor_set.get_key(it); }
+  [[nodiscard]] Key get_key(const const_bucket_iterator &it) const { return visitor_set.get_key(it); }
 
   /* All the bucket_get() functions, returns whatever the whole 64 bit number
    * Why the need for a template here?
@@ -67,42 +84,42 @@ public:
   }
 
   template <typename T_ = T, typename = std::enable_if_t<!is_array_serializable<T_>::value>>
-  [[nodiscard]] const T &bucket_get_val(const iterator &it) const {
+  [[nodiscard]] const T &bucket_get_val(const bucket_iterator &it) const {
+    return visitor_set.get(it);
+  }
+
+  template <typename T_ = T, typename = std::enable_if_t<is_array_serializable<T_>::value>>
+  [[nodiscard]] T bucket_get_val(const bucket_iterator &it) const {
     return visitor_set.get(it);
   }
 
   template <typename T_ = T, typename = std::enable_if_t<!is_array_serializable<T_>::value>>
-  [[nodiscard]] const T &bucket_get_val(const const_iterator &it) const {
+  [[nodiscard]] const T &bucket_get_val(const const_bucket_iterator &it) const {
     return visitor_set.get(it);
   }
 
   template <typename T_ = T, typename = std::enable_if_t<is_array_serializable<T_>::value>>
-  [[nodiscard]] T bucket_get_val(const iterator &it) const {
+  [[nodiscard]] T bucket_get_val(const const_bucket_iterator &it) const {
     return visitor_set.get(it);
   }
 
-  template <typename T_ = T, typename = std::enable_if_t<is_array_serializable<T_>::value>>
-  [[nodiscard]] T bucket_get_val(const const_iterator &it) const {
-    return visitor_set.get(it);
-  }
-
-  [[nodiscard]] iterator       bucket_find(const Key &key) { return visitor_set.find(key); }
-  [[nodiscard]] const_iterator bucket_find(const Key &key) const { return visitor_set.find(key); }
+  [[nodiscard]] bucket_iterator bucket_find(const Key &key) { return visitor_set.find(key); }
+  [[nodiscard]] const_bucket_iterator bucket_find(const Key &key) const { return visitor_set.find(key); }
 
   // Functions used for iterating, begin() and end()
-  [[nodiscard]] iterator       bucket_begin() { return visitor_set.begin(); }
-  [[nodiscard]] const_iterator bucket_begin() const { return visitor_set.cbegin(); }
-  [[nodiscard]] const_iterator bucket_cbegin() const { return visitor_set.cbegin(); }
+  [[nodiscard]] bucket_iterator bucket_begin() { return visitor_set.begin(); }
+  [[nodiscard]] const_bucket_iterator bucket_begin() const { return visitor_set.cbegin(); }
+  [[nodiscard]] const_bucket_iterator bucket_cbegin() const { return visitor_set.cbegin(); }
 
-  [[nodiscard]] iterator       bucket_end() { return visitor_set.end(); }
-  [[nodiscard]] const_iterator bucket_end() const { return visitor_set.cend(); }
-  [[nodiscard]] const_iterator bucket_cend() const { return visitor_set.cend(); }
+  [[nodiscard]] bucket_iterator       bucket_end() { return visitor_set.end(); }
+  [[nodiscard]] const_bucket_iterator bucket_end() const { return visitor_set.cend(); }
+  [[nodiscard]] const_bucket_iterator bucket_cend() const { return visitor_set.cend(); }
 
   /* These functions erase the WHOLE bitmap,
    * Erases element at pos, returns iterator to next element
    */
-  iterator bucket_erase(const_iterator pos) { return visitor_set.erase(pos); }
-  iterator bucket_erase(iterator pos) { return visitor_set.erase(pos); }
+  bucket_iterator bucket_erase(const_bucket_iterator pos) { return visitor_set.erase(pos); }
+  bucket_iterator bucket_erase(bucket_iterator pos) { return visitor_set.erase(pos); }
 
   // erases the key if it's there, if not, returns 0
   size_t bucket_erase_key(const Key &key) {
@@ -154,6 +171,8 @@ public:
     }                                  // is there a bitmap at key p
     hold = hold | (1 << i);            // modify the bit at pos
     visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
+
+    if (ele > max) { max = ele; }
   }
 
   [[nodiscard]] void insert(const T &&ele) {
@@ -166,6 +185,8 @@ public:
     }                                  // is there a bitmap at key p
     hold = hold | (1 << i);            // modify the bit at pos
     visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
+    
+    if (ele > max) { max = ele; }
   }
 
   [[nodiscard]] void erase(T &&ele) {
@@ -177,9 +198,52 @@ public:
     if (visitor_set.has((Key)p)) {
       hold = visitor_set.get((Key)p);
       hold = hold & ~(1 << i);           // modify the bit at i
-      visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
-      p--;
+      if (hold == 0) { visitor_set.erase((Key)p); } 
+      else { visitor_set.set((Key)p, (T)hold); } // put it back in the bitmap
     }
+
+    /*
+     * Need to  add logic to update max
+     */
+    if (ele == max) {
+      for (;;) { 
+        if (hold == 0) { //first detect if hold is 0
+          if (p == 0) { //then see if p is 0
+            max = 0; //max is nothing
+            return;
+          } else {
+            p = p - 1; //decrement key
+            i = (sizeof(T) * 8) - 1; //reset i;
+            ele = ele - 1; //reset ele;
+            hold = visitor_set.get((Key)p); //reset hold;
+          }
+        } else { //hold is not 0
+          //if hold is not 0, then we check for (ele-1) or (i-1) until i is 0
+          i = i - 1;
+          ele = ele - 1;
+        }
+        if ((hold >> i) & 1) { //if prev ele exists, set max to it and end func
+          max = ele;
+          return;
+        } else {
+          hold = hold & ~(1 << i);//update hold
+        }
+      }
+    }
+    //   if hold is 0: 
+    //     check if key == 0
+    //       if key == 0
+    //         max = 0
+    //       else
+    //         key--, and check for that key
+    //         loop:
+    //           if that key is there: check bits
+    //             if bit is found: set as max
+    //             else, key-- and loop around
+    //           else, key-- and loop around
+    //     
+    //   if hold is not 0: 
+    //     same thing as above basically, but be careful where you key-- 
   }
 
   [[nodiscard]] void erase(const T &&ele) {
@@ -191,8 +255,39 @@ public:
     if (visitor_set.has((Key)p)) {
       hold = visitor_set.get((Key)p);
       hold = hold & ~(1 << i);           // modify the bit at i
-      visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
-      p--;
+      if (hold == 0) { 
+        visitor_set.erase((Key)p); 
+      } else { visitor_set.set((Key)p, (T)hold); } // put it back in the bitmap
+
+    }
+    
+    /*
+     * Need to  add logic to update max
+     */
+    if (ele == max) {
+      for (;;) { 
+        if (hold == 0) { //first detect if hold is 0
+          if (p == 0) { //then see if p is 0
+            max = 0; //max is nothing
+            return;
+          } else {
+            p = p - 1; //decrement key
+            i = (sizeof(T) * 8) - 1; //reset i;
+            ele = ele - 1; //reset ele;
+            hold = visitor_set.get((Key)p); //reset hold;
+          }
+        } else { //hold is not 0
+          //if hold is not 0, then we check for (ele-1) or (i-1) until i is 0
+          i = i - 1;
+          ele = ele - 1;
+        }
+        if ((hold >> i) & 1) { //if prev ele exists, set max to it and end func
+          max = ele;
+          return;
+        } else {
+          hold = hold & ~(1 << i);//update hold
+        }
+      }
     }
   }
 
@@ -242,6 +337,64 @@ public:
     }
     return false;
   }
+
+  [[nodiscard]] T get_max() { return max; } 
+
+  /*
+   * Iterator class for vset
+   */
+  class vIter {
+
+  public:
+    //unsigned int iData;
+    T iData;
+
+    vIter() : iData(0) {}
+    ~vIter() { ; }
+
+    void cont_test() { std::cout << "made it" << std::endl; }
+    void iter_change(T ele) { iData = ele; }
+    T iter_val() { return iData; }
+    vIter operator++() { iData = iData + 1; } //prefix
+    vIter operator++(int other) { iData = iData + 1; } //postix
+   
+    vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; } //prefix
+    vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postix
+
+  };
+  
+  void test_begin() { 
+    vIter alpha;
+    alpha.cont_test();
+  }
+
+  vIter test_ret() {
+    vIter beta;
+    return beta;
+  }
+
+  [[nodiscard]] vIter begin() {
+    vIter tmp;
+    if (visitor_set.empty() == true) {
+      return tmp;
+    }
+    
+    for (T i = 0; i <= max; i = i + 1) {
+      if (vset::find(i+0) == true) {
+        tmp.iter_change(i);
+        return tmp;
+      }
+    }
+    /*
+    if (vset::find(0) == false) {
+      std::cout << "find() works" << std::endl;
+    } else {
+      std::cout << "Detected!" << std::endl;
+    }*/
+    return tmp;
+  }
+
+  
 
 };
 
