@@ -161,6 +161,8 @@ public:
    * All the erase() functions are void too
    * The funcs intake a number you wish to remove from the set
    */
+  
+  
   [[nodiscard]] void insert(T &&ele) {
     // find correct index the pos is at
     const auto p    = ele / (sizeof(T) * 8);  // p will be the key that points to the correct bitmap
@@ -188,6 +190,8 @@ public:
     
     if (ele > max) { max = ele; }
   }
+  
+  //================================
 
   [[nodiscard]] void erase(T &&ele) {
     // find correct index the pos is at
@@ -198,14 +202,14 @@ public:
     if (visitor_set.has((Key)p)) {
       hold = visitor_set.get((Key)p);
       hold = hold & ~(1 << i);           // modify the bit at i
-      if (hold == 0) { visitor_set.erase((Key)p); } 
-      else { visitor_set.set((Key)p, (T)hold); } // put it back in the bitmap
+      if (hold == 0) { 
+        visitor_set.erase((Key)p); 
+      } else { 
+        visitor_set.set((Key)p, (T)hold); 
+      } // put it back in the bitmap
     }
 
-    /*
-     * Need to  add logic to update max
-     */
-     
+    // Need to  add logic to update max    
     if (ele == max) {
       while (hold == 0) {
         if (p == 0) {
@@ -232,36 +236,6 @@ public:
         }
       }
     }
-    //if(ele == max):
-    // two loops:
-    // 1st loop --> finds the correct hold
-    //
-    // while (hold == 0) {
-    //   if (p == 0) {
-    //     max = 0;
-    //     return;
-    //   } else {
-    //     p = p - 1;
-    //     if (set.has((Key)p)) {
-    //       hold = set.get((Key)p);
-    //     }
-    //   }
-    // }
-    // i = (sizeof(T) * 8) - 1;
-    // ele = ((p + 1) * (sizeof(T)*8) - 1);
-    //
-    // 2nd loop --> updates max within correct hold
-    // 
-    // while (i != 0) {
-    //   if ((hold >> i) & 1) {
-    //     max = ele;
-    //     return;
-    //   } else {
-    //     i = i - 1;
-    //     ele = ele - 1;
-    //   }
-    // }
-    
   }
 
   [[nodiscard]] void erase(const T &&ele) {
@@ -275,13 +249,12 @@ public:
       hold = hold & ~(1 << i);           // modify the bit at i
       if (hold == 0) { 
         visitor_set.erase((Key)p); 
-      } else { visitor_set.set((Key)p, (T)hold); } // put it back in the bitmap
-
+      } else { 
+        visitor_set.set((Key)p, (T)hold); 
+      } // put it back in the bitmap
     }
     
-    /*
-     * Need to  add logic to update max
-     */
+    // Need to  add logic to update max
     if (ele == max) {
       while (hold == 0) {
         if (p == 0) {
@@ -311,11 +284,6 @@ public:
   }
 
   /* Can add functions here to get a single bit of the bitmap
-   * size_t find(const T &&ele) const {
-   *   const auto t = visitor_set.get(key);
-   *   [find the correct bit somehow]
-   *   return true if 1, false otherwise
-   * }
    */
 
   [[nodiscard]] bool find(T &&ele) {
@@ -358,7 +326,7 @@ public:
   }
 
   [[nodiscard]] T get_max() { return max; } 
-
+  [[nodiscard]] T get_min() { return min; }
   /*
    * Iterator class for vset
    */
@@ -379,7 +347,6 @@ public:
    
     vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; } //prefix
     vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postix
-
   };
   
   void test_begin() { 
@@ -412,9 +379,6 @@ public:
     }*/
     return tmp;
   }
-
-  
-
 };
 
 }  // namespace mmap_lib
