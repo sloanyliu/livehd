@@ -28,7 +28,6 @@ class vset {
 
 private:
   T max = 0;
-  T min = 0;
 
 public:
   using VisitorSet = typename mmap_lib::map<Key, T>;
@@ -227,7 +226,7 @@ public:
       ele = (p + 1) * (sizeof(T) * 8) - 1;
 
       while (i != 0) {
-        if ((hold >> 1) & 1) {
+        if ((hold >> i) & 1) {
           max = ele;
           return;
         } else {
@@ -272,7 +271,7 @@ public:
       ele = (p + 1) * (sizeof(T) * 8) - 1;
 
       while (i != 0) {
-        if ((hold >> 1) & 1) {
+        if ((hold >> i) & 1) {
           max = ele;
           return;
         } else {
@@ -326,7 +325,7 @@ public:
   }
 
   [[nodiscard]] T get_max() { return max; } 
-  [[nodiscard]] T get_min() { return min; }
+  
   /*
    * Iterator class for vset
    */
