@@ -72,7 +72,21 @@ void mmap_vset(int max, std::string_view name) {
   std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 99)
   set.erase(ninenine);
   std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 23)
-                                                                    // Whoops, got a 31, -> not decrementing
+  set.erase(four);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 23)
+  set.erase(twothree);
+  std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 1)
+  set.clear();
+  std::cout << "max is: " << set.get_max() << std::endl;            //
+
+  for (auto i = 0; i < 10; ++i) {
+    set.insert(i);
+  }
+   
+  auto foo = set.begin();
+  std::cout << "value of vIter is: " << foo.iter_val() << std::endl;
+  std::cout << "value of set max given by vIter: " << foo.get_set_max(set) << std::endl;
+
   //===================================
 
   /*

@@ -44,7 +44,10 @@ public:
   explicit vset(std::string_view _path, std::string_view _set_name) : visitor_set(_path, std::string(_set_name) + "_vs") {}
 
   // Clears the whole data structures
-  void clear() { visitor_set.clear(); }
+  void clear() { 
+    visitor_set.clear();
+    max = 0; 
+  }
 
   //====
   void   wht() { std::cout << sizeof(T) << std::endl; }
@@ -342,10 +345,12 @@ public:
     void iter_change(T ele) { iData = ele; }
     T iter_val() { return iData; }
     vIter operator++() { iData = iData + 1; } //prefix
-    vIter operator++(int other) { iData = iData + 1; } //postix
+    vIter operator++(int other) { iData = iData + 1; } //postfix
    
-    vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; } //prefix
-    vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postix
+    vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; } //prefix --i
+    vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postfix i--
+
+    T get_set_max(vset & owner) { return owner.max; }
   };
   
   void test_begin() { 
@@ -364,8 +369,8 @@ public:
       return tmp;
     }
     
-    for (T i = 0; i <= max; i = i + 1) {
-      if (vset::find(i+0) == true) {
+    for (auto i = 0; i <= max; i = i + 1) {
+      if (vset::find(i) == true) {
         tmp.iter_change(i);
         return tmp;
       }
