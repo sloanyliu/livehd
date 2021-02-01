@@ -9,8 +9,7 @@
 
 #include "floorplan.hpp"
 
-#include <stdlib.h>
-
+#include <cassert>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -22,10 +21,11 @@
 #include "mathutil.hpp"
 
 // This will be used to keep track of user's request for more output during layout.
-bool verbose = false;
+constexpr bool verbose = false;
 
 // Temporary local for crazy mirror reflection stuff.
-#define maxMirrorDepth 20
+constexpr int maxMirrorDepth = 20;
+
 static bool   xReflect = false;
 static double xLeft[maxMirrorDepth];
 static double xRight[maxMirrorDepth];
@@ -140,38 +140,31 @@ void FPObject::outputHotSpotLayout(ostream& o, double startX, double startY) {
     << calcY(startY) / 1000 << "\n";
 }
 
-void FPObject::outputLGraphLayout(LGraph* root, LGraph* lg, const Hierarchy_index hidx,
-                                  absl::flat_hash_set<mmap_lib::Tree_index>& sub_hidx_used, double startX, double startY) {
-  I(root);
-  I(lg);
-  I(!hidx.is_invalid());
-  I(root->ref_htree()->ref_lgraph(hidx) == lg);
+unsigned int FPObject::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
+  bool found = false;
 
-  for (Node fn : lg->fast()) {
-    if (fn.get_type_op() != getType()) {
+  Tree_index child_idx = tree.get_first_child(tidx);
+  while (child_idx != tree.invalid_index()) {
+    Node* child = tree.ref_data(child_idx);
+
+    // fmt::print("testing child node {} with parent hier ({}, {})\n", child->debug_name(), child->get_hidx().level, child->get_hidx().pos);
+    if (child->get_type_op() != getType() || child->get_hier_color() == 1) {
+      child_idx = tree.get_sibling_next(child_idx);
       continue;
     }
 
-    Node hn(root, hidx, fn.get_compact_class());
-
-    if (hn.get_hier_color() == 1) {
-      continue;
-    }
-
+    found = true;
+    fmt::print("assigning child node {} to parent hier ({}, {})\n", child->debug_name(), child->get_hidx().level, child->get_hidx().pos);
     Ann_place p(calcX(startX), calcY(startY), getWidth() / 1000, getHeight() / 1000);
-    hn.set_place(p);
-    hn.set_hier_color(1);  // set node instance as marked after visiting it
-
-/*
-    fmt::print("setting node {} (l: {}, p: {}) with color {}\n",
-               hn.debug_name(),
-               hn.get_hidx().level,
-               hn.get_hidx().pos,
-               hn.get_hier_color());
-*/
+    child->set_place(p);
+    child->set_hier_color(1);  // set node instance as marked after visiting it
 
     break;
   }
+
+  assert(found);
+
+  return 1;
 }
 
 // Methods for the FPWrapper class.
@@ -230,6 +223,7 @@ void FPCompWrapper::flip() {
 }
 
 bool FPCompWrapper::layout(FPOptimization opt, double ratio) {
+  (void)opt;
   // Make sure the ratio is within the stated constraints.
   ratio = ARInRange(ratio);
   // Calculate width height from area and AR.
@@ -241,51 +235,56 @@ bool FPCompWrapper::layout(FPOptimization opt, double ratio) {
 }
 
 // Methods for the FPcontainer class.
-int FPContainer::maxItemCount = 256;
 
 // Default constructor
-FPContainer::FPContainer() {
-  itemCount = 0;
-  items     = new FPObject*[maxItemCount];
-  count     = 1;
-  yMirror   = false;
-  xMirror   = false;
+FPContainer::FPContainer() : items() {
+  count   = 1;
+  yMirror = false;
+  xMirror = false;
 }
 
 FPContainer::~FPContainer() {
   // It's very important to only delete items when their refcount hits zero.
   // cout << "deleting container.\n";
-  for (int i = 0; i < itemCount; i++) {
+  for (int i = 0; i < (int)items.size(); i++) {
     FPObject* item     = items[i];
     int       newCount = item->decRefCount();
     if (newCount == 0)
       delete item;
   }
-  delete[] items;
 }
 
 // To properly handle refCount, we will only allow one method to actually add (or remove) items from the item list.
 
 void FPContainer::addComponentAtIndex(FPObject* comp, int index) {
-  if (index < 0 || index > itemCount)
+  if (index < 0 || index > (int)items.size())
     throw invalid_argument("Attempt to add item to Container at illegal index.");
-  if (itemCount == maxItemCount)
-    throw out_of_range("Attempt to add more than the maximum items to a container.");
+
+  const int oldsize = items.size();
+  items.resize(items.size() + 1);
+
   // See if we need to move things to open space.
-  if (index < itemCount)
-    for (int i = itemCount; i > index; i--) items[i] = items[i - 1];
+  if (index < oldsize && oldsize > 0) {
+    for (int i = oldsize; i > index; i--) {
+      items[i] = items[i - 1];
+    }
+  }
+
   items[index] = comp;
-  itemCount += 1;
   comp->incRefCount();
 }
 
 FPObject* FPContainer::removeComponentAtIndex(int index) {
-  if (index < 0 || index >= itemCount)
+  if (index < 0 || index >= (int)items.size())
     throw invalid_argument("Attempt to add item to Container at illegal index.");
   FPObject* comp = items[index];
   // Now fill in the hole.
-  for (int i = index; i < itemCount - 1; i++) items[i] = items[i + 1];
-  itemCount -= 1;
+  for (int i = index; i < (int)items.size() - 1; i++) {
+    items[i] = items[i + 1];
+  }
+
+  items.resize(items.size() - 1);
+
   // Often this component is about to be added somewhere else.
   // So, if the refCount is now zero, don't handle it here.
   // If the caller doesn't put it somewhere else, they will have to delete it themselves.
@@ -298,7 +297,7 @@ void FPContainer::replaceComponent(FPObject* comp, int index) {
   addComponentAtIndex(comp, index);
 }
 
-void FPContainer::addComponent(FPObject* comp) { addComponentAtIndex(comp, itemCount); }
+void FPContainer::addComponent(FPObject* comp) { addComponentAtIndex(comp, items.size()); }
 
 void FPContainer::addComponentToFront(FPObject* comp) { addComponentAtIndex(comp, 0); }
 
@@ -332,7 +331,7 @@ FPObject* FPContainer::removeComponent(int index) { return removeComponentAtInde
 // We want a descending sort.
 // We know this won't change item counts, so just it have at the item list.
 void FPContainer::sortByArea() {
-  int len = itemCount;
+  int len = items.size();
   for (int i = 0; i < len; i++) {
     double maxArea      = -1;
     int    maxAreaIndex = 0;
@@ -362,67 +361,71 @@ double FPContainer::totalArea() {
   return area;
 }
 
-void FPContainer::outputLGraphLayout(LGraph* root, LGraph* lg, const Hierarchy_index hidx,
-                                     absl::flat_hash_set<mmap_lib::Tree_index>& sub_hidx_used, double startX, double startY) {
-  I(root);
-  I(lg);
-  I(!hidx.is_invalid());
-  I(root->ref_htree()->ref_lgraph(hidx) == lg);
-  
+static unsigned int findNode(FPObject* obj, Node_tree& tree, Tree_index tidx, double startX, double startY) {
+  Ntype_op t = obj->getType();
+
+  unsigned int count;
+
+  if (Ntype::is_synthesizable(t)) {  // leaf node - current hier structure is fine
+    count = obj->outputLGraphLayout(tree, tidx, startX, startY);
+  } else if (t == Ntype_op::Sub) {  // Sub node - parameters need to be adjusted
+
+    bool found = false;
+
+    Tree_index child_idx = tree.get_first_child(tidx);
+    while (child_idx != tree.invalid_index()) {
+      auto child = tree.ref_data(child_idx);
+
+      if (!child->is_type_sub_present() || child->get_hier_color() == 1) {
+        child_idx = tree.get_sibling_next(child_idx);
+        continue;
+      }
+
+      LGraph* child_lg = LGraph::open(tree.get_root_lg()->get_path(), child->get_type_sub());
+
+      if (child_lg->get_name() != obj->getName()) {
+        child_idx = tree.get_sibling_next(child_idx);
+        continue;
+      }
+
+      found = true;
+      // fmt::print("assigning child subnode {} to parent hier ({}, {})\n", child->debug_name(), child->get_hidx().level, child->get_hidx().pos);
+
+      // write placement information to subnode as well
+      Ann_place p(obj->calcX(startX), obj->calcY(startY), obj->getWidth() / 1000, obj->getHeight() / 1000);
+
+      child->set_place(p);
+      child->set_hier_color(1);  // set node instance as marked after visiting it
+      count = obj->outputLGraphLayout(tree, child_idx, startX, startY);
+      found = true;
+
+      break;
+    }
+
+    assert(found);
+  } else if (t == Ntype_op::Invalid) {  // specific kind of layout - current hier structure is fine
+    count = obj->outputLGraphLayout(tree, tidx, startX, startY);
+  } else {
+    fmt::print("???\n");
+    assert(false);
+  }
+
+  return count;
+}
+
+unsigned int FPContainer::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
   pushMirrorContext(startX, startY);
-  int itemCount = getComponentCount();
+
+  unsigned int total = 0;
 
   for (int i = 0; i < getComponentCount(); i++) {
     FPObject* obj = getComponent(i);
-
-    Ntype_op t = obj->getType();
-
-    if (Ntype::is_synthesizable(t)) {  // leaf node - current hier structure is fine
-      obj->outputLGraphLayout(root, lg, hidx, sub_hidx_used, x + startX, y + startY);
-    } else if (t == Ntype_op::Sub) {  // Sub node - parameters need to be adjusted
-
-      bool found = false;
-      for (auto fn : lg->fast()) {
-        if (!fn.is_type_sub_present()) {
-          continue;
-        }
-
-        Node    hn(root, hidx, fn.get_compact_class());
-        LGraph* sub_lg = LGraph::open(root->get_path(), hn.get_type_sub());
-
-        const std::string_view tname = Ntype::get_name(obj->getType());
-        if ((sub_lg->get_name() == obj->getName()) && (hn.get_hier_color() == 0)) {
-          Ann_place p(obj->getX(), obj->getY(), obj->getWidth(), obj->getHeight());
-          hn.set_place(p);
-          hn.set_hier_color(1);  // set subnode instance as marked after visiting it
-
-          // find compatible tree index for subnode
-          auto ht   = root->ref_htree();
-          auto tidx = ht->get_first_child(hidx);
-          while (tidx != ht->invalid_index()) {
-            LGraph* sub_lg = LGraph::open(root->get_path(), hn.get_type_sub());
-
-            if (!sub_hidx_used.contains(tidx) && ht->ref_lgraph(tidx) == sub_lg) {
-              sub_hidx_used.emplace(tidx);
-              obj->outputLGraphLayout(root, sub_lg, tidx, sub_hidx_used, x + startX, y + startY);
-              found = true;
-              break;
-            }
-            tidx = ht->get_sibling_next(tidx);
-          }
-          break;
-        }
-      }
-      I(found);
-    } else if (t == Ntype_op::Invalid) {  // specific kind of layout - current hier structure is fine
-      obj->outputLGraphLayout(root, lg, hidx, sub_hidx_used, x + startX, y + startY);
-    } else {
-      fmt::print("???\n");
-      I(false);
-    }
+    total += findNode(obj, tree, tidx, x + startX, y + startY);
   }
 
   popMirrorContext();
+
+  return total;
 }
 
 // Methods for the GridLayout class.
@@ -432,6 +435,7 @@ gridLayout::gridLayout() : FPContainer() {
 }
 
 bool gridLayout::layout(FPOptimization opt, double targetAR) {
+  (void)opt;
   // We assume that a grid is a repeating unit of a single object.
   // However, that object can be either a leaf component or a container.
   if (getComponentCount() != 1) {
@@ -442,7 +446,7 @@ bool gridLayout::layout(FPOptimization opt, double targetAR) {
   double theight = sqrt(tarea / targetAR);
   double twidth  = tarea / theight;
   if (verbose)
-    cout << "Begin Grid Layout, TargetAR=" << targetAR << " My area=" << tarea << " Implied W=" << twidth << " H=" << theight
+    cout << "Begin Grid Layout for " << getName() << ", TargetAR=" << targetAR << " My area=" << tarea << " Implied W=" << twidth << " H=" << theight
          << "\n";
 
   FPObject* obj   = getComponent(0);
@@ -510,16 +514,9 @@ void gridLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
   o << "# End of " << GridName << " Layout.\n";
 }
 
-void gridLayout::outputLGraphLayout(LGraph* root, LGraph* lg, const Hierarchy_index hidx,
-                                    absl::flat_hash_set<mmap_lib::Tree_index>& sub_hidx_used, double startX, double startY) {
-  I(root);
-  I(lg);
-  I(!hidx.is_invalid());
-  I(root->ref_htree()->ref_lgraph(hidx) == lg);
-  
+unsigned int gridLayout::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
   if (getComponentCount() != 1) {
-    cerr << "Attempt to output a grid with other than one component.\n";
-    return;
+    throw std::invalid_argument("Attempt to output a grid with other than one component.\n");
   }
 
   double    compWidth, compHeight;
@@ -529,58 +526,24 @@ void gridLayout::outputLGraphLayout(LGraph* root, LGraph* lg, const Hierarchy_in
   compHeight    = obj->getHeight();
   compName      = obj->getName();
 
-  int compCount = xCount * yCount;
-  int compNum   = 1;
+  int compNum = 1;
 
   Ntype_op t = obj->getType();
+
+  unsigned int total = 0;
 
   for (int i = 0; i < yCount; i++) {
     double cy = (i * compHeight) + y + startY;
     for (int j = 0; j < xCount; j++) {
       double cx = (j * compWidth) + x + startX;
 
-      if (Ntype::is_synthesizable(t)) {  // leaf node - current hier structure is fine
-        obj->outputLGraphLayout(root, lg, hidx, sub_hidx_used, x + startX, y + startY);
-      } else if (t == Ntype_op::Sub) {  // Sub node - parameters need to be adjusted
-        bool found = false;
-        for (auto fn : lg->fast()) {
-          if (!fn.is_type_sub_present()) {
-            continue;
-          }
+      total += findNode(obj, tree, tidx, cx, cy);
 
-          Node    hn(root, hidx, fn.get_compact_class());
-          LGraph* sub_lg = LGraph::open(root->get_path(), hn.get_type_sub());
-
-          const std::string_view tname = Ntype::get_name(obj->getType());
-          if ((sub_lg->get_name() == obj->getName()) && (hn.get_hier_color() == 0)) {
-            Ann_place p(obj->getX(), obj->getY(), obj->getWidth(), obj->getHeight());
-            hn.set_place(p);
-            hn.set_hier_color(1);  // set node instance as marked after visiting it
-
-            // find compatible tree index for subnode
-            auto ht   = root->ref_htree();
-            auto tidx = ht->get_first_child(hidx);
-            while (tidx != ht->invalid_index()) {
-              LGraph* sub_lg = LGraph::open(root->get_path(), hn.get_type_sub());
-
-              if (!sub_hidx_used.contains(tidx) && ht->ref_lgraph(tidx) == sub_lg) {
-                sub_hidx_used.emplace(tidx);
-                obj->outputLGraphLayout(root, sub_lg, tidx, sub_hidx_used, cx, cy);
-                found = true;
-                break;
-              }
-              tidx = ht->get_sibling_next(tidx);
-            }
-            break;
-          }
-        }
-        I(found);
-      } else if (t == Ntype_op::Invalid) {  // specific kind of layout - current hier structure is fine
-        obj->outputLGraphLayout(root, lg, hidx, sub_hidx_used, x + startX, y + startY);
-      }
       compNum += 1;
     }
   }
+
+  return total;
 }
 
 // Methods for Baglayout Class
@@ -591,6 +554,7 @@ bagLayout::bagLayout() : FPContainer() {
 }
 
 bool bagLayout::layout(FPOptimization opt, double targetAR) {
+  (void)opt;
   // If we are locked, don't layout.
   if (locked)
     return true;
@@ -603,7 +567,7 @@ bool bagLayout::layout(FPOptimization opt, double targetAR) {
   double nextY     = 0;
 
   if (verbose) {
-    cout << "In BagLayout, Area=" << area << " Width= " << remWidth << " Height=" << remHeight << " Target AR=" << targetAR << "\n";
+    cout << "In BagLayout for " << getName() << ", Area=" << area << " Width= " << remWidth << " Height=" << remHeight << " Target AR=" << targetAR << "\n";
   }
 
   // Sort the components, placing them in decreasing order of size.
@@ -671,7 +635,7 @@ void bagLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
   string groupName;
   if (itemCount != 1) {
     groupName = getUniqueName();
-    o << "# Start of " << groupName << " layout of type " << Ntype::get_name(getType()) << ".\n";
+    o << "# Start of " << groupName << " layout of type " << Ntype::get_name(getType()) << " (" << getComponentCount() << " items).\n";
     o << "# Total Group Stats: X=" << calcX(startX) << " Y=" << calcY(startY) << " W=" << width << "mm H=" << height
       << "mm Area=" << area << "mm^2\n";
   }
@@ -758,6 +722,7 @@ fixedLayout::fixedLayout(const char* filename, double scalingFactor) : bagLayout
 }
 
 bool fixedLayout::layout(FPOptimization opt, double targetAR) {
+  (void)opt;
   // Compare targetAR to our originalAR to calculate x and y scaling factors.
   double currentAR = width / height;
   double xFactor   = sqrt(targetAR / currentAR);
@@ -795,6 +760,7 @@ FPObject* geogLayout::addComponentCluster(string name, int count, double area, d
 }
 
 bool geogLayout::layout(FPOptimization opt, double targetAR) {
+  (void)opt;
   // All this routine does is set up some data structures,
   //   and then call the helper to recursively do the layout work.
   // We will keep track of containers we make in a "stack".
@@ -803,10 +769,10 @@ bool geogLayout::layout(FPOptimization opt, double targetAR) {
   // Assume no item will be more than split in two.
   int        itemCount    = getComponentCount();
   int        maxArraySize = itemCount * 2;
-  FPObject** layoutStack  = (FPObject**)malloc(sizeof(FPObject*) * maxArraySize);
+  FPObject** layoutStack  = new FPObject*[maxArraySize];
   for (int i = 0; i < maxArraySize; i++) layoutStack[i] = 0;
-  FPObject** centerItems = (FPObject**)(malloc(sizeof(FPObject*) * FPContainer::maxItemCount));
-  for (int i = 0; i < maxItemCount; i++) centerItems[i] = 0;
+  FPObject** centerItems = new FPObject*[itemCount];
+  for (int i = 0; i < itemCount; i++) centerItems[i] = 0;
 
   // Calculate the total area, and the implied target width and height.
   area             = totalArea();
@@ -814,7 +780,7 @@ bool geogLayout::layout(FPOptimization opt, double targetAR) {
   double remWidth  = area / remHeight;
 
   if (verbose)
-    cout << "In geogLayout.  A=" << area << " W=" << remWidth << " H=" << remHeight << "\n";
+    cout << "In geogLayout for " << getName() << ".  A=" << area << " W=" << remWidth << " H=" << remHeight << "\n";
 
   // Now do the real work.
   bool retval = layoutHelper(remWidth, remHeight, 0, 0, layoutStack, 0, centerItems, 0);
@@ -841,8 +807,9 @@ bool geogLayout::layout(FPOptimization opt, double targetAR) {
   }
   area = width * height;
 
-  free(centerItems);
-  free(layoutStack);
+  delete[] centerItems;
+  delete[] layoutStack;
+
   return retval;
 }
 
@@ -950,7 +917,7 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
     double totalArea = comp->totalArea();
 
     if (verbose)
-      cout << "In geog, for component " << comp->getName() << " total component area=" << totalArea << "\n";
+      cout << "In geog for " << comp->getName() << ", total component area=" << totalArea << "\n";
 
     double targetWidth, targetHeight;
     newX = curX;
@@ -1003,7 +970,7 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
 void geogLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
   pushMirrorContext(startX, startY);
   string layoutName = getUniqueName();
-  o << "# Start of " << layoutName << " Layout of type " << Ntype::get_name(getType()) << ".\n";
+  o << "# Start of " << layoutName << " Layout of type " << Ntype::get_name(getType()) << " (" << getComponentCount() << " items).\n";
   o << "# Total Cluster Stats: X=" << calcX(startX) << " Y=" << calcY(startY) << " W=" << width << "mm H=" << height
     << "mm Area=" << area << "mm^2\n";
   for (int i = 0; i < getComponentCount(); i++) {

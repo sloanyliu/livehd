@@ -91,8 +91,16 @@ void Bitwidth::process_mux(Node &node, XEdge_iterator &inp_edges) {
   Lconst max_val;
   Lconst min_val;
   for (auto e : inp_edges) {
-    if (e.sink.get_pid() == 0)
-      continue;  // Skip select
+    if (e.sink.get_pid() == 0) {
+
+      Bitwidth_range bw(0, inp_edges.size()-1); // -1 for the mux sel
+      flat_bwmap.insert_or_assign(e.driver.get_compact_flat(), bw);
+
+      if (e.driver.get_bits() && e.driver.get_bits() >= bw.get_sbits()) {
+        e.driver.set_bits(bw.get_sbits());
+      }
+      continue;
+    }
 
     auto it = flat_bwmap.find(e.driver.get_compact_flat());
     if (it != flat_bwmap.end()) {
@@ -960,27 +968,31 @@ void Bitwidth::try_delete_attr_node(Node &node) {
 }
 
 void Bitwidth::set_subgraph_boundary_bw(Node &node) {
-  auto *library = Graph_library::instance(node.get_class_lgraph()->get_path());
-  Sub_node* sub;
-  (void)sub;
 
-  auto sub_name = node.get_type_sub_node().get_name();
-  if (library->has_name(sub_name)) {
-    auto lgid = library->get_lgid(node.get_type_sub_node().get_name());
-    sub   = library->ref_sub(lgid);
-  } else {
-    Pass::error("Global IO connection pass cannot find existing subgraph {} in lgdb\n", sub_name);
+  if (!node.is_type_sub_present()) {
+    auto sub_lgid = node.get_type_sub();
+    auto sub_name = node.get_class_lgraph()->get_library().get_name(sub_lgid);
+    // No error because sometimes we could infer backwards the size of outputs
+    Pass::info("Global IO connection pass cannot find existing subgraph {} in lgdb\n", sub_name);
     return;
   }
 
-  // get the BW of the driver of sub_graph_output, and set it to the corresponding subg_node in lg
-  // FIXME->sh: any other way that doesn't need to open a lgraph?
-  auto sub_lg = LGraph::open(node.get_class_lgraph()->get_path(), sub_name) ; 
-  sub_lg->each_graph_output([&node, this](Node_pin &dpin_gout) {
-    if (flat_bwmap.find(dpin_gout.get_compact_flat()) == flat_bwmap.end())
-      return; // not ready yet, only possible from Pyrope front-end
+  auto sub_lg = node.ref_type_sub_lgraph();
 
+  sub_lg->each_graph_output([&node, this](Node_pin &dpin_gout) {
     auto node_subg_dpin = node.setup_driver_pin(dpin_gout.get_name());
+
+    if (flat_bwmap.find(dpin_gout.get_compact_flat()) == flat_bwmap.end()) {
+      const auto bits = dpin_gout.get_bits();
+      if (dpin_gout.get_bits()) {
+        Bitwidth_range bw;
+        bw.set_sbits_range(bits);
+        flat_bwmap.insert_or_assign(node_subg_dpin.get_compact_flat(), bw);
+      }
+
+      return;
+    }
+
     flat_bwmap.insert_or_assign(node_subg_dpin.get_compact_flat(), flat_bwmap[dpin_gout.get_compact_flat()]);
   });
 }

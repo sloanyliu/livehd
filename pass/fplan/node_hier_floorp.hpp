@@ -1,3 +1,5 @@
+//  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+
 #pragma once
 
 #include "floorplanner.hpp"
@@ -8,7 +10,7 @@
 
 class Node_hier_floorp : public Lhd_floorplanner {
 public:
-  void load(LGraph* root, const std::string_view lgdb_path);
+  void load(const Node_tree& tree, const std::string_view lgdb_path);
 
 private:
   void load_lg_nodes(LGraph* lg, const std::string_view lgdb_path);

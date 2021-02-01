@@ -19,23 +19,32 @@ Decrementer Test1 Test2 Test3 Test6 TrivialAdd NotAnd Trivial Tail TrivialArith
 Shifts PlusAnd MaxN ByteSelector Darken HiLoMultiplier SimpleALU Mul
 VecShiftRegisterParam VecShiftRegisterSimple ' 
 
-# pts_hifirrtl_todo='Test6 ByteSelector ResetShiftRegister Counter Life Cell_alone Adder4 Mux4 LogShifter SingleEvenFilter
-# VecShiftRegister BundleConnect SubModule PlusAnd MaxN VecShiftRegisterParam
-# VecShiftRegisterSimple VecSearch VendingMachineSwitch VendingMachine'
+# pts_hifirrtl_todo='
+# 
+# VendingMachineSwitch VendingMachine'
 
 # passed hifirrtl pattern pool
-pts='ByteSelector MaxN Max2 SimpleALU ResetShiftRegister Parity Counter
-RegisterSimple Register RegXor AddNot EnableShiftRegister GCD_3bits Flop
-Decrementer Test2 Test3 TrivialAdd NotAnd Trivial Tail TrivialArith Shifts
-Darken HiLoMultiplier Coverage Accumulator LFSR16 ' 
+pts='Xor6Thread2 XorSelfThread1 Cell_alone ByteSelector SimpleALU Mux4 MaxN
+Max2 ResetShiftRegister Parity Counter RegisterSimple Register RegXor AddNot
+EnableShiftRegister GCD_3bits Flop Decrementer Test2 Test3 TrivialAdd NotAnd
+Trivial Tail TrivialArith Shifts Darken HiLoMultiplier Coverage Accumulator
+LFSR16 PlusAnd VendingMachine VendingMachineSwitch'  
 
 # pts='Mul'
 # pts='Adder4'
-# pts='Mux4'
 # pts='SingleEvenFilter'
-pts='LogShifter'
+# pts='LogShifter'
 # pts='Test6'
 # pts='Test1'
+# pts='Life'
+# pts='VecShiftRegister'
+# pts='BundleConnect' 
+# pts='SubModule'
+# pts='VecShiftRegisterParam'
+# pts='VecShiftRegisterSimple '
+# pts='VecSearch '
+
+
 
 
 LGSHELL=./bazel-bin/main/lgshell
@@ -121,10 +130,11 @@ firrtl_test() {
     fi
   done
 
-  # rm -f *.v
-  # rm -f *.dot
-  # rm -f lgcheck*
-  # rm -rf lgdb
+  rm -f *.v
+  rm -f *.dot
+  rm -f *.tcl
+  rm -f lgcheck*
+  rm -rf lgdb
 }
 
 firrtl_test "$pts"

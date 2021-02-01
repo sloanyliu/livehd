@@ -55,6 +55,8 @@ Node_pin::Node_pin(LGraph *_g, Compact_class_driver comp)
 }
 
 const Index_ID Node_pin::get_root_idx() const {
+  if (unlikely(current_g==nullptr))
+    return 0;
   return current_g->get_root_idx(idx);
 }
 
@@ -74,24 +76,24 @@ bool Node_pin::has_inputs() const { return current_g->has_inputs(*this); }
 
 bool Node_pin::has_outputs() const { return current_g->has_outputs(*this); }
 
-bool Node_pin::is_graph_io() const { return current_g->is_graph_io(idx); }
+bool Node_pin::is_graph_io() const { return current_g->has_graph_io(idx); }
 
-bool Node_pin::is_graph_input() const { return current_g->is_graph_input(idx); }
+bool Node_pin::is_graph_input() const { return current_g->has_graph_input(idx); }
 
-bool Node_pin::is_graph_output() const { return current_g->is_graph_output(idx); }
+bool Node_pin::is_graph_output() const { return current_g->has_graph_output(idx); }
 
 Node_pin Node_pin::get_non_hierarchical() const {
   return Node_pin(current_g, current_g, Hierarchy_tree::invalid_index(), idx, pid, sink);
 }
 
-Node_pin Node_pin::get_sink() const {
+Node_pin Node_pin::switch_to_sink() const {
   if(is_sink())
     return *this;
 
   return Node_pin(top_g, current_g, hidx, idx, pid, true);
 }
 
-Node_pin Node_pin::get_driver() const {
+Node_pin Node_pin::switch_to_driver() const {
   if (is_driver())
     return *this;
 
@@ -196,18 +198,21 @@ bool Node_pin::is_io_sign() const {
   return Ann_node_pin_io_unsign::ref(top_g)->has(get_compact_driver())?false:true;
 }
 
-std::string Node_pin::get_type_sub_pin_name() const {
-  auto &sub_node = get_node().get_type_sub_node();
-  if (sub_node.has_instance_pin(pid))
-    return std::string(sub_node.get_name_from_instance_pid(pid));
+std::string_view Node_pin::get_type_sub_pin_name() const {
+  const auto node = get_node();
 
-  return std::to_string(pid);
+  const auto &sub    = node.get_type_sub_node();
+  const auto &io_pin = sub.get_io_pin_from_instance_pid(pid);
+
+  GI(is_driver(), !io_pin.is_input()); // it can be invalid
+  GI(is_sink(),   !io_pin.is_output());// it can be invalid
+
+  return io_pin.name;
 }
 
 void Node_pin::set_delay(float val) { Ann_node_pin_delay::ref(top_g)->set(get_compact_driver(), val); }
 bool Node_pin::has_delay()  const { return Ann_node_pin_delay::ref(top_g)->has(get_compact_driver()); }
 float Node_pin::get_delay() const { return Ann_node_pin_delay::ref(top_g)->get(get_compact_driver()); }
-
 
 void Node_pin::del_delay() {
   Ann_node_pin_delay::ref(top_g)->erase(get_compact_driver());
@@ -219,13 +224,11 @@ void Node_pin::set_name(std::string_view wname) {
 }
 
 void Node_pin::del() {
-  if (sink && is_graph_output()) {
+  if (is_graph_output() && sink) {
     auto dpin = change_to_driver_from_graph_out_sink();
     dpin.del();
     return;
   }
-
-  get_lg()->del_pin(*this);
 
   if (!sink) {
     if (has_name()) { // works for sink/driver if needed
@@ -235,6 +238,8 @@ void Node_pin::del() {
       del_delay();
     }
   }
+
+  get_lg()->del_pin(*this);
 
   invalidate();
 }
@@ -359,22 +364,28 @@ Node_pin Node_pin::find_driver_pin(LGraph *top, std::string_view wname) {
   return Node_pin(top, ref->get_key(it));
 }
 
-std::string Node_pin::get_pin_name() const {
+std::string_view Node_pin::get_pin_name() const {
   if (is_graph_io()) {
-		auto &sub_node = current_g->get_self_sub_node();
+		const auto &sub    = current_g->get_self_sub_node();
+    const auto &io_pin = sub.get_io_pin_from_instance_pid(pid);
+    return io_pin.name;
+#if 0
+    // handles case that there is no name by returning PID instead of INVALID
 		if (sub_node.has_instance_pin(pid))
 			return std::string(sub_node.get_name_from_instance_pid(pid));
 
 		return std::to_string(pid);
+#endif
 	}
 
   auto op = get_type_op();
   if (op == Ntype_op::Sub)
     return get_type_sub_pin_name();
-  if (is_driver())
-    return std::string(Ntype::get_driver_name(op, pid));
 
-  return std::string(Ntype::get_sink_name(op, pid));
+  if (is_driver())
+    return Ntype::get_driver_name(op, pid);
+
+  return Ntype::get_sink_name(op, pid);
 }
 
 void Node_pin::set_offset(Bits_t offset) {

@@ -55,11 +55,12 @@ public:
     bool    is_input() const { return dir == Direction::Input; }
     bool    is_output() const { return dir == Direction::Output; }
     bool    is_invalid() const { return dir == Direction::Invalid; }
-    Port_ID get_graph_pos() const { return graph_io_pos; }
+    bool    has_io_pos() const { return graph_io_pos != Port_invalid; }
+    Port_ID get_io_pos() const { return graph_io_pos; }
 
     void clear() {
       dir = Direction::Invalid;
-      name.clear();
+      name = "INVALID_PID";
       graph_io_pos = Port_invalid;
       phys.clear();
     }
@@ -226,7 +227,7 @@ public:
     return name2id.at(io_name);
   }
 
-  Port_ID get_graph_pos(std::string_view io_name) const {
+  Port_ID get_io_pos(std::string_view io_name) const {
     auto instance_pid = get_instance_pid(io_name);
     return io_pins[instance_pid].graph_io_pos;
   }
@@ -242,11 +243,13 @@ public:
   }
 
   const IO_pin &get_io_pin_from_instance_pid(Port_ID instance_pid) const {
-    I(has_instance_pin(instance_pid));
+    if (instance_pid>=io_pins.size()) {
+      return io_pins[0]; // invalid PID
+    }
     return io_pins[instance_pid];
   }
 
-  Port_ID get_graph_pos_from_instance_pid(Port_ID instance_pid) const {
+  Port_ID get_io_pos_from_instance_pid(Port_ID instance_pid) const {
     I(has_instance_pin(instance_pid));
     return io_pins[instance_pid].graph_io_pos;
   }
@@ -355,6 +358,30 @@ public:
       if (e.is_invalid())
         continue;
       v.emplace_back(&e);
+    }
+    return v;
+  }
+
+  const std::vector<const IO_pin *> get_output_pins() const {
+    I(io_pins.size() >= 1);
+    std::vector<const IO_pin *> v;
+    for(const auto &e:io_pins) {
+      if (e.is_invalid())
+        continue;
+      if (e.is_output())
+        v.emplace_back(&e);
+    }
+    return v;
+  }
+
+  const std::vector<const IO_pin *> get_input_pins() const {
+    I(io_pins.size() >= 1);
+    std::vector<const IO_pin *> v;
+    for(const auto &e:io_pins) {
+      if (e.is_invalid())
+        continue;
+      if (e.is_input())
+        v.emplace_back(&e);
     }
     return v;
   }

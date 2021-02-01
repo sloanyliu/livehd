@@ -1,3 +1,5 @@
+//  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+
 #pragma once
 
 #include <memory>
@@ -6,14 +8,14 @@
 #include "absl/container/flat_hash_map.h"
 #include "floorplan.hpp"
 #include "lgraph.hpp"
+#include "node_tree.hpp"
 
 class Lhd_floorplanner {
 public:
-
   Lhd_floorplanner();
 
   // load modules into ArchFP using verious kinds of traversals
-  virtual void load(LGraph* root, const std::string_view lgdb_path) = 0;
+  virtual void load(const Node_tree& tree, const std::string_view lgdb_path) = 0;
 
   // create a floorplan from loaded modules
   void create();
@@ -22,33 +24,50 @@ public:
   void write_file(const std::string_view filename);
 
   // write the floorplan back to LiveHD for analysis and future floorplans
-  void write_lhd();
-	
-  virtual ~Lhd_floorplanner() {
-    for (auto& pair : layouts) {
-      bagLayout* l = pair.second.release();
-      (void)l;
+  void write_lhd(Node_tree& tree);
 
-      // TODO: actually deleting geogLayouts segfaults for some reason...
-      // delete l;
-      // (pair.second.l.reset() also fails)
-    }
-
-    bagLayout* l = root_layout.release();
-    (void)l;
-  }
+  ~Lhd_floorplanner();
 
 protected:
-  
+  /*
+    NOTE: raw pointers, new, and delete are used because ArchFP has a built-in reference counting system, so
+    all that is required in order to free all floorplanner memory is to free the top-level layout.  Freeing every layout
+    will result in double-frees.
+
+    A fix for this would be to replace the refcounting implementation with std::shared_ptr.
+  */
+
+  // using std::array for fixed max size
+  constexpr static std::array<GeographyHint, 5> hint_seq = {
+      GeographyHint::Center,
+      GeographyHint::Top,
+      GeographyHint::Bottom,
+      GeographyHint::Left,
+      GeographyHint::Right
+  };
+
+  // these hints are only valid for exactly two nodes
+  constexpr static std::array<GeographyHint, 6> hint_seq_2 = {
+      GeographyHint::LeftRight,
+      GeographyHint::LeftRightMirror,
+      GeographyHint::LeftRight180,
+      GeographyHint::TopBottom,
+      GeographyHint::TopBottomMirror,
+      GeographyHint::TopBottom180,
+  };
+
+  // return a hint based on the number of components
+  GeographyHint randomHint(int count) const;
+
   // layout of root node, used frequently
   LGraph* root_lg;
-  std::unique_ptr<bagLayout> root_layout;
 
   // layout of all child nodes
-  absl::flat_hash_map<LGraph*, std::unique_ptr<bagLayout>> layouts;
+  absl::flat_hash_map<LGraph*, geogLayout*> layouts;
 
   // at what number of nodes of a given type should they be laid out in a grid?
   absl::flat_hash_map<Ntype_op, unsigned int> grid_thresh;
 
-  constexpr static bool debug_print = false;
+  // print debug information
+  constexpr static bool debug_print = true;
 };

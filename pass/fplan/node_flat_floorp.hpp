@@ -1,5 +1,8 @@
+//  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+
 #pragma once
 
+/*
 #include "floorplanner.hpp"
 #include "node_pin.hpp"
 #include "lgedgeiter.hpp"
@@ -10,3 +13,4 @@ public:
 
 private:
 };
+*/

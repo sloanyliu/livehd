@@ -1,3 +1,5 @@
+//  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+
 #include "node_hier_floorp.hpp"
 
 #include <functional>
@@ -14,9 +16,9 @@ void Node_hier_floorp::load_lg_nodes(LGraph* lg, const std::string_view lgdb_pat
     return;
   }
 
-  auto l = std::make_unique<bagLayout>();
+  geogLayout* l = new geogLayout();
 
-  Ntype_area na(lgdb_path);
+  const Ntype_area na(lgdb_path);
 
   // count and floorplan subnodes
   absl::flat_hash_map<LGraph*, unsigned int> sub_lg_count;
@@ -34,11 +36,11 @@ void Node_hier_floorp::load_lg_nodes(LGraph* lg, const std::string_view lgdb_pat
       fmt::print("adding {} of subcomponent {} to cluster of lg {}\n", sub_lg_count[sub_lg], sub_lg->get_name(), lg->get_name());
     }
 
-    l->addComponent(layouts[sub_lg].get(), sub_lg_count[sub_lg]);
+    l->addComponent(layouts[sub_lg], sub_lg_count[sub_lg], randomHint(sub_lg_count[sub_lg]));
   }
 
   absl::flat_hash_map<Ntype_op, unsigned int> grid_count;
-  absl::flat_hash_set<Ntype_op> skip;
+  absl::flat_hash_set<Ntype_op>               skip;
   for (auto n : lg->fast()) {
     Ntype_op op = n.get_type_op();
     if (!Ntype::is_synthesizable(op)) {
@@ -51,18 +53,19 @@ void Node_hier_floorp::load_lg_nodes(LGraph* lg, const std::string_view lgdb_pat
   // count and floorplan leaves
   for (auto n : lg->fast()) {
     Ntype_op op = n.get_type_op();
-    if (!Ntype::is_synthesizable(op)) {
+    if (!Ntype::is_synthesizable(op) || skip.contains(op)) {
       continue;
     }
 
-    if (skip.contains(op)) {
-      continue;
+    if (!na.has_dim(op)) {
+      std::string errstr = "node type ";
+      errstr.append(Ntype::get_name(op));
+      errstr.append(" has no area information!");
+      throw std::runtime_error(errstr);
     }
-
-    I(na.has_dim(op));
 
     auto  dim       = na.get_dim(op);
-    float node_area = dim.area;  // TODO: can we calculate some sort of bitwidth for the node?
+    float node_area = dim.area;
 
     unsigned int count = 1;
     if (grid_count[op] >= grid_thresh[op] && grid_thresh[op] > 0) {
@@ -75,32 +78,19 @@ void Node_hier_floorp::load_lg_nodes(LGraph* lg, const std::string_view lgdb_pat
       fmt::print("\tarea: {}, min asp: {}, max asp: {}\n", node_area, dim.min_aspect, dim.max_aspect);
     }
 
-    l->addComponentCluster(n.get_type_op(), count, node_area, dim.max_aspect, dim.min_aspect);
+    l->addComponentCluster(n.get_type_op(), count, node_area, dim.max_aspect, dim.min_aspect, randomHint(count));
   }
 
   l->setName(lg->get_name().data());
   l->setType(Ntype_op::Sub);  // treat nodes placed by us as subnodes
-  layouts[lg] = std::move(l);
+
+  I(layouts[lg] == nullptr);
+  layouts[lg] = l;
 }
 
-void Node_hier_floorp::load(LGraph* root, const std::string_view lgdb_path) {
+void Node_hier_floorp::load(const Node_tree& tree, const std::string_view lgdb_path) {
   fmt::print("\n");
-  root_lg = root;
-
-  auto check_area_exists = [&lgdb_path](LGraph* lg) {
-    const Ntype_area na(lgdb_path);
-    for (auto n : lg->fast(true)) {
-      Ntype_op op = n.get_type_op();
-      if (Ntype::is_synthesizable(op) && !(na.has_dim(op))) {
-        std::string errstr = "node type ";
-        errstr.append(Ntype::get_name(op));
-        errstr.append(" has no area information!");
-        throw std::runtime_error(errstr);
-      }
-    }
-  };
-
-  check_area_exists(root);
+  root_lg = tree.get_root_lg();
 
   std::function<void(LGraph*)> load_nodes = [&](LGraph* lg) {
     lg->each_sub_fast([&](Node& n, Lg_type_id lgid) {
@@ -113,7 +103,5 @@ void Node_hier_floorp::load(LGraph* root, const std::string_view lgdb_path) {
     load_lg_nodes(lg, lgdb_path);
   };
 
-  load_nodes(root);
-
-  root_layout = std::move(layouts[root]);
+  load_nodes(root_lg);
 }

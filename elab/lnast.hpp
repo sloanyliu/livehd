@@ -1,20 +1,16 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 #pragma once
+#include <stack>
 
 #include "elab_scanner.hpp"
 #include "mmap_tree.hpp"
 #include "lnast_ntype.hpp"
 
-// FIXME->sh: need ordered map to guarantee phi-node generation order to be able
-// to test LNAST-SSA, better to use absl::btree_map
-
-/* using Phi_rtable = absl::flat_hash_map<std::string_view, Lnast_nid>; // rtable = resolve_table */
-using Lnast_nid = mmap_lib::Tree_index;
-using Phi_rtable = std::map<std::string_view, Lnast_nid>; // rtable = resolve_table
-using Cnt_rtable = absl::flat_hash_map<std::string_view, int16_t>;
-using Dot_lrhs_table = absl::flat_hash_map<Lnast_nid, std::pair<bool, Lnast_nid>>;  // for both dot and selection, dot -> (lrhs, paired opr node)
-using Tuple_var_table = absl::flat_hash_set<std::string_view>;
-using Tuple_var_1st_scope_ssa_table = std::map<std::string_view, Lnast_nid>; // rtable = resolve_table
+using Lnast_nid                     = mmap_lib::Tree_index;
+using Phi_rtable                    = absl::flat_hash_map<std::string_view, Lnast_nid>; // rtable = resolve_table
+using Cnt_rtable                    = absl::flat_hash_map<std::string_view, int16_t>;
+using Dot_lrhs_table                = absl::flat_hash_map<Lnast_nid, std::pair<bool, Lnast_nid>>;  // for both dot and selection, dot -> (lrhs, paired opr node)
+using Tuple_var_1st_scope_ssa_table = absl::flat_hash_map<std::string_view, Lnast_nid>; // rtable = resolve_table
 
 
 //tricky old C macro to avoid redundant code from function overloadings
@@ -151,12 +147,13 @@ private:
   void      update_tuple_var_table             (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
   bool      update_tuple_var_1st_scope_ssa_table (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
   bool      check_tuple_var_1st_scope_ssa_table_parents_chain (const Lnast_nid &psts_nid, std::string_view ref_name);
+  void      merge_hierarchical_attr_set        (Lnast_nid &opr_nid);
+  void      collect_hier_tuple_nids            (Lnast_nid &opr_nid, std::stack<Lnast_nid> &stk_tuple_fields); 
 
   // hierarchical statements node -> symbol table
   absl::flat_hash_map<Lnast_nid, Phi_rtable>       phi_resolve_tables;
   absl::flat_hash_map<Lnast_nid, Cnt_rtable>       ssa_rhs_cnt_tables;
   absl::flat_hash_map<Lnast_nid, Dot_lrhs_table>   dot_lrhs_tables;
-  absl::flat_hash_map<Lnast_nid, Tuple_var_table>  tuple_var_tables;
   absl::flat_hash_map<Lnast_nid, Phi_rtable>       new_added_phi_node_tables; // for each if-subtree scope
   absl::flat_hash_set<std::string_view>            tuplized_table;
   absl::flat_hash_map<std::string_view, Lnast_nid> candidates_update_phi_resolve_table;
