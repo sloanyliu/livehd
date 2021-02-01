@@ -28,6 +28,7 @@ class vset {
 
 private:
   T max = 0;
+  T min = 0;
 
 public:
   using VisitorSet = typename mmap_lib::map<Key, T>;
@@ -46,7 +47,8 @@ public:
   // Clears the whole data structures
   void clear() { 
     visitor_set.clear();
-    max = 0; 
+    max = 0;
+    min = 0; 
   }
 
   //====
@@ -333,6 +335,8 @@ public:
    * Iterator class for vset
    */
   class vIter {
+  private:
+    T test = 0;
 
   public:
     //unsigned int iData;
@@ -344,11 +348,61 @@ public:
     void cont_test() { std::cout << "made it" << std::endl; }
     void iter_change(T ele) { iData = ele; }
     T iter_val() { return iData; }
-    vIter operator++() { iData = iData + 1; } //prefix
-    vIter operator++(int other) { iData = iData + 1; } //postfix
-   
-    vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; } //prefix --i
+    
+    /* Revert back to old ways for now 
+     * Need to think about how to make sure vIter doesnt ++ or -- blindly*/
+    vIter operator++() { iData = (iData < 0) ? 0 : iData - 1;}
+    vIter operator++(int other) { iData = (iData == 0) ? 0 : iData - 1;} 
+    vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; }
+    vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1; }
+    /*
+    vIter operator++() { 
+      while (true) {
+        if (iData < vset::get_max()) {
+          if (vset::find(iData + 1)) {
+            iData = iData + 1;
+            break;
+          } else {
+            iData = iData + 1;
+          }
+        } else if (iData == vset::get_max()) {
+          break;
+        }
+      }
+    } //prefix ++i
+
+    vIter operator++(int other) { 
+      while (true) {
+        if (iData < vset::get_max()) {
+          if (vset::find(iData + 1)) {
+            iData = iData + 1;
+            break;
+          } else {
+            iData = iData + 1;
+          }
+        } else if (iData == vset::get_max()) {
+          break;
+        }
+      }
+    } //postfix i++
+
+    vIter operator--() { 
+      while (true) {
+        if (iData == 0) {
+          break;
+        } else {
+          if (vset::find(iData - 1)) {
+            iData = iData - 1;
+            break;
+          } else {
+            iData = iData - 1;
+          }
+        }
+      }
+    } //prefix --i
+    
     vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postfix i--
+    */
 
     T get_set_max(vset & owner) { return owner.max; }
   };
@@ -361,6 +415,12 @@ public:
   vIter test_ret() {
     vIter beta;
     return beta;
+  }
+
+  // trying to change vIter member vars using vset
+  T set_and_ret (T ele) {
+    vIter::test = ele;
+    return vIter::test;
   }
 
   [[nodiscard]] vIter begin() {
