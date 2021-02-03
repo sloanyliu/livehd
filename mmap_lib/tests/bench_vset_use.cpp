@@ -18,7 +18,7 @@
  * Creates a vset from mmap_lib namespace
  * And tests it a little
  */
-void mmap_vset(int max, std::string_view name) {
+void mmap_vset(std::string_view name) {
   Lrand<int> rng;
 
   std::string type_test("mmap_vset ");
@@ -79,14 +79,89 @@ void mmap_vset(int max, std::string_view name) {
   set.clear();
   std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
 
-  for (auto i = 0; i < 10; ++i) {
-    set.insert(i);
-  }
+  std::cout << "inserting 0 to 9 into vset" << std::endl;   
+  for (auto i = 0; i < 10; ++i) { set.insert(i); }                  // insert 0 to 9
    
-  auto foo = set.begin();
-  std::cout << "vIter is: " << foo.iter_val() << std::endl;        
+  auto foo = set.begin();                                           // created vIter foo
+  std::cout << "vIter is: " << foo.iter_val() << std::endl;         // expecting vIter val to be 0
   std::cout << "max given by vIter: " << foo.get_set_max() << std::endl;
+
+  foo++;
+  std::cout << "vIter++: " << foo.iter_val() << std::endl; 
+  ++foo;
+  std::cout << "++vIter: " << foo.iter_val() << std::endl;
+  foo--;
+  std::cout << "vIter--: " << foo.iter_val() << std::endl;
+  --foo;
+  std::cout << "--vIter: " << foo.iter_val() << std::endl;
+
+  std::cout << "vIter++ 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    foo++;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "--vIter 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    --foo;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
+
+  set.erase(3);                                                     // erasing 3 from vset
+  std::cout << "Easing 3 from vset" << std::endl;
+
+  std::cout << "vIter++ 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    foo++;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "--vIter 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    --foo;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
+ 
+  set.erase(1);                                                     // erasing 3 from vset
+  std::cout << "Easing 1 from vset" << std::endl;
+
+  std::cout << "vIter++ 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    foo++;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
+
+  set.erase(0);
+  std::cout << "Erasing 0 from vset" << std::endl;
+
+  std::cout << "--vIter 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    --foo;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
   
+  set.erase(9);                                                     // erasing 3 from vset
+  std::cout << "Easing 9 from vset" << std::endl;
+
+  std::cout << "vIter++ 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    foo++;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "--vIter 10 times:\n";
+  for (int i = 0; i < 10; ++i) {
+    --foo;
+    std::cout << foo.iter_val() << " ";
+  }
+  std::cout << std::endl;
   //auto bar = set.set_and_ret(2);
   //std::cout << "bar is: " << bar << std::endl;
 
@@ -275,12 +350,8 @@ int main(int argc, char **argv) {
     run_mmap_vset = true;
   }
 
-  const std::vector<int> nums = {10000, 100000};
-
-  for(auto i:nums) {
-    if (run_mmap_vset) {
-      mmap_vset(i, "bench_map_use_mmap.data");
-		}
+  if (run_mmap_vset) {
+    mmap_vset("bench_map_use_mmap.data");
   }
 
   return 0;

@@ -337,8 +337,8 @@ public:
   class vIter {
   private:
     T test = 0;
-    vset &owner;
-
+    vset &owner; // a reference to the vset this vIter is a part of
+                 // this reference included in order to access vset members
   public:
     //unsigned int iData;
     T iData;
@@ -352,21 +352,23 @@ public:
     
     /* Revert back to old ways for now 
      * Need to think about how to make sure vIter doesnt ++ or -- blindly*/
-    vIter operator++() { iData = (iData < 0) ? 0 : iData - 1;}
-    vIter operator++(int other) { iData = (iData == 0) ? 0 : iData - 1;} 
-    vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; }
-    vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1; }
-    /*
+    //vIter operator++() { iData = (iData < 0) ? 0 : iData - 1;}
+    //vIter operator++(int other) { iData = (iData == 0) ? 0 : iData - 1;} 
+    //vIter operator--() { iData = (iData == 0) ? 0 : iData - 1; }
+    //vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1; }
+    
+    T get_set_max() { return owner.max; }
+    
     vIter operator++() { 
       while (true) {
-        if (iData < vset::get_max()) {
-          if (vset::find(iData + 1)) {
+        if (iData < owner.get_max()) {
+          if (owner.find(iData + 1)) {
             iData = iData + 1;
             break;
           } else {
             iData = iData + 1;
           }
-        } else if (iData == vset::get_max()) {
+        } else if (iData == owner.get_max()) {
           break;
         }
       }
@@ -374,38 +376,54 @@ public:
 
     vIter operator++(int other) { 
       while (true) {
-        if (iData < vset::get_max()) {
-          if (vset::find(iData + 1)) {
+        if (iData < owner.get_max()) {
+          if (owner.find(iData + 1)) {
             iData = iData + 1;
             break;
           } else {
             iData = iData + 1;
           }
-        } else if (iData == vset::get_max()) {
+        } else if (iData == owner.get_max()) {
           break;
         }
       }
     } //postfix i++
 
     vIter operator--() { 
+      T _iData = iData;
       while (true) {
-        if (iData == 0) {
+        if (_iData == 0) {
           break;
         } else {
-          if (vset::find(iData - 1)) {
-            iData = iData - 1;
+          if (owner.find(_iData - 1)) {
+            _iData = _iData - 1;
+            iData = _iData;
             break;
           } else {
-            iData = iData - 1;
+            _iData = _iData - 1;
           }
         }
       }
     } //prefix --i
     
-    vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postfix i--
-    */
+    vIter operator--(int other) {
+      T _iData = iData;
+      while (true) {
+        if (_iData == 0) {
+          break;
+        } else {
+          if (owner.find(_iData - 1)) {
+            _iData = _iData - 1;
+            iData = _iData;
+            break;
+          } else {
+            _iData = _iData - 1;
+          }
+        }
+      }
+    } //postfix i--
+    
 
-    T get_set_max() { return owner.max; }
   };
   
   void test_begin() { 
@@ -436,14 +454,18 @@ public:
         return tmp;
       }
     }
-    /*
-    if (vset::find(0) == false) {
-      std::cout << "find() works" << std::endl;
-    } else {
-      std::cout << "Detected!" << std::endl;
-    }*/
     return tmp;
   }
+  
+  [[nodiscard]] vIter end() {
+    vIter tmp(*this);
+    if (visitor_set.empty() == true) {
+      return tmp;
+    }
+    tmp.iter_change(vset::get_max());
+    return tmp;
+  }
+
 };
 
 }  // namespace mmap_lib
