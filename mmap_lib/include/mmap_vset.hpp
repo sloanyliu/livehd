@@ -337,12 +337,13 @@ public:
   class vIter {
   private:
     T test = 0;
+    vset &owner;
 
   public:
     //unsigned int iData;
     T iData;
 
-    vIter() : iData(0) {}
+    vIter(vset &tmp): iData(0) , owner(tmp){ }
     ~vIter() { ; }
 
     void cont_test() { std::cout << "made it" << std::endl; }
@@ -404,7 +405,7 @@ public:
     vIter operator--(int other) { iData = (iData == 0) ? 0 : iData - 1;} //postfix i--
     */
 
-    T get_set_max(vset & owner) { return owner.max; }
+    T get_set_max() { return owner.max; }
   };
   
   void test_begin() { 
@@ -424,7 +425,7 @@ public:
   }
 
   [[nodiscard]] vIter begin() {
-    vIter tmp;
+    vIter tmp(*this);
     if (visitor_set.empty() == true) {
       return tmp;
     }

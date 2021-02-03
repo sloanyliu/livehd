@@ -85,10 +85,10 @@ void mmap_vset(int max, std::string_view name) {
    
   auto foo = set.begin();
   std::cout << "vIter is: " << foo.iter_val() << std::endl;        
-  std::cout << "max given by vIter: " << foo.get_set_max(set) << std::endl;
+  std::cout << "max given by vIter: " << foo.get_set_max() << std::endl;
   
-  auto bar = set.set_and_ret(2);
-  std::cout << "bar is: " << bar << std::endl;
+  //auto bar = set.set_and_ret(2);
+  //std::cout << "bar is: " << bar << std::endl;
 
   //foo++;
   //std::cout << "vIter is: " << foo.iter_val() << std::endl;
