@@ -4,6 +4,8 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
+#include <stdio.h>
+#include <stdlib.h>
 
 namespace mmap_lib {
 
@@ -40,6 +42,7 @@ protected:
   uint32_t ptr_or_start;  // 4 chars if _size < 14, ptr to mmap otherwise
   std::array<char, 10> e; // last 10 "special <128" characters ending the string
   uint16_t _size;          // 2 bytes
+  bool isptr= false;
 
   constexpr bool is_digit(char c) const {
     return c>='0' && c <='9';
@@ -51,6 +54,7 @@ public:
   template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
     constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) { // N-1 because str includes the zero
       auto stop    = _size<4?_size:4;
+      isptr =  _size<14?false:true;
       for(auto i=0;i<stop;++i) {
         ptr_or_start <<= 8;
         ptr_or_start |= s[i];
@@ -143,6 +147,17 @@ public:
 
   [[nodiscard]] constexpr bool empty() const { return 0 == _size; }
 
+  [[nodiscard]] void print_PoS() {std::cout << ptr_or_start << std::endl;}
+  [[nodiscard]] void print_e() {  // e is weird, printing question marks
+    std::cout << "e is: ";
+    for (int i = 0; i < 10 ; ++i) {
+      std::cout << int(e.at(i));
+    }
+    std::cout << std::endl;
+  }
+  [[nodiscard]] void print_size() {std::cout << "String size is:" << _size << std::endl;}
+
+
   template<std::size_t N>
   constexpr bool operator==(const char(&s)[N]) const {
     return str(s) == *this;
@@ -197,18 +212,73 @@ public:
   static str concat(const str &a, const str &b);
   static str concat(std::string_view a, const str &b);
   static str concat(const str &a, std::string_view b);
-  static str concat(const str &a, int v);
+  static str concat(const str &a, int v); // just puts two things together concat(x, b); -> x.append(b)
+                                          //                               concat(b, x); -> b.append(x)
 
-  str append(const str       &b) const;
+
+  // New Stuff:
+  str append(const str       &b) const; // adds to the end, x.append(b); x<=b
   str append(std::string_view b) const;
   str append(int              b) const;
 
-  std::vector<str> split(const char chr);
 
-  bool    is_i() const; // starts with digit -> is integer
-  int64_t to_i() const; // convert to integer
+  std::vector<str> split(const char chr); // used as a tokenizing func, return vector of pstr's
 
-  str get_str_after_last (const char chr) const;
+  bool is_i() const{ // starts with digit -> is integer
+    //this fun works when str size is <14   
+    if(!isptr){
+      char chars[5];
+      std::cout << "chars[] inside is_i(): ";
+      for (int i =3, j=0;i>=0;i--,j++){
+         chars[j] = (ptr_or_start >> (i*sizeof(char)*8)) & 0x000000ff;
+         std::cout << chars[j];
+      } 
+      std::cout << std::endl;
+      if (chars[0]!='-' and( chars[0]<'0' or chars[0]> '9')) {
+        std::cout << "Non-number char detected in ptr_or_start[0]\n";
+        return false; 
+      }
+      for (int i= 1; i<(_size>4?4:_size);i++){
+        switch (chars[i]){
+          case '0'...'9':
+            break;
+          default:
+            std::cout << "Non-number char detected in ptr_or_start[1:3]\n";
+            return false;
+            break;
+        }
+      }
+      for (int i=0; i<(_size>4?_size-4:0);i++){
+        switch (e[i]){
+          case '0'...'9':
+            break;
+          default:
+            std::cout << "Non-number char detected in e\n";
+            return false;
+            break;
+        }
+      }
+    }
+    return true;  
+  } 
+  
+
+  // How to handle if it's not an int?
+  // what to return/exceptions?
+  int64_t to_i() const { // only works if _size < 14
+    /*
+    if (this.is_i()) {  
+      int64_t hold = 0;
+      // convert ptr_or_start first
+      // convert e next
+    } else {
+      return;
+    } 
+  */  
+  } // convert to integer
+
+
+  str get_str_after_last (const char chr) const; 
   str get_str_after_first(const char chr) const;
 
   str get_str_before_last (const char chr) const;
