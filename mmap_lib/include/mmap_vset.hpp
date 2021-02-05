@@ -277,7 +277,9 @@ public:
   /* Can add functions here to get a single bit of the bitmap
    */
 
-  [[nodiscard]] bool find(T &&ele) {
+  // Not the 'real' find function
+  // Need a wrapper to call this func and put it in a vIter
+  [[nodiscard]] bool efind(T &&ele) {
     // finding the correct bitmap to get
     const auto p = ele / (sizeof(T) * 8);
     const auto i = ele % (sizeof(T) * 8);
@@ -290,7 +292,7 @@ public:
     }
   }
 
-  [[nodiscard]] bool find(const T &&ele) {
+  [[nodiscard]] bool efind(const T &&ele) {
     const auto p = ele / (sizeof(T) * 8);
     const auto i = ele % (sizeof(T) * 8);
 
@@ -300,6 +302,7 @@ public:
       return false;
     }
   }
+
 
   // Functions used for iterating, begin() and end()
   [[nodiscard]] bool is_start(T &&ele) {
@@ -353,7 +356,7 @@ public:
       //else if (iData == max)
       //  do nothing
       if (iData <= owner.get_max()) {
-        while (!(owner.find(iData + 1)) && !(iData == owner.get_max())) { 
+        while (!(owner.efind(iData + 1)) && !(iData == owner.get_max())) { 
           ++iData; 
         }
         ++iData;
@@ -368,7 +371,7 @@ public:
       //else if (iData == max)
       //  do nothing
       if (iData <= owner.get_max()) {
-        while (!(owner.find(iData + 1)) && !(iData == owner.get_max())) { 
+        while (!(owner.efind(iData + 1)) && !(iData == owner.get_max())) { 
           ++iData; 
         }
         ++iData;
@@ -387,7 +390,7 @@ public:
         if (_iData == 0) {
           break;
         } else {
-          if (owner.find(_iData - 1)) {
+          if (owner.efind(_iData - 1)) {
             _iData = _iData - 1;
             iData = _iData;
             break;
@@ -404,7 +407,7 @@ public:
         if (_iData == 0) {
           break;
         } else {
-          if (owner.find(_iData - 1)) {
+          if (owner.efind(_iData - 1)) {
             _iData = _iData - 1;
             iData = _iData;
             break;
@@ -416,24 +419,17 @@ public:
     } //postfix i--
     
     bool operator !=(vIter other) const {
-      if (iData != other.iter_val()) {
-        return true;
-      }
+      if (iData != other.iter_val()) { return true; }
       return false;
     }
     
     bool operator ==(vIter other) const {
-      if (iData == other.iter_val()) {
-        return true;
-      }
+      if (iData == other.iter_val()) { return true; }
       return false;
     }
-
     
     //Fix this to make the auto for loop work
-    T operator *() const {
-      return iData;
-    }
+    T operator *() const { return iData; }
 
   };
   
@@ -457,25 +453,44 @@ public:
   [[nodiscard]] vIter begin() {
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
+      //Exception?
+      //Assertion?
       return tmp;
     }
     
     for (auto i = 0; i <= max; ++i) {
-      if (vset::find(i) == true) {
+      if (vset::efind(i) == true) {
         tmp.iter_change(i);
         return tmp;
       }
     }
+    //Exception?
+    //Assertion?
     return tmp;
   }
   
   [[nodiscard]] vIter end() {
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
+      //Exception?
+      //Assertion?
       return tmp;
     }
     tmp.iter_change(vset::get_max()+1);
     return tmp;
+  }
+  
+
+  [[nodiscard]] vIter find(T ele) {
+    vIter tmp(*this);
+    if (vset::efind(ele)) { 
+      tmp.iter_change(ele);
+      return tmp;
+    } else {
+      //Exception?
+      //Assertion?
+      return tmp;
+    }
   }
 
 };
