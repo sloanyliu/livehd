@@ -179,6 +179,7 @@ public:
     visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
 
     if (ele > max) { max = ele; }
+
   }
 
   [[nodiscard]] void insert(const T &&ele) {
@@ -216,11 +217,9 @@ public:
     // Need to  add logic to update max    
     if (ele == max) {
       while (hold == 0) {
-        if (p == 0) {
-          max = 0;
-          return;
-        } else {
-          p = p - 1;
+        if (p == 0) { max = 0; return; }
+        else {
+          --p;
           if (visitor_set.has((Key)p)) {
             hold = visitor_set.get((Key)p);
           }
@@ -231,13 +230,8 @@ public:
       ele = (p + 1) * (sizeof(T) * 8) - 1;
 
       while (i != 0) {
-        if ((hold >> i) & 1) {
-          max = ele;
-          return;
-        } else {
-          i = i - 1;
-          ele = ele - 1; 
-        }
+        if ((hold >> i) & 1) { max = ele; return; }
+        else { --i; --ele; }
       }
     }
   }
@@ -258,14 +252,12 @@ public:
       } // put it back in the bitmap
     }
     
-    // Need to  add logic to update max
+    // Need to  add logic to update max    
     if (ele == max) {
       while (hold == 0) {
-        if (p == 0) {
-          max = 0;
-          return;
-        } else {
-          p = p - 1;
+        if (p == 0) { max = 0; return; }
+        else {
+          --p;
           if (visitor_set.has((Key)p)) {
             hold = visitor_set.get((Key)p);
           }
@@ -276,13 +268,8 @@ public:
       ele = (p + 1) * (sizeof(T) * 8) - 1;
 
       while (i != 0) {
-        if ((hold >> i) & 1) {
-          max = ele;
-          return;
-        } else {
-          i = i - 1;
-          ele = ele - 1; 
-        }
+        if ((hold >> i) & 1) { max = ele; return; }
+        else { --i; --ele; }
       }
     }
   }
@@ -329,7 +316,7 @@ public:
     return false;
   }
 
-  [[nodiscard]] T get_max() { return max; } 
+  [[nodiscard]] T get_max() const { return max; } 
   
   /*
    * Iterator class for vset
@@ -339,9 +326,8 @@ public:
     T test = 0;
     vset &owner; // a reference to the vset this vIter is a part of
                  // this reference included in order to access vset members
-  public:
-    //unsigned int iData;
     T iData;
+  public:
 
     vIter(vset &tmp): iData(0) , owner(tmp){ }
     ~vIter() { ; }
@@ -359,38 +345,44 @@ public:
     
     T get_set_max() { return owner.max; }
     
-    vIter operator++() { 
-      while (true) {
-        if (iData < owner.get_max()) {
-          if (owner.find(iData + 1)) {
-            iData = iData + 1;
-            break;
-          } else {
-            iData = iData + 1;
-          }
-        } else if (iData == owner.get_max()) {
-          break;
+    vIter operator ++() { 
+      //if iData < max
+      //  while(!(owner.find(iData+1)))
+      //    ++iData;
+      //  ++iData
+      //else if (iData == max)
+      //  do nothing
+      if (iData <= owner.get_max()) {
+        while (!(owner.find(iData + 1)) && !(iData == owner.get_max())) { 
+          ++iData; 
         }
+        ++iData;
       }
     } //prefix ++i
 
-    vIter operator++(int other) { 
-      while (true) {
-        if (iData < owner.get_max()) {
-          if (owner.find(iData + 1)) {
-            iData = iData + 1;
-            break;
-          } else {
-            iData = iData + 1;
-          }
-        } else if (iData == owner.get_max()) {
-          break;
+    vIter operator ++(int other) { 
+      //if iData < max
+      //  while(!(owner.find(iData+1)))
+      //    ++iData;
+      //  ++iData
+      //else if (iData == max)
+      //  do nothing
+      if (iData <= owner.get_max()) {
+        while (!(owner.find(iData + 1)) && !(iData == owner.get_max())) { 
+          ++iData; 
         }
+        ++iData;
       }
     } //postfix i++
 
-    vIter operator--() { 
+    vIter operator --() { 
       T _iData = iData;
+
+      //_iData = iData
+      //if _iData > 0
+      //  while(!(owner.find(iData - 1))) { --_iData; }
+      //  iData = --_iData
+
       while (true) {
         if (_iData == 0) {
           break;
@@ -406,7 +398,7 @@ public:
       }
     } //prefix --i
     
-    vIter operator--(int other) {
+    vIter operator --(int other) {
       T _iData = iData;
       while (true) {
         if (_iData == 0) {
@@ -423,6 +415,19 @@ public:
       }
     } //postfix i--
     
+    bool operator !=(vIter other) const {
+      if (iData != other.iter_val()) {
+        return true;
+      }
+      return false;
+    }
+    
+    bool operator ==(vIter other) const {
+      if (iData == other.iter_val()) {
+        return true;
+      }
+      return false;
+    }
 
   };
   
@@ -442,13 +447,14 @@ public:
     return vIter::test;
   }
 
+
   [[nodiscard]] vIter begin() {
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
       return tmp;
     }
     
-    for (auto i = 0; i <= max; i = i + 1) {
+    for (auto i = 0; i <= max; ++i) {
       if (vset::find(i) == true) {
         tmp.iter_change(i);
         return tmp;
@@ -462,7 +468,7 @@ public:
     if (visitor_set.empty() == true) {
       return tmp;
     }
-    tmp.iter_change(vset::get_max());
+    tmp.iter_change(vset::get_max()+1);
     return tmp;
   }
 

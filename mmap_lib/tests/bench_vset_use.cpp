@@ -30,8 +30,19 @@ void mmap_vset(std::string_view name) {
 	//mmap_lib::map<uint32_t, uint64_t> map("lgdb_bench", name);
 
 	set.clear();
-  set.wht();
+  
+  for (auto j = 0; j < 50; ++j) { set.insert(j); }
+  for (auto i = set.begin(); i != set.end(); ++i) { std::cout << i.iter_val() << " ";  }
+  std::cout << std::endl;
+  set.erase(0);
+  set.erase(5);
+  set.erase(set.get_max());
+  for (auto i = set.begin(); i != set.end(); ++i) { std::cout << i.iter_val() << " ";  }
+  std::cout << std::endl;
 
+
+  //set.wht();
+  /*
   int one, four, ten, twothree, ninenine;
   one = 1;
   four = 4;
@@ -39,7 +50,6 @@ void mmap_vset(std::string_view name) {
   twothree = 23;
   ninenine = 99;
   std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 0)
-  
   set.insert(one);
   std::cout << "max is: " << set.get_max() << std::endl;            // print vset max (expect 1)
   set.erase(one);
@@ -162,13 +172,18 @@ void mmap_vset(std::string_view name) {
     std::cout << foo.iter_val() << " ";
   }
   std::cout << std::endl;
-  //auto bar = set.set_and_ret(2);
-  //std::cout << "bar is: " << bar << std::endl;
 
-  //foo++;
-  //std::cout << "vIter is: " << foo.iter_val() << std::endl;
-  //++foo;
-  //std::cout << "vIter is: " << foo.iter_val() << std::endl;
+  auto bar = set.end();
+  std::cout << "set.end() is: " << bar.iter_val() << std::endl;
+  auto tau = set.end();
+  if (tau == bar) { std::cout << "Comparison complete" << std::endl; }
+  if (!(tau != bar)) { std::cout << "Other comparison complete" << std::endl; }
+  --tau;
+  if (tau == bar) { std::cout << "Comparison complete" << std::endl; }
+  if (!(tau != bar)) { std::cout << "Other comparison complete" << std::endl; }
+ 
+  */
+
   //===================================
 
   /*
