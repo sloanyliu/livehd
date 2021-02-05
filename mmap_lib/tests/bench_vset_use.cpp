@@ -37,7 +37,11 @@ void mmap_vset(std::string_view name) {
   set.erase(0);
   set.erase(5);
   set.erase(set.get_max());
-  for (auto i = set.begin(); i != set.end(); ++i) { std::cout << i.iter_val() << " ";  }
+  for (auto i : set) { std::cout << i << " ";  }
+  std::cout << std::endl;
+  for (auto i = set.begin(); i != set.end(); ++i) {
+    std::cout << *i << " ";
+  }
   std::cout << std::endl;
 
 

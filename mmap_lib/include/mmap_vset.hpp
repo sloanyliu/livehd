@@ -429,6 +429,12 @@ public:
       return false;
     }
 
+    
+    //Fix this to make the auto for loop work
+    T operator *() const {
+      return iData;
+    }
+
   };
   
   void test_begin() { 
