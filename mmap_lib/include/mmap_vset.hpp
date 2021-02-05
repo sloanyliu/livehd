@@ -303,6 +303,13 @@ public:
     }
   }
 
+  [[nodiscard]] bool contains(T &&ele) {
+    return vset::efind(ele);
+  }
+
+  [[nodiscard]] bool contains(const T &&ele) {
+    return vset::efind(ele);
+  }
 
   // Functions used for iterating, begin() and end()
   [[nodiscard]] bool is_start(T &&ele) {
