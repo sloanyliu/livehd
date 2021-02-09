@@ -160,7 +160,7 @@ bool Cprop::try_constant_prop(Node &node, XEdge_iterator &inp_edges_ordered) {
   if (n_inputs == n_inputs_constant && n_inputs) {
     replace_all_inputs_const(node, inp_edges_ordered);
     return true;
-  } else if (n_inputs && n_inputs_constant>1) {
+  } else if (n_inputs && n_inputs_constant>=1) { // Some ops like shift can opt with 1 constant input
     replace_part_inputs_const(node, inp_edges_ordered);
     return true;
   }
@@ -225,7 +225,7 @@ void Cprop::replace_part_inputs_const(Node &node, XEdge_iterator &inp_edges_orde
     }
 
     collapse_forward_for_pin(node, a_pin);
-  } else if (op == Ntype_op::Sum || op == Ntype_op::Or) {
+  } else if (op == Ntype_op::Sum || op == Ntype_op::Or || op == Ntype_op::And) {
     Lconst result;
     XEdge first_const_edge;
     int nconstants = 0;
@@ -255,9 +255,11 @@ void Cprop::replace_part_inputs_const(Node &node, XEdge_iterator &inp_edges_orde
           I(i.sink.get_pin_name() == "B");
           result = result.sub_op(c);
         }
-      }else{
-        I(op==Ntype_op::Or);
+      }else if (op == Ntype_op::Or) {
         result = result.or_op(c);
+      }else{
+        I(op==Ntype_op::And);
+        result = result.and_op(c);
       }
 
       if (nconstants==1)
@@ -283,6 +285,13 @@ void Cprop::replace_part_inputs_const(Node &node, XEdge_iterator &inp_edges_orde
       collapse_forward_always_pin0(node, inp_edges_ordered);
     }else if (npending==1 && nconstants==0) {
       collapse_forward_always_pin0(node, edge_it2);
+    }
+  } else if (op == Ntype_op::SRA || op == Ntype_op::SHL) {
+    auto amt_node = inp_edges_ordered[1].driver.get_node();
+    I(amt_node == node.get_sink_pin("b").get_driver_node());
+
+    if (amt_node.is_type_const() && amt_node.get_type_const() == 0) {
+      collapse_forward_for_pin(node, inp_edges_ordered[0].driver);
     }
   }
 }
@@ -336,23 +345,23 @@ void Cprop::replace_all_inputs_const(Node &node, XEdge_iterator &inp_edges_order
     replace_logic_node(node, result, result_reduced);
 
   } else if (op == Ntype_op::And) {
+#if 0
     Bits_t max_bits = 0;
     for (auto &i : inp_edges_ordered) {
       auto c = i.driver.get_node().get_type_const();
       if (c.get_bits() > max_bits)
         max_bits = c.get_bits();
     }
+#endif
     Lconst result("-1");
     for (auto &i : inp_edges_ordered) {
       auto c = i.driver.get_node().get_type_const();
-      result = result.and_op(c.adjust_bits(max_bits));
+      result = result.and_op(c);
     }
 
     TRACE(fmt::print("cprop: and node:{} to {}\n", node.debug_name(), result.to_pyrope()));
 
-    Lconst result_reduced = result == Lconst("-1") ? 1 : 0;
-
-    replace_logic_node(node, result, result_reduced);
+    replace_node(node, result);
 
   } else if (op == Ntype_op::EQ) {
     bool eq = true;
@@ -695,14 +704,37 @@ bool Cprop::process_tuple_get(Node &node) {
     return true;
   }
 
-  auto sub_tup = node_tup->get_sub_tuple(key_pos, key_name);
-  if (!sub_tup) {
-		Pass::info("tuple_get {} could not decide the field {}!", node.debug_name(), key_name);
-    return false; // Could not resolve (maybe compile error, maybe hierarchical needed)
+  if (key_pos<0 && key_name.empty()) {
+    auto pos_dpin = node.get_sink_pin("position").get_driver_pin();
+    auto pos_node = pos_dpin.get_node();
+    if (pos_node.is_type_const()) {
+      Pass::info("tuple_get {} could not index with position {}!", node.debug_name(), pos_node.get_type_const().to_pyrope());
+      return false; // Could not resolve (maybe compile error, maybe hierarchical needed)
+    }
+    I(!pos_node.is_type_tup()); // It should be something that can has a valid dpin
+
+    auto [res_dpin, res_tup] = node_tup->make_select(pos_dpin);
+    if (res_dpin.is_invalid() && !res_tup) {
+      return false; // Could not resolve (maybe compile error, maybe hierarchical needed)
+    }
+    if (res_tup) {
+      I(res_dpin.is_invalid());
+      node2tuple[node.get_compact()] = res_tup;
+    }else{
+      I(!res_tup);
+      collapse_forward_for_pin(node, res_dpin);
+    }
+    return true;
   }
 
-  node2tuple[node.get_compact()] = sub_tup;
-  return true;
+  auto sub_tup = node_tup->get_sub_tuple(key_pos, key_name);
+  if (sub_tup) {
+    node2tuple[node.get_compact()] = sub_tup;
+    return true;
+  }
+
+  Pass::info("tuple_get {} could not decide the field {}!", node.debug_name(), key_name);
+  return false; // Could not resolve (maybe compile error, maybe hierarchical needed)
 }
 
 void Cprop::process_mux(Node &node) {
@@ -824,7 +856,7 @@ void Cprop::process_tuple_add(Node &node) {
     for(auto &e:node.out_edges()) {
       if (e.sink.is_graph_output() && e.sink.get_pin_name() == "%") {
         try_create_graph_output(node, node_tup); // first add outputs
-      }else if (e.sink.get_node().is_type_sub_present() && e.sink.get_pin_name() == "$") {
+      } else if (e.sink.get_node().is_type_sub_present() && e.sink.get_pin_name() == "$") {
         auto sub_node = e.sink.get_node();
         try_connect_tuple_to_sub(e.sink, node_tup, sub_node, node);
       }
@@ -851,7 +883,7 @@ void Cprop::do_trans(LGraph *lg) {
     } else if (op == Ntype_op::Sub) {
       process_subgraph(node);
       continue;
-    } else if (op == Ntype_op::Sflop || op == Ntype_op::Aflop || op == Ntype_op::Latch || op == Ntype_op::Fflop || op == Ntype_op::Memory || op == Ntype_op::Sub) {
+    } else if (op == Ntype_op::Sflop || op == Ntype_op::Aflop || op == Ntype_op::Latch || op == Ntype_op::Fflop || op == Ntype_op::Memory) {
       fmt::print("cprop skipping node:{}\n", node.debug_name());
       // FIXME: if flop feeds itself (no update, delete, replace for zero)
       // FIXME: if flop is disconnected *after AttrGet processed*, the flop was not used. Delete

@@ -24,27 +24,22 @@ VecShiftRegisterParam VecShiftRegisterSimple '
 # VendingMachineSwitch VendingMachine'
 
 # passed hifirrtl pattern pool
-pts='Xor6Thread2 XorSelfThread1 Cell_alone ByteSelector SimpleALU Mux4 MaxN
-Max2 ResetShiftRegister Parity Counter RegisterSimple Register RegXor AddNot
-EnableShiftRegister GCD_3bits Flop Decrementer Test2 Test3 TrivialAdd NotAnd
-Trivial Tail TrivialArith Shifts Darken HiLoMultiplier Coverage Accumulator
-LFSR16 PlusAnd VendingMachine VendingMachineSwitch'  
+pts='PlusAnd Test2 EnableShiftRegister MaxN SingleEvenFilter Coverage Counter
+Decrementer SubModule BundleConnect LogShifter Adder4 Xor6Thread2
+XorSelfThread1 ByteSelector SimpleALU Mux4 Max2 ResetShiftRegister
+Parity RegisterSimple Register RegXor AddNot GCD_3bits Flop Test3 TrivialAdd
+NotAnd Trivial Tail TrivialArith Shifts Darken HiLoMultiplier Accumulator
+LFSR16 VendingMachine VendingMachineSwitch'  
 
-# pts='Mul'
-# pts='Adder4'
-# pts='SingleEvenFilter'
-# pts='LogShifter'
-# pts='Test6'
-# pts='Test1'
+pts_hang='Cell_alone'
+pts_wait_verilog_large_mux_code_gen='Mul Test6 Test1'
+
+# pts='Cell_alone'
 # pts='Life'
-# pts='VecShiftRegister'
-# pts='BundleConnect' 
-# pts='SubModule'
+#pts='VecShiftRegister'
 # pts='VecShiftRegisterParam'
 # pts='VecShiftRegisterSimple '
 # pts='VecSearch '
-
-
 
 
 LGSHELL=./bazel-bin/main/lgshell

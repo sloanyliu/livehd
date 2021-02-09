@@ -19,11 +19,14 @@ Ntype::_init::_init() {
       if (pin_name.empty() || pin_name == "invalid")
         continue;
 
-      assert(sink_name2pid[pin_name[0]][op] == -1 || sink_name2pid[pin_name[0]][op] == pid); // No double assign
+      assert(is_unlimited_sink(static_cast<Ntype_op>(op)) || pid>10 || sink_name2pid[pin_name[0]][op] == -1 || sink_name2pid[pin_name[0]][op] == pid); // No double assign
 
       sink_pid2name[pid][op] = pin_name;
-      sink_name2pid[pin_name[0]][op] = pid;
 
+      if (is_unlimited_sink(static_cast<Ntype_op>(op)) && pid >=10)
+        continue;
+
+      sink_name2pid[pin_name[0]][op] = pid;
       assert(pid == Ntype::get_sink_pid(static_cast<Ntype_op>(op), pin_name));
       assert(pin_name == Ntype::get_sink_name(static_cast<Ntype_op>(op), pid));
     }
@@ -106,6 +109,7 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
     case Ntype_op::Const: // No drivers to Constants
       return "invalid";
       break;
+    case Ntype_op::IO:
     case Ntype_op::Mux:   // unlimited case: 1,2,3,4,5.... // Y = (pid0 == true) ? pid2 : pid1
     case Ntype_op::LUT:   // unlimited case: 1,2,3,4,5....
     case Ntype_op::Sub:   // unlimited case: 1,2,3,4,5....
@@ -120,7 +124,8 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
         case 6: return "6";
         case 7: return "7";
         case 8: return "8";
-        case 9: return "9"; // >9 handled with loop at get_sink_pid
+        case 9: return "9";
+        case 10: return "10"; // >10 handled with loop at get_sink_pid
         default: return "invalid";
       }
       return "invalid";
@@ -216,7 +221,6 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
         default: return "invalid";
       }
       break;
-    case Ntype_op::IO:
     case Ntype_op::CompileErr:
       switch(pid) {
         case 0: return "A";

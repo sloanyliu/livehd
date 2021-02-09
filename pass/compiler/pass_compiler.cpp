@@ -108,7 +108,7 @@ void Pass_compiler::firrtl_compilation(Eprp_var &var, Lcompiler &compiler) {
     for (const auto &lnast : var.lnasts)
       compiler.add_firrtl(lnast);
 
-    compiler.global_io_connection();
+    /* compiler.global_io_connection(); */
     compiler.global_firrtl_bits_analysis_map();
     compiler.local_bitwidth_inference();
     /* compiler.global_bitwidth_inference(); */
@@ -187,6 +187,14 @@ void Pass_compiler::setup_firmap_library(LGraph *lg) {
   auto &lg_fir_as_sint = lg->ref_library()->setup_sub("__fir_as_sint", "-");
   lg_fir_as_sint.add_input_pin("e1");
   lg_fir_as_sint.add_output_pin("Y");
+
+  auto &lg_fir_as_clock = lg->ref_library()->setup_sub("__fir_as_clock", "-");
+  lg_fir_as_clock.add_input_pin("e1");
+  lg_fir_as_clock.add_output_pin("Y");
+
+  auto &lg_fir_as_async = lg->ref_library()->setup_sub("__fir_as_async", "-");
+  lg_fir_as_async.add_input_pin("e1");
+  lg_fir_as_async.add_output_pin("Y");
 
   auto &lg_fir_shl = lg->ref_library()->setup_sub("__fir_shl", "-");
   lg_fir_shl.add_input_pin("e1");

@@ -9,13 +9,14 @@
 #include "floorplan.hpp"
 #include "lgraph.hpp"
 #include "node_tree.hpp"
+#include "node_type_area.hpp"
 
 class Lhd_floorplanner {
 public:
-  Lhd_floorplanner();
+  Lhd_floorplanner(Node_tree&& nt_arg);
 
   // load modules into ArchFP using verious kinds of traversals
-  virtual void load(const Node_tree& tree, const std::string_view lgdb_path) = 0;
+  virtual void load() = 0;
 
   // create a floorplan from loaded modules
   void create();
@@ -24,7 +25,7 @@ public:
   void write_file(const std::string_view filename);
 
   // write the floorplan back to LiveHD for analysis and future floorplans
-  void write_lhd(Node_tree& tree);
+  void write_lhd();
 
   ~Lhd_floorplanner();
 
@@ -59,15 +60,21 @@ protected:
   // return a hint based on the number of components
   GeographyHint randomHint(int count) const;
 
-  // layout of root node, used frequently
+  // information for layout of root node, used frequently
   LGraph* root_lg;
 
+  // hierarchy of node instances
+  Node_tree nt;
+
+  // node area map
+  const Ntype_area na;
+
   // layout of all child nodes
-  absl::flat_hash_map<LGraph*, geogLayout*> layouts;
+  absl::flat_hash_map<Tree_index, geogLayout*> layouts;
 
   // at what number of nodes of a given type should they be laid out in a grid?
   absl::flat_hash_map<Ntype_op, unsigned int> grid_thresh;
 
   // print debug information
-  constexpr static bool debug_print = true;
+  constexpr static bool debug_print = false;
 };

@@ -1,3 +1,135 @@
+
+#----------------------------------------- Firrtl start --------------------------------
+
+#!/bin/bash
+rm -rf ./lgdb
+# FIRRTL_LEVEL='lo'
+FIRRTL_LEVEL='hi'
+
+pts_long_lec='GCD '
+
+pts_todo_advanced='Risc FPU ICache MemoryController RWSmem Smem Rob ICache
+HwachaSequencer RocketCore Ops Router'
+
+pts_mem='Smem_simple Stack DynamicMemorySearch Memo'
+
+# passed lofirrtl pattern pool
+pts='Life Cell_alone RegisterSimple Register Adder4 Mux4 LogShifter
+SingleEvenFilter RegXor AddNot VendingMachineSwitch Coverage VendingMachine
+VecShiftRegister Counter VecSearch ResetShiftRegister Parity
+EnableShiftRegister GCD_3bits Flop Accumulator LFSR16 BundleConnect SubModule
+Decrementer Test1 Test2 Test3 Test6 TrivialAdd NotAnd Trivial Tail TrivialArith
+Shifts PlusAnd MaxN ByteSelector Darken HiLoMultiplier SimpleALU Mul
+VecShiftRegisterParam VecShiftRegisterSimple ' 
+
+# pts_hifirrtl_todo='Test6 ByteSelector ResetShiftRegister Counter Life Cell_alone Adder4 Mux4 LogShifter SingleEvenFilter
+# VecShiftRegister BundleConnect SubModule PlusAnd MaxN VecShiftRegisterParam
+# VecShiftRegisterSimple VecSearch VendingMachineSwitch VendingMachine'
+
+pts='PlusAnd Test2 EnableShiftRegister MaxN SingleEvenFilter Coverage Counter
+Decrementer SubModule BundleConnect LogShifter Adder4 Xor6Thread2
+XorSelfThread1 ByteSelector SimpleALU Mux4 Max2 ResetShiftRegister
+Parity RegisterSimple Register RegXor AddNot GCD_3bits Flop Test3 TrivialAdd
+NotAnd Trivial Tail TrivialArith Shifts Darken HiLoMultiplier Accumulator
+LFSR16 VendingMachine VendingMachineSwitch'  
+
+
+LGSHELL=./bazel-bin/main/lgshell
+LGCHECK=./inou/yosys/lgcheck
+POST_IO_RENAME=./inou/firrtl/post_io_renaming.py
+PATTERN_PATH=./inou/firrtl/tests/proto
+
+if [ ! -f $LGSHELL ]; then
+    if [ -f ./main/lgshell ]; then
+        LGSHELL=./main/lgshell
+        echo "lgshell is in $(pwd)"
+    else
+        echo "ERROR: could not find lgshell binary in $(pwd)";
+    fi
+fi
+
+firrtl_test() {
+  echo ""
+  echo ""
+  echo ""
+  echo "======================================================================"
+  echo "                         LoFIRRTL Full Compilation"
+  echo "======================================================================"
+  for pt in $1
+  do
+    if [ ! -f ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb ]; then
+        echo "ERROR: could not find ${pt}.${FIRRTL_LEVEL}.pb in ${PATTERN_PATH}"
+        exit 1
+    fi
+
+    ${LGSHELL} "inou.firrtl.tolnast files:${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb |> pass.compiler gviz:true top:${pt} firrtl:true"
+    ret_val=$?
+    if [ $ret_val -ne 0 ]; then
+      echo "ERROR: could not compile with pattern: ${pt}.${FIRRTL_LEVEL}.pb!"
+      exit $ret_val
+    fi
+  done #end of for
+
+
+  # Verilog code generation
+  for pt in $1
+  do
+    echo ""
+    echo ""
+    echo ""
+    echo "----------------------------------------------------"
+    echo "LGraph -> Verilog"
+    echo "----------------------------------------------------"
+
+    ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
+    # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg"
+    if [ $? -eq 0 ] && [ -f ${pt}.v ]; then
+        echo "Successfully generate Verilog: ${pt}.v"
+        rm -f  yosys_script.*
+    else
+        echo "ERROR: Pyrope compiler failed: verilog generation, testcase: ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb"
+        exit 1
+    fi
+  done
+
+
+  # Logic Equivalence Check
+  for pt in $1
+  do
+    echo ""
+    echo ""
+    echo ""
+    echo "----------------------------------------------------"
+    echo "Logic Equivalence Check"
+    echo "----------------------------------------------------"
+    
+    if [ "${FIRRTL_LEVEL}" == "hi" ]; then
+        python ${POST_IO_RENAME} "${pt}.v"
+    fi
+
+    ${LGCHECK} --implementation=${pt}.v --reference=./inou/firrtl/tests/verilog_gld/${pt}.gld.v
+
+    if [ $? -eq 0 ]; then
+      echo "Successfully pass LEC!"
+    else
+        echo "FAIL: "${pt}".v !== "${pt}".gld.v"
+        exit 1
+    fi
+  done
+
+  rm -f *.v
+  rm -f *.dot
+  rm -f lgcheck*
+  rm -rf lgdb
+  rm -f *.tcl
+}
+
+firrtl_test "$pts"
+
+
+
+#----------------------------------------- Pyrope start --------------------------------
+
 #!/bin/bash
 
 pts_to_be_merged='io_gen io_gen2 io_gen3 test2'
@@ -6,13 +138,12 @@ pts_tuple_dbg='lhs_wire3 funcall_unnamed2
 
 pts_long_time='firrtl_gcd'
 
-pts='reg_bits_set scalar_tuple hier_tuple_io hier_tuple3 lhs_wire2 hier_tuple2
-tuple_if counter_nested_if counter ssa_rhs out_ssa attr_set logic lhs_wire
-adder_stage bits_rhs if2 hier_tuple capricious_bits4 capricious_bits
-firrtl_gcd_3bits tuple_copy reg__q_pin if nested_if tuple_copy2 firrtl_tail
-firrtl_tail2 firrtl_tail3 hier_tuple_nested_if7 hier_tuple_nested_if
-hier_tuple_nested_if2 hier_tuple_nested_if3 hier_tuple_nested_if4
-hier_tuple_nested_if5'
+pts='reg_bits_set bits_rhs reg__q_pin scalar_tuple hier_tuple_io hier_tuple3
+hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2 hier_tuple lhs_wire
+tuple_copy if firrtl_tail hier_tuple_nested_if2 lhs_wire2 tuple_copy2
+counter_nested_if counter lhs_wire adder_stage capricious_bits4
+capricious_bits firrtl_gcd_3bits nested_if firrtl_tail2 firrtl_tail3 '
+
 
 # pts='firrtl_tail reg_bits_set  reg_bits_set firrtl_tail2 firrtl_tail3 firrtl_gcd_3bits  tuple_copy2 '
 
@@ -192,10 +323,10 @@ Pyrope_compile_hier () {
 }
 
 
-rm -rf ./lgdb
-Pyrope_compile_hier "$pts_hier1"
-rm -rf ./lgdb
-Pyrope_compile_hier "$pts_hier2"
+# rm -rf ./lgdb
+# Pyrope_compile_hier "$pts_hier1"
+# rm -rf ./lgdb
+# Pyrope_compile_hier "$pts_hier2"
 rm -rf ./lgdb
 Pyrope_compile "$pts"
 
@@ -210,140 +341,3 @@ rm -f lgcheck*
 
 
 
-#----------------------------------------- Firrtl start --------------------------------
-
-#!/bin/bash
-rm -rf ./lgdb
-# FIRRTL_LEVEL='lo'
-FIRRTL_LEVEL='hi'
-
-pts_long_lec='GCD '
-
-pts_todo_advanced='Risc FPU ICache MemoryController RWSmem Smem Rob ICache
-HwachaSequencer RocketCore Ops Router'
-
-pts_mem='Smem_simple Stack DynamicMemorySearch Memo'
-
-# passed lofirrtl pattern pool
-pts='Life Cell_alone RegisterSimple Register Adder4 Mux4 LogShifter
-SingleEvenFilter RegXor AddNot VendingMachineSwitch Coverage VendingMachine
-VecShiftRegister Counter VecSearch ResetShiftRegister Parity
-EnableShiftRegister GCD_3bits Flop Accumulator LFSR16 BundleConnect SubModule
-Decrementer Test1 Test2 Test3 Test6 TrivialAdd NotAnd Trivial Tail TrivialArith
-Shifts PlusAnd MaxN ByteSelector Darken HiLoMultiplier SimpleALU Mul
-VecShiftRegisterParam VecShiftRegisterSimple ' 
-
-# pts_hifirrtl_todo='Test6 ByteSelector ResetShiftRegister Counter Life Cell_alone Adder4 Mux4 LogShifter SingleEvenFilter
-# VecShiftRegister BundleConnect SubModule PlusAnd MaxN VecShiftRegisterParam
-# VecShiftRegisterSimple VecSearch VendingMachineSwitch VendingMachine'
-
-pts='Xor6Thread2 XorSelfThread1 Cell_alone ByteSelector SimpleALU Mux4 MaxN
-Max2 ResetShiftRegister Parity Counter RegisterSimple Register RegXor AddNot
-EnableShiftRegister GCD_3bits Flop Decrementer Test2 Test3 TrivialAdd NotAnd
-Trivial Tail TrivialArith Shifts Darken HiLoMultiplier Coverage Accumulator
-LFSR16 PlusAnd VendingMachine VendingMachineSwitch'  
-
-# pts='Mul'
-# pts='SimpleALU'
-# pts='Test1'
-# pts='Test6'
-# pts='ByteSelector'
-# pts='Adder4'
-# pts='Mux4'
-# pts='SingleEvenFilter'
-# pts='LogShifter'
-# pts='MaxN '
-# pts='Max2'
-
-
-LGSHELL=./bazel-bin/main/lgshell
-LGCHECK=./inou/yosys/lgcheck
-POST_IO_RENAME=./inou/firrtl/post_io_renaming.py
-PATTERN_PATH=./inou/firrtl/tests/proto
-
-if [ ! -f $LGSHELL ]; then
-    if [ -f ./main/lgshell ]; then
-        LGSHELL=./main/lgshell
-        echo "lgshell is in $(pwd)"
-    else
-        echo "ERROR: could not find lgshell binary in $(pwd)";
-    fi
-fi
-
-firrtl_test() {
-  echo ""
-  echo ""
-  echo ""
-  echo "======================================================================"
-  echo "                         LoFIRRTL Full Compilation"
-  echo "======================================================================"
-  for pt in $1
-  do
-    if [ ! -f ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb ]; then
-        echo "ERROR: could not find ${pt}.${FIRRTL_LEVEL}.pb in ${PATTERN_PATH}"
-        exit 1
-    fi
-
-    ${LGSHELL} "inou.firrtl.tolnast files:${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb |> pass.compiler gviz:true top:${pt} firrtl:true"
-    ret_val=$?
-    if [ $ret_val -ne 0 ]; then
-      echo "ERROR: could not compile with pattern: ${pt}.${FIRRTL_LEVEL}.pb!"
-      exit $ret_val
-    fi
-  done #end of for
-
-
-  # Verilog code generation
-  for pt in $1
-  do
-    echo ""
-    echo ""
-    echo ""
-    echo "----------------------------------------------------"
-    echo "LGraph -> Verilog"
-    echo "----------------------------------------------------"
-
-    ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
-    # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg"
-    if [ $? -eq 0 ] && [ -f ${pt}.v ]; then
-        echo "Successfully generate Verilog: ${pt}.v"
-        rm -f  yosys_script.*
-    else
-        echo "ERROR: Pyrope compiler failed: verilog generation, testcase: ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb"
-        exit 1
-    fi
-  done
-
-
-  # Logic Equivalence Check
-  for pt in $1
-  do
-    echo ""
-    echo ""
-    echo ""
-    echo "----------------------------------------------------"
-    echo "Logic Equivalence Check"
-    echo "----------------------------------------------------"
-    
-    if [ "${FIRRTL_LEVEL}" == "hi" ]; then
-        python ${POST_IO_RENAME} "${pt}.v"
-    fi
-
-    ${LGCHECK} --implementation=${pt}.v --reference=./inou/firrtl/tests/verilog_gld/${pt}.gld.v
-
-    if [ $? -eq 0 ]; then
-      echo "Successfully pass LEC!"
-    else
-        echo "FAIL: "${pt}".v !== "${pt}".gld.v"
-        exit 1
-    fi
-  done
-
-  rm -f *.v
-  rm -f *.dot
-  rm -f lgcheck*
-  rm -rf lgdb
-  rm -f *.tcl
-}
-
-firrtl_test "$pts"

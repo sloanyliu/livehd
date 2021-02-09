@@ -6,21 +6,34 @@ pts_tuple_dbg='lhs_wire3 funcall_unnamed2
 
 pts_long_time='firrtl_gcd'
 
-pts_dbg='capricious_bits2'
-pts='reg_bits_set scalar_tuple hier_tuple_io hier_tuple3 lhs_wire2 hier_tuple2
-tuple_if counter_nested_if counter ssa_rhs out_ssa attr_set logic lhs_wire
-adder_stage bits_rhs if2 hier_tuple capricious_bits4 capricious_bits
-firrtl_gcd_3bits tuple_copy reg__q_pin if nested_if tuple_copy2 firrtl_tail
-firrtl_tail2 firrtl_tail3 hier_tuple_nested_if7 hier_tuple_nested_if
-hier_tuple_nested_if2 hier_tuple_nested_if3 hier_tuple_nested_if4
-hier_tuple_nested_if5'
+# pts_tbd='tup_out1 tup_out2'
 
-# pts='tup_out1 tup_out2'
-# hier_tuple_nested_if hier_tuple_nested_if2 hier_tuple_nested_if3 hier_tuple_nested_if4 hier_tuple_nested_if5'
+pts='reg_bits_set bits_rhs reg__q_pin scalar_tuple hier_tuple_io hier_tuple3
+hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2 hier_tuple lhs_wire
+tuple_copy if firrtl_tail hier_tuple_nested_if2 lhs_wire2 tuple_copy2
+counter_nested_if counter lhs_wire adder_stage capricious_bits4
+capricious_bits firrtl_gcd_3bits nested_if firrtl_tail2 firrtl_tail3 logic
+capricious_bits2 
+'
 
-#pts='hier_tuple_nested_if8'
-#pts='hier_tuple_nested_if6'
-#pts='pp'
+pts='hier_tuple_nested_if hier_tuple_nested_if3 hier_tuple_nested_if3
+hier_tuple_nested_if4 hier_tuple_nested_if5 hier_tuple_nested_if7 '
+
+
+pts_new_BW_issuse=''
+
+# pts='tuple_reg2'
+# pts='vector'
+# pts='vector2'
+
+# pts='tuple_reg'
+# pts='pp'
+# pts='pp2'
+
+# pts='hier_tuple_nested_if8'
+# pts='hier_tuple_nested_if6'
+# pts='pp'
+# pts='pp2'
 
 # Note: in this bash script, you MUST specify top module name AT FIRST POSITION
 pts_hier1='top sum top'

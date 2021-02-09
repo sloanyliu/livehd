@@ -283,14 +283,15 @@ public:
   */  
   } // convert to integer
 
-  
-
   //first or last refers to occurence of the char chr
   str get_str_after_last_occurence_of_chr (const char chr) const; // split str from chr 
   str get_str_after_first_occurence_of_chr (const char chr) const; // split str from chr
 
   str get_str_before_last_occurence_of_chr (const char chr) const; // split str from chr
   str get_str_before_first_occurence_of_chr (const char chr) const; // split str from chr
+
+  str substr(size_t start) const;
+  str substr(size_t start, size_t end) const;
 };
 
 }  // namespace mmap_lib
