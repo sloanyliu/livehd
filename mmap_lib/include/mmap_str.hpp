@@ -39,16 +39,19 @@ protected:
   // The only drawback is that to compute size, it needs to iterate over the e
   // field, but asking size is not a common operation in LiveHD
 
-  uint32_t ptr_or_start;  // 4 chars if _size < 14, ptr to mmap otherwise
-  std::array<char, 10> e; // last 10 "special <128" characters ending the string
-  uint16_t _size;          // 2 bytes
-  bool isptr= false;
+  uint32_t ptr_or_start;  // 4 chars if _size < 14, ptr to mmap otherwise (location in vector)
+  std::array<char, 10> e; // last 10 "special <128" characters ending the string (first part, last part)
+  uint16_t _size;         // 2 bytes
+  //bool isptr = false;   // will use 8 bytes due to alignment issues
+  //There is a directive to get rid of alignment so no extra bytes will be added
 
   constexpr bool is_digit(char c) const {
     return c>='0' && c <='9';
   }
 
 public:
+
+  //first two are compile time -> compiler will do everything for you, not a single instr. at a time
 
   // Must be constexpr to allow fast (constexpr) cmp for things like IDs.
   template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
@@ -74,6 +77,7 @@ public:
       }
     }
 
+  // copy of first one, add some stuff
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
     constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) { // N-1 because str includes the zero
       ptr_or_start = 0;
@@ -93,7 +97,8 @@ public:
       }
     }
 
-  constexpr str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
+  constexpr str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {  //starting with a string_view instead of string literal ("hello")
+                                                                                  //compiler doesnt know size of something, we call this one
     // FIXME: maybe short maybe long
     if (sv.size()<14) { // FIXME: create method to share this code with str short char constructor
       auto stop    = _size<4?_size:4;
@@ -209,6 +214,7 @@ public:
   std::size_t rfind(const char *s, std::size_t pos, std::size_t n ) const;
   std::size_t rfind(const char *s, std::size_t pos = 0 ) const;
 
+  //returns a pstr from two objects (pstr)
   static str concat(const str &a, const str &b);
   static str concat(std::string_view a, const str &b);
   static str concat(const str &a, std::string_view b);
@@ -277,12 +283,14 @@ public:
   */  
   } // convert to integer
 
+  
 
-  str get_str_after_last (const char chr) const; 
-  str get_str_after_first(const char chr) const;
+  //first or last refers to occurence of the char chr
+  str get_str_after_last_occurence_of_chr (const char chr) const; // split str from chr 
+  str get_str_after_first_occurence_of_chr (const char chr) const; // split str from chr
 
-  str get_str_before_last (const char chr) const;
-  str get_str_before_first(const char chr) const;
+  str get_str_before_last_occurence_of_chr (const char chr) const; // split str from chr
+  str get_str_before_first_occurence_of_chr (const char chr) const; // split str from chr
 };
 
 }  // namespace mmap_lib
