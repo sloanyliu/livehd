@@ -6,6 +6,8 @@
 #include <string_view>
 #include <stdio.h>
 #include <stdlib.h>
+#include "mmap_map.hpp"
+
 
 namespace mmap_lib {
 
@@ -57,7 +59,7 @@ public:
   template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
     constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) { // N-1 because str includes the zero
       auto stop    = _size<4?_size:4;
-      isptr =  _size<14?false:true;
+      //isptr =  _size<14?false:true;
       for(auto i=0;i<stop;++i) {
         ptr_or_start <<= 8;
         ptr_or_start |= s[i];
@@ -232,7 +234,7 @@ public:
 
   bool is_i() const{ // starts with digit -> is integer
     //this fun works when str size is <14   
-    if(!isptr){
+    //if(!isptr){
       char chars[5];
       std::cout << "chars[] inside is_i(): ";
       for (int i =3, j=0;i>=0;i--,j++){
@@ -264,7 +266,7 @@ public:
             break;
         }
       }
-    }
+    //}
     return true;  
   } 
   

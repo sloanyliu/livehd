@@ -18,7 +18,7 @@
  * Creates a vset from mmap_lib namespace
  * And tests it a little
  */
-void mmap_vset(std::string_view name) {
+void mmap_vset(int max, std::string_view name) {
   Lrand<int> rng;
 
   std::string type_test("mmap_vset ");
@@ -31,8 +31,11 @@ void mmap_vset(std::string_view name) {
 
 	set.clear();
   
+  /*
   for (auto j = 0; j < 50; ++j) { set.insert(j); }
-  for (auto i = set.begin(); i != set.end(); ++i) { /*std::cout << i.iter_val() << " ";*/  }
+  for (auto i = set.begin(); i != set.end(); ++i) { 
+    //std::cout << i.iter_val() << " ";  
+  }
   //std::cout << std::endl;
   for (auto i = 0; i < 49; ++i) {
     auto pos = rng.max(set.get_max());
@@ -40,13 +43,16 @@ void mmap_vset(std::string_view name) {
       pos = rng.max(set.get_max());
     }
     set.erase(pos);
-    for (auto i : set) { /*std::cout << i << " ";*/  }
+    for (auto i : set) { 
+      //std::cout << i << " "; 
+    }
     //std::cout << std::endl;
   }
-  
+  */
+
   //=========================
 
-  /*
+  
 
 	int conta = 0;
 
@@ -172,7 +178,6 @@ void mmap_vset(std::string_view name) {
   }
   b.sample("traversal dense");
   printf("inserts random %d\n",conta);
-*/
 
 }
 
@@ -180,10 +185,9 @@ void mmap_vset(std::string_view name) {
 
 
 int main(int argc, char **argv) {
-
   bool run_mmap_vset = false;
-
-	if (argc>1) {
+	
+  if (argc>1) {
     if (strcasecmp(argv[1],"vset") == 0) {
       run_mmap_vset = true;
 		}
@@ -192,7 +196,7 @@ int main(int argc, char **argv) {
   }
 
   if (run_mmap_vset) {
-    mmap_vset("bench_map_use_mmap.data");
+    mmap_vset(1000, "bench_map_use_mmap.data");
   }
 
   return 0;
