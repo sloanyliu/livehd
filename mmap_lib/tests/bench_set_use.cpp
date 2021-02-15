@@ -536,18 +536,17 @@ void random_mmap_vset(int max, std::string_view name) {
   //   --> generate rand num, insert that num into the map
   //   --> generate another rand num, erase that num from the map
   //   --> generate another rand num, if this num is not the end of the map, erase
+  
   for (int n = 1; n < BENCH_OUT_SIZE; ++n) {
     for (int i = 0; i < BENCH_INN_SIZE; ++i) {
       auto pos = rng.max(max);
       set.insert(pos);
-
       pos = rng.max(max);
-      set.erase(pos);
-
+			set.erase(pos);
       pos = rng.max(max);
-
-      if (set.efind(pos))
+      if (set.find(pos) != set.end()) {
         set.erase(pos);
+      }
     }
   }
 
@@ -561,19 +560,16 @@ void random_mmap_vset(int max, std::string_view name) {
   //   --> insert a random number into map
   //   --> generate a random num, if num is not end of map, erase it
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
-      auto hold = set.bucket_get_val(it);
-      for (auto j = 0; j < set.bucket_size(); ++j) {
-        if ((hold & 1) == 1) {
-          conta++;
-        }
-        hold = hold >> 1;
-      }
+    std::cout << "whoops" << std::endl;
+    //Problematic for loop, don't know why xD
+    for (auto it = set.begin(), end = set.end(); it != end; ++it) {
+      conta++;
     }
     set.insert(rng.max(max));
-
     auto pos = rng.max(max);
-    set.erase(pos);
+    if (set.find(pos) != set.end()) {
+      set.erase(pos);
+    }
   }
   b.sample("traversal sparse");
 
@@ -591,14 +587,8 @@ void random_mmap_vset(int max, std::string_view name) {
   }
 
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
-      auto hold = set.bucket_get_val(it);
-      for (auto j = 0; j < set.bucket_size(); ++j) {
-        if ((hold & 1) == 1) {
-          conta++;
-        }
-        hold = hold >> 1;
-      }
+    for (auto it = set.begin(); it != set.end(); ++it) {
+      conta++;
     }
   }
   b.sample("traversal dense");

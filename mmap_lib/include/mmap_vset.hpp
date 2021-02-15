@@ -355,7 +355,21 @@ public:
     
     T get_set_max() { return owner.max; }
     
-    vIter operator ++() { 
+
+    //=================================================
+    //
+    // This operator is not working, keeps getting looped
+    // Need to figure out why
+    // Also somehow manages to get a core dump/Seg Fault
+    //
+    // Note: in the else never prints, narrows problem down to inside if() 
+    //       or the while loop
+    //
+    // Strategy: Maybe try to revert back to old code before optimize
+    //           to see if it makes a difference
+    //
+    //=================================================
+    vIter operator ++() {            
       //if iData < max
       //  while(!(owner.find(iData+1)))
       //    ++iData;
@@ -363,11 +377,17 @@ public:
       //else if (iData == max)
       //  do nothing
       if (iData <= owner.get_max()) {
+        //std::cout << "really?" << std::endl;
         while (!(owner.efind(iData + 1)) && !(iData == owner.get_max())) { 
           ++iData; 
+          //std::cout << "in loop" << std::endl; // <=== STUCK HERE
         }
+        //std::cout << "or not?" << std::endl; // <=== AND HERE?
         ++iData;
+      } else {
+        std::cout << "in the else" << std::endl; // this one does not print
       }
+      std::cout << "make it here?" << std::endl; // <=== ALSO HERE
     } //prefix ++i
 
     vIter operator ++(int other) { 
@@ -457,6 +477,14 @@ public:
   }
 
 
+  //=========================================
+  //
+  // In bench_set_use tests, vset is getting stuck at the first loop
+  // My guess is that it stopped because of begin() and end() in vIter
+  // Something is happening where it is not returning from these
+  //
+  //=========================================
+
   [[nodiscard]] vIter begin() {
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
@@ -483,14 +511,15 @@ public:
       //Assertion?
       return tmp;
     }
-    tmp.iter_change(vset::get_max()+1);
+    //tmp.iter_change(vset::get_max()+1);
+    tmp.iter_change(vset::get_max());
     return tmp;
   }
   
 
   [[nodiscard]] vIter find(T ele) {
     vIter tmp(*this);
-    if (vset::efind(ele)) { 
+    if (vset::efind(ele+0)) { 
       tmp.iter_change(ele);
       return tmp;
     } else {

@@ -117,13 +117,12 @@ void mmap_vset(int max, std::string_view name) {
     for (int i = 0; i < SMALL_BENCH; ++i) {
       auto pos = rng.max(max);
       set.insert(pos);
-
       pos = rng.max(max);
 			set.erase(pos);
-
       pos = rng.max(max);
-
-      set.erase(pos);
+      if (set.find(pos) != set.end()) {
+        set.erase(pos);
+      }
     }
   }
 
@@ -139,6 +138,15 @@ void mmap_vset(int max, std::string_view name) {
 	//   --> insert a random number into map
 	//   --> generate a random num, if num is not end of map, erase it
   for (int i = 0; i < SMALL_BENCH; ++i) {
+    for (auto it = set.begin(), end = set.end(); it != end; ++it) {
+      conta++;
+    }
+    set.insert(rng.max(max));
+    auto pos = rng.max(max);
+    if (set.find(pos) != set.end()) {
+      set.erase(pos);
+    }
+    /*
 		for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
 			auto hold = set.bucket_get_val(it);
 			for (auto j = 0; j < 32; ++j) {
@@ -149,7 +157,7 @@ void mmap_vset(int max, std::string_view name) {
     set.insert(rng.max(max));
 
     auto pos = rng.max(max);
-    set.erase(pos);
+    set.erase(pos); */
   }
   b.sample("traversal sparse");
 
@@ -168,13 +176,16 @@ void mmap_vset(int max, std::string_view name) {
   }
 
   for (int i = 0; i < SMALL_BENCH; ++i) {
-		for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
+    for (auto it = set.begin(), end = set.end(); it != end; ++it) {
+      conta++;
+    }
+		/*for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
 			auto hold = set.bucket_get_val(it);
 			for (auto j = 0; j < 32; ++j) {
 				if ((hold & 1) == 1) { conta++; }
 				hold = hold >> 1;
 			}
-		}
+		}*/
   }
   b.sample("traversal dense");
   printf("inserts random %d\n",conta);
