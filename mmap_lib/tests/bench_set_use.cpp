@@ -529,41 +529,66 @@ void random_mmap_vset(int max, std::string_view name) {
   set.clear();
 
   int conta = 0;  // reset
-
   // INSERT/ERASE DENSE TEST
   // runs about (BIG * SMALL) times
   // each run:
   //   --> generate rand num, insert that num into the map
   //   --> generate another rand num, erase that num from the map
   //   --> generate another rand num, if this num is not the end of the map, erase
-  
+
   for (int n = 1; n < BENCH_OUT_SIZE; ++n) {
     for (int i = 0; i < BENCH_INN_SIZE; ++i) {
       auto pos = rng.max(max);
       set.insert(pos);
+      
+      if (set.efind(pos) == false) { std::cout << "did not insert " << pos << std::endl; }
+
       pos = rng.max(max);
 			set.erase(pos);
+      
+      if (set.efind(pos) == true) { std::cout << "did not erase " << pos << std::endl; }
+      
       pos = rng.max(max);
       if (set.find(pos) != set.end()) {
+
         set.erase(pos);
+
+        if (set.efind(pos) == true) { std::cout << "did not erase " << pos << std::endl; }
+
       }
     }
   }
 
+  std::cout << set.get_max() << std::endl;
+
   b.sample("insert/erase dense");
   conta = 0;
-
+  
+  
   // TRAVERSAL SPARSE TEST
   // runs (200) times
   // each run:
   //   --> go through the whole map and increment a variable per map index
   //   --> insert a random number into map
   //   --> generate a random num, if num is not end of map, erase it
+  
+  auto it = set.begin();
+  std::cout << "begin of the set: " << it.iter_val() << std::endl;
+  auto end = set.end();
+  std::cout << "end of the set: " << end.iter_val() << std::endl;
+  
+  if (it != end) { std::cout << "!= works" << std::endl; }
+  ++it;  // <-- this is the bad part
+  if (it != end) { std::cout << "!= works" << std::endl; }
+
+
+
+
+  /*
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    std::cout << "whoops" << std::endl;
     //Problematic for loop, don't know why xD
     for (auto it = set.begin(), end = set.end(); it != end; ++it) {
-      conta++;
+      conta++; 
     }
     set.insert(rng.max(max));
     auto pos = rng.max(max);
@@ -572,8 +597,9 @@ void random_mmap_vset(int max, std::string_view name) {
     }
   }
   b.sample("traversal sparse");
-
   printf("inserts random %d\n", conta);
+
+  
   conta = 0;
 
   // TRAVERSAL DENSE TEST
@@ -593,6 +619,7 @@ void random_mmap_vset(int max, std::string_view name) {
   }
   b.sample("traversal dense");
   printf("inserts random %d\n", conta);
+  */
 }
 
 #if 0

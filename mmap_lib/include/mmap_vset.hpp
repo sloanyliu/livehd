@@ -362,14 +362,15 @@ public:
     // Need to figure out why
     // Also somehow manages to get a core dump/Seg Fault
     //
-    // Note: in the else never prints, narrows problem down to inside if() 
+    // Note: "in the else" never prints, narrows problem down to inside if() 
     //       or the while loop
     //
     // Strategy: Maybe try to revert back to old code before optimize
     //           to see if it makes a difference
     //
     //=================================================
-    vIter operator ++() {            
+    vIter operator ++() {
+      /*      
       //if iData < max
       //  while(!(owner.find(iData+1)))
       //    ++iData;
@@ -388,9 +389,23 @@ public:
         std::cout << "in the else" << std::endl; // this one does not print
       }
       std::cout << "make it here?" << std::endl; // <=== ALSO HERE
+      */
+      std::cout << "in prefix ++ " << std::endl;
+      if (iData < owner.get_max()) {
+        std::cout << "in first if" << std::endl;
+        while (!(owner.efind(iData+1))) { //<--- issue is in efind() xD
+          ++iData;
+          std::cout << "in while" << std::endl;
+        }
+        ++iData;
+      } else if (iData == owner.get_max()) {
+        std::cout << "cmon" << std::endl;
+      }
+       
     } //prefix ++i
 
     vIter operator ++(int other) { 
+      /*
       //if iData < max
       //  while(!(owner.find(iData+1)))
       //    ++iData;
@@ -402,6 +417,15 @@ public:
           ++iData; 
         }
         ++iData;
+      }
+      */
+      if (iData < owner.get_max()) {
+        while (!(owner.efind(iData+1))) {
+          ++iData;
+        }
+        ++iData;
+      } else if (iData == owner.get_max()) {
+        ;
       }
     } //postfix i++
 
@@ -486,6 +510,7 @@ public:
   //=========================================
 
   [[nodiscard]] vIter begin() {
+    //std::cout << "begin";
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
       //Exception?
@@ -505,6 +530,7 @@ public:
   }
   
   [[nodiscard]] vIter end() {
+    //std::cout << "end";
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
       //Exception?
