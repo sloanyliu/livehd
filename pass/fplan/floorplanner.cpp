@@ -30,22 +30,22 @@ GeographyHint Lhd_floorplanner::randomHint(int count) const {
   static size_t sel = 0;
 
   sel = (sel + 1) % hint_seq.size();
-  if (count == 2) {
+  if (count % 2 == 0) {
     return hint_seq_2[sel];
   }
 
   return hint_seq[sel];
 }
 
-void Lhd_floorplanner::create(float ar) {
-  bool success = root_layout->layout(HardAspectRatio, ar);
+void Lhd_floorplanner::create(FPOptimization opt, float ar) {
+  bool success = root_layout->layout(opt, ar);
   if (!success) {
     throw std::runtime_error("unable to lay out floorplan!");
   }
 }
 
 void Lhd_floorplanner::write_file(const std::string_view filename) {
-  ostream& fos = outputHotSpotHeader(filename.data());
+  std::ostream& fos = outputHotSpotHeader(filename.data());
   root_layout->outputHotSpotLayout(fos);
   outputHotSpotFooter(fos);
 }

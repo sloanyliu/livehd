@@ -6,7 +6,7 @@
 #include <string_view>
 
 #include "absl/container/flat_hash_map.h"
-#include "floorplan.hpp"
+#include "GeogLayout.hpp"
 #include "lgraph.hpp"
 #include "node_tree.hpp"
 #include "node_type_area.hpp"
@@ -19,7 +19,7 @@ public:
   virtual void load() = 0;
 
   // create a floorplan from loaded modules
-  void create(float ar);
+  void create(FPOptimization opt, float ar);
 
   // dump floorplan to file
   void write_file(const std::string_view filename);
@@ -50,7 +50,7 @@ protected:
       GeographyHint::Right
   };
 
-  // these hints are only valid for exactly two nodes
+  // these hints are only valid for node counts divisible by 2
   constexpr static std::array<GeographyHint, 6> hint_seq_2 = {
       GeographyHint::LeftRight,
       GeographyHint::LeftRightMirror,
