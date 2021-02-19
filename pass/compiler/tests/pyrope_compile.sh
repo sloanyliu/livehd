@@ -11,29 +11,27 @@ pts_long_time='firrtl_gcd'
 pts='reg_bits_set bits_rhs reg__q_pin scalar_tuple hier_tuple_io hier_tuple3
 hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2 hier_tuple lhs_wire
 tuple_copy if firrtl_tail hier_tuple_nested_if2 lhs_wire2 tuple_copy2
-counter_nested_if counter lhs_wire adder_stage capricious_bits4
-capricious_bits firrtl_gcd_3bits nested_if firrtl_tail2 firrtl_tail3 logic
-capricious_bits2 
-'
+counter_nested_if counter lhs_wire adder_stage capricious_bits4 capricious_bits
+firrtl_gcd_3bits nested_if firrtl_tail3 logic capricious_bits2
+scalar_reg_out_pre_declare firrtl_tail2 tuple_reg tuple_reg2'
 
-pts='hier_tuple_nested_if hier_tuple_nested_if3 hier_tuple_nested_if3
-hier_tuple_nested_if4 hier_tuple_nested_if5 hier_tuple_nested_if7 '
+# pts='firrtl_tail2'
 
+# pts='hier_tuple_nested_if hier_tuple_nested_if3 hier_tuple_nested_if3
+# hier_tuple_nested_if4 hier_tuple_nested_if5 hier_tuple_nested_if7 '
 
-pts_new_BW_issuse=''
+# pts='tuple_reg2 tuple_reg3'
+# pts='pp'
+# pts='tuple_reg3'
 
-# pts='tuple_reg2'
 # pts='vector'
 # pts='vector2'
 
-# pts='tuple_reg'
 # pts='pp'
 # pts='pp2'
 
 # pts='hier_tuple_nested_if8'
 # pts='hier_tuple_nested_if6'
-# pts='pp'
-# pts='pp2'
 
 # Note: in this bash script, you MUST specify top module name AT FIRST POSITION
 pts_hier1='top sum top'
@@ -214,11 +212,11 @@ Pyrope_compile_hier () {
 
 
 rm -rf ./lgdb
+Pyrope_compile "$pts"
+rm -rf ./lgdb
 Pyrope_compile_hier "$pts_hier1"
 rm -rf ./lgdb
 Pyrope_compile_hier "$pts_hier2"
-rm -rf ./lgdb
-Pyrope_compile "$pts"
 
 
 rm -f *.dot

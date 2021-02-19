@@ -511,8 +511,9 @@ void Lgyosys_dump::to_yosys(LGraph *g) {
 
         RTLIL::Wire *adds_result = nullptr;
         if (add_signed.size() > 1) {
+          int  xtra_bits = ceill(log2(add_signed.size()));
           if (sub_signed.size() > 0) {
-            adds_result = module->addWire(next_id(g), size);
+            adds_result = module->addWire(next_id(g), size+xtra_bits);
           } else {
             adds_result = cell_output_map[node.get_driver_pin().get_compact()];
           }
@@ -523,8 +524,9 @@ void Lgyosys_dump::to_yosys(LGraph *g) {
 
         RTLIL::Wire *subs_result = nullptr;
         if (sub_signed.size() > 1) {
+          int  xtra_bits = ceill(log2(sub_signed.size()));
           if (add_signed.size() > 0) {
-            subs_result = module->addWire(next_id(g), size);
+            subs_result = module->addWire(next_id(g), size+xtra_bits);
           } else {
             subs_result = cell_output_map[node.get_driver_pin().get_compact()];
           }
@@ -604,6 +606,23 @@ void Lgyosys_dump::to_yosys(LGraph *g) {
           Lconst mask = (Lconst(1)<<Lconst(out_wire->width))-1;
           module->addAnd(next_id(g), in_wire, RTLIL::Const::from_string(mask.to_yosys()), out_wire);
         }
+      }
+      break;
+      case Ntype_op::Sext: {
+        auto *in_wire   = get_wire(node.get_sink_pin("a").get_driver_pin());
+        auto width_dpin  = node.get_sink_pin("b").get_driver_pin();
+        auto *out_wire  = cell_output_map[node.get_driver_pin().get_compact()];
+
+        I(width_dpin.is_type_const());
+        I(width_dpin.get_node().get_type_const().is_i());
+
+        auto w = width_dpin.get_node().get_type_const().to_i();
+
+        I(w == out_wire->width); // Can this be broken in yosys?
+
+        auto w2 = RTLIL::SigSpec(in_wire);
+        w2.extend_u0(out_wire->width, false);  // unsigned extend
+        module->connect(out_wire, w2);
       }
       break;
       case Ntype_op::LUT: {
@@ -699,8 +718,7 @@ void Lgyosys_dump::to_yosys(LGraph *g) {
         module->addDlatch(next_id(g), enable_wire, din_wire, cell_output_map[node.get_driver_pin().get_compact()], polarity);
       }
       break;
-      case Ntype_op::Sflop:
-      case Ntype_op::Aflop: {
+      case Ntype_op::Flop: {
 
         Node_pin    reset_dpin;
         Node_pin  initial_dpin;

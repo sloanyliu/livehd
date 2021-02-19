@@ -1,16 +1,4 @@
 // Visitor set to LiveHD
-/*
- * This is a more optimized set data structure, built using mmap_lib's map.
- * 
- * The idea is that there is a hash map under the hood, and each <key,val>
- * pair's key is a unique index (0 to n), and the val is a bit vector (32 bits) 
- * that represents the existence (0 or 1) of 32 distinct numbers.
- *
- * For example: 
- * set.insert(100) 
- * will flip the 4th bit of the val of the 'key = 3' <key,val> pair high.
- *
- */
 
 #pragma once
 

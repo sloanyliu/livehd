@@ -77,6 +77,7 @@ do
   mkdir -p tmp_yosys
 
   echo "inou.yosys.tolg path:lgdb_yosys top:${base} files:"${full_input}  | ${LGSHELL} -q >tmp_yosys/${input}.log 2>tmp_yosys/${input}.err
+  #echo "inou.verilog path:lgdb_yosys top:${base} files:"${full_input}" |> pass.compiler "  | ${LGSHELL} -q >tmp_yosys/${input}.log 2>tmp_yosys/${input}.err
   if [ $? -eq 0 ]; then
     echo "Successfully created graph from ${input}"
   else
@@ -101,8 +102,9 @@ do
   fi
 
   #echo "lgraph.match path:lgdb_yosys |> pass.cprop |> inou.yosys.fromlg odir:tmp_yosys" | ${LGSHELL} -q 2>tmp_yosys/${input}.err
-  echo "lgraph.match path:lgdb_yosys |> pass.cprop |> pass.bitwidth |> inou.yosys.fromlg odir:tmp_yosys" | ${LGSHELL} -q 2>tmp_yosys/${input}.err
-  #echo "lgraph.match path:lgdb_yosys |> inou.cgen.verilog odir:tmp_yosys" | ${LGSHELL} -q 2>tmp_yosys/${input}.err
+  #echo "lgraph.match path:lgdb_yosys |> pass.cprop |> pass.bitwidth |> inou.yosys.fromlg odir:tmp_yosys" | ${LGSHELL} -q 2>tmp_yosys/${input}.err
+  #echo "lgraph.match path:lgdb_yosys |> pass.cprop |> pass.bitwidth |> inou.cgen.verilog odir:tmp_yosys" | ${LGSHELL} -q 2>tmp_yosys/${input}.err
+  echo "lgraph.match path:lgdb_yosys |> pass.cprop |> inou.cgen.verilog odir:tmp_yosys" | ${LGSHELL} -q 2>tmp_yosys/${input}.err
   LC=$(grep -iv Warning tmp_yosys/${input}.err | grep -v perf_event | grep -v "recommended to use " | grep -v "IPC=" | wc -l | cut -d" " -f1)
   if [[ $LC -gt 0 ]]; then
     echo "FAIL: Faulty "$LC" err verilog file tmp_yosys/${input}.err"

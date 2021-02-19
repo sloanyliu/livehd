@@ -1,44 +1,49 @@
 Issues:
- - ArchFP has basically no error checking, and fails on large floorplans while returning successfully from layout() on the root layout...?
-    - Using a high aspect ratio and putting things in grids alleviates this problem, but does not eliminate it.
- - ArchFP has a refcounting implementation built-in, which causes problems when destructors are called on anything other than the root node.  Replace with std::shared_ptr
+ - HardAspectRatio tries to satisfy the requested aspect ratio as well as possible, even if it's not possible without incorrect layouts.
+    - Fixing aspect ratio issues automatically is hard.  Checking if components collide with each other is $$ and figuring out where they should go is difficult.
 
 Issues not related to ArchFP:
- - fix Lgraph hier traversal after getting hier_node working properly - useful for large designs (BOOM)
-    - populate hierarchies with area
  - view.py output is flipped due to mismatch between coordinates for HotSpot and png coordinates in PyCairo
- - blackboxes are not supported (use fixedLayout for this)
 
-Node hierarchy:
- - check for TODOs elsewhere in the code and resolve if possible
+Ask about:
+ - put fplan tests into yosys tests since they crash livehd fairly often
+ - LiveHD does not function correctly with non-english names (rename broken, importing broken as well (non-ascii characters skipped?))
 
- - check grid layout not pushing mirror contexts?
- - verify node hierarchy is correct
- - add a is_valid method to Ntype_area, use it instead of hier_color to determine if a node has been placed yet
- - write non-root node to layouts[] in node_hier_floorp
-
-Easy things:
- - Node::bimap -> Node::map for hier_node_color fails?
- - LiveHD has a random number class, use that in writearea
- - put warning bazel file in //tools
+Goals:
+1. Check on how nextpnr gets hints, if it gets hints at all.  Can we write hints for nextpnr to consume?
+2. Test hier_lg with hier_test.v (put hier_test file in yosys test dir, and check it for partially disconnected wires)
+3. Test BOOM core (waiting on yosys memory implementation?)
+4. Write node level hierarchy to file (mmap_tree not being written to file is known TODO)
+5. Find / write a method that doesn't mess up on the wrong aspect ratio - HardAspectRatio not helpful for initial floorplans.
 
 Things to add:
+0. Interactivity
+    - allow for querying of top level floorplans, current layout is messy (create a top level node below top level?)
+    - add a recursive dump option
+    - dump everything if no nodes are passed
+    - Node names are not hierarchical, so I can't query information about a specific Or node...
 1. Optimization
-   - use HPWL as benchmark
-   - easy: swap positions of leaves of the same type (within a hierarchy), see if HPWL gets better
-   - identify components that are far away, set geography hints to be closer?
-2. Incremental Floorplans
-   - floorplan using existing geography hints instead of randomly choosing a hint
-   - assign geography hints to nodes based on wirelength metrics
+    - multithread the floorplanner (need deep hierarchies to play with - waiting on (0))
+    - multithread the Lgraph traversal (need deep hierarchies to play with - waiting on (0))
+       - create a way to floorplan using existing layouts
+    - Check out the paper for ArchFP
+    - improve implementation in ArchFP, resolve todos, add better floorplan techniques
+       - double -> float?
+2. Incremental Floorplans (waiting on goal (2))
+    - floorplan using existing geography hints/specific AR instead of randomly choosing a hint/using AR = 1.0
+    - assign geography hints to nodes based on wirelength metrics
+    - use HPWL as benchmark (waiting on goal (2) - need node hierarchy)
+    - easy: swap positions of leaves of the same type (within a hierarchy), see if HPWL gets better
+    - identify components that are far away, set geography hints to be closer?
 3. More accurate floorplans
-   - floorplan node pins - allows for more accurate HPWL estimation
-   - scale area by bitwidth of node, if possible
-4. multithread hier_node traversal
-   - Check out the paper for ArchFP
-   - improve implementation in ArchFP, fix todos, add better floorplan techniques
-   - create a way to floorplan using existing layouts
-5. add more checks to checkfp:
-   - check for insane / unrealistic wirelength metrics
-   - check for disconnected parts of floorplan
-6. Overlay lgraph borders over actual nodes on png
-   - rewrite view.py in C++, and have it source data from LiveHD
+    - floorplan node pins - allows for more accurate HPWL estimation
+    - scale area by bitwidth of node, if possible
+    - implement blackboxes (waiting on goal (2))
+4. add more checks to checkfp:
+    - check for insane / unrealistic wirelength metrics
+5. Create area-based floorplans
+    - allows for efficient floorplan analysis, prevents disconnected segments entirely
+
+Tabled:
+ - Cairo is LGPL, so it can't be shipped with LiveHD.  Python script is fine.
+ - Lrand random class doesn't support floats, not using it for writearea pass

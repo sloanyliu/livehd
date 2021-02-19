@@ -15,11 +15,11 @@ Pass_fplan_checkfp::Pass_fplan_checkfp(const Eprp_var& var) : Pass("pass.fplan",
 
 void Pass_fplan_checkfp::pass(Eprp_var& var) {
   if (var.lgs.size() == 0) {
-    throw std::invalid_argument("no lgraphs provided!");
+    error("no lgraphs provided!");
   }
 
   if (var.lgs.size() > 1) {
-    throw std::invalid_argument("more than one root lgraph provided!");
+    error("more than one root lgraph provided!");
   }
 
   fmt::print("checking floorplan...\n");
@@ -63,22 +63,25 @@ void Pass_fplan_checkfp::pass(Eprp_var& var) {
 
       // is (xt, yt) inside a rectangle from (x0, y0) -> (x1, y1)?
       auto inside = [](float x0, float y0, float x1, float y1, float xt, float yt) -> bool {
-        bool in_x = (x0 <= xt) && (xt <= x1);
+        I(x0 < x1);
+        I(y0 < y1);
+
+        bool in_x = (x0 < xt) && (xt < x1);
         //fmt::print("x0 ({}) <= xp ({}) <= x1({}): {}\n", x0, xt, x1, in_x);
-        bool in_y = (y0 <= yt) && (yt <= y1);
+        bool in_y = (y0 < yt) && (yt < y1);
         //fmt::print("y0 ({}) <= yp ({}) <= yp ({}): {}\n", y0, yt, y1, in_y);
         return in_x && in_y;
       };
 
-      float px0 = np.get_pos_x();
-      float px1 = np.get_pos_x() + np.get_len_x();
-      float py0 = np.get_pos_y();
-      float py1 = np.get_pos_y() + np.get_len_y();
+      float px0 = np.get_x();
+      float px1 = np.get_x() + np.get_width();
+      float py0 = np.get_y();
+      float py1 = np.get_y() + np.get_height();
 
-      float tx0 = tp.get_pos_x();
-      float tx1 = tp.get_pos_x() + tp.get_len_x();
-      float ty0 = tp.get_pos_y();
-      float ty1 = tp.get_pos_y() + tp.get_len_y();
+      float tx0 = tp.get_x();
+      float tx1 = tp.get_x() + tp.get_width();
+      float ty0 = tp.get_y();
+      float ty1 = tp.get_y() + tp.get_height();
 
       bool intersect = false;
       intersect = intersect || inside(tx0, ty0, tx1, ty1, px0, py0);

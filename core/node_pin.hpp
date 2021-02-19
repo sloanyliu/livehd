@@ -37,7 +37,7 @@ protected:
   constexpr Node_pin(LGraph *_g, LGraph *_c_g, const Hierarchy_index &_hidx, Index_ID _idx, Port_ID _pid, bool _sink)
     : top_g(_g), current_g(_c_g), hidx(_hidx), idx(_idx), pid(_pid), sink(_sink) {
     assert(_g);
-    assert(_idx);
+    // Could be IDX=0 for invalid
   }
 
   const Index_ID get_idx() const {
@@ -313,6 +313,8 @@ public:
 
   // Some redundant code with node (implemented because frequent)
   bool             is_type_const() const;
+  bool             is_type_loop_breaker() const;
+  Lconst           get_type_const() const;
 
   Node_pin change_to_sink_from_graph_out_driver() const {
     I(is_graph_output());
@@ -333,6 +335,7 @@ public:
     return !sink;
   }
 
+  Index_ID get_node_nid() const;
   Node     get_node() const;
   Ntype_op get_type_op() const;
 
@@ -384,6 +387,7 @@ public:
 
   // BEGIN ATTRIBUTE ACCESSORS
   std::string debug_name() const;
+  std::string get_wire_name() const;
 
   void             set_name(std::string_view wname);
   void             del_name();

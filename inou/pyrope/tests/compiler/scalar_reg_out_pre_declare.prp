@@ -1,0 +1,7 @@
+foo = 1
+if (foo == 1) {
+  %out = 1
+  #reg = 2
+}
+
+%out2 = #reg.__q_pin

@@ -87,6 +87,17 @@ bool Node_pin::is_type_const() const {
   return current_g->is_type_const(nid);
 }
 
+bool Node_pin::is_type_loop_breaker() const {
+  auto nid = current_g->get_node_nid(idx);
+  auto op = current_g->get_type_op(nid);
+  return Ntype::is_loop_breaker(op);
+}
+
+Lconst Node_pin::get_type_const() const {
+  auto nid = current_g->get_node_nid(idx);
+  return current_g->get_type_const(nid);
+}
+
 Node_pin Node_pin::get_non_hierarchical() const {
   return Node_pin(current_g, current_g, Hierarchy_tree::invalid_index(), idx, pid, sink);
 }
@@ -110,6 +121,8 @@ Node Node_pin::get_node() const {
 
   return Node(top_g, current_g, hidx, nid);
 }
+
+Index_ID Node_pin::get_node_nid() const { return current_g->get_node_nid(idx); }
 
 Ntype_op Node_pin::get_type_op() const {
   auto nid = current_g->get_node_nid(idx);
@@ -331,6 +344,39 @@ std::string Node_pin::debug_name() const {
                       std::to_string(pid),
                       "_lg",
                       current_g->get_name());
+}
+
+std::string Node_pin::get_wire_name() const {
+  if (is_sink()) {
+    auto dpin = get_driver_pin();
+    if (dpin.is_invalid())
+      return "";
+    return dpin.get_wire_name();
+  }
+
+  if (!is_connected())
+    return "";
+
+  std::string name;
+
+  if (is_hierarchical()) {
+    absl::StrAppend(&name, "lg", current_g->get_name(), "_hidx" ,std::to_string(hidx.level), "_", std::to_string(hidx.pos));
+  }
+
+  if (has_name()) {
+    absl::StrAppend(&name, get_name());
+    return name;
+  }
+
+  if (name.empty())
+    name = "t";
+
+  absl::StrAppend(&name, "_pin" , std::to_string(get_root_idx()));
+  if (pid!=0) {
+    absl::StrAppend(&name, "_" , get_pin_name());
+  }
+
+  return name;
 }
 
 std::string_view Node_pin::get_name() const {

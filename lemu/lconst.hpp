@@ -9,7 +9,7 @@
 
 using Bits_t  = uint32_t;  // bits type (future use)
 constexpr int     Bits_bits      = 17;
-constexpr int     Bits_max       = ((1ULL<<Bits_bits)-1);
+constexpr Bits_t  Bits_max       = ((1ULL<<Bits_bits)-1);
 
 class Lconst {
 private:
@@ -118,6 +118,7 @@ public:
   [[nodiscard]] Lconst tposs_op() const;
   [[nodiscard]] Lconst add_op(const Lconst &o) const;
   [[nodiscard]] Lconst mult_op(const Lconst &o) const;
+  [[nodiscard]] Lconst div_op(const Lconst &o) const;
   [[nodiscard]] Lconst sub_op(const Lconst &o) const;
   [[nodiscard]] Lconst lsh_op(Bits_t amount) const;
   [[nodiscard]] Lconst rsh_op(Bits_t amount) const;

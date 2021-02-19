@@ -107,7 +107,7 @@ public:
 
   public:
     // constexpr operator size_t() const { return nid; }
-    // constexpr Compact_class() : nid(0){};
+    constexpr Compact_class() : nid(0){}; // needed for mmap_tree which allocates empty data
 
     constexpr Compact_class(const Index_ID &_nid) : nid(_nid){};
 
@@ -137,12 +137,12 @@ public:
   void update(const Node::Compact &comp);
   void update(const Node &node);
 
-  constexpr Node() : top_g(0), current_g(0), nid(0) {}
+  constexpr Node() : top_g(nullptr), current_g(nullptr), nid(0) {}
 
   Node(LGraph *_g, const Compact &comp) { update(_g, comp); }
   Node(LGraph *_g, const Hierarchy_index &_hidx, const Compact_class &comp);
   constexpr Node(LGraph *_g, const Compact_class &comp)
-      : top_g(_g), current_g(0), hidx(Hierarchy_tree::invalid_index()), nid(comp.nid) {
+      : top_g(_g), current_g(nullptr), hidx(Hierarchy_tree::invalid_index()), nid(comp.nid) {
     I(nid);
     I(top_g);
 
@@ -312,7 +312,7 @@ public:
   XEdge_iterator out_edges_ordered_reverse() const;  // Slower than inp_edges, but edges ordered by driver.pid
   XEdge_iterator inp_edges_ordered_reverse() const;  // Slower than inp_edges, but edges ordered by sink.pid
 
-  Node_pin_iterator inp_drivers(const absl::flat_hash_set<Node::Compact> &exclude) const;
+  Node_pin_iterator inp_drivers() const;
 
   bool is_graph_io() const { return nid == Hardcoded_input_nid || nid == Hardcoded_output_nid; }
   bool is_graph_input() const { return nid == Hardcoded_input_nid; }
@@ -323,6 +323,7 @@ public:
   // BEGIN ATTRIBUTE ACCESSORS
   std::string debug_name() const;
 
+  std::string      get_instance_name() const;
   void             set_name(std::string_view iname);
   std::string_view get_name() const;
   std::string_view create_name() const;
@@ -338,10 +339,6 @@ public:
   void set_color(int color);
   int  get_color() const;
   bool has_color() const;
-
-  void set_hier_color(int color);
-  int  get_hier_color() const;
-  bool has_hier_color() const;
   // END ATTRIBUTE ACCESSORS
 
   void dump();

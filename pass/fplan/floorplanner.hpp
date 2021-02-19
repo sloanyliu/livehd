@@ -19,13 +19,16 @@ public:
   virtual void load() = 0;
 
   // create a floorplan from loaded modules
-  void create();
+  void create(float ar);
 
   // dump floorplan to file
   void write_file(const std::string_view filename);
 
-  // write the floorplan back to LiveHD for analysis and future floorplans
-  void write_lhd();
+  // write a node level floorplan back to LiveHD (must match livehd hierarchy exactly)
+  void write_lhd_node();
+
+  // write a module level floorplan back to LiveHD (nodes ignored)
+  void write_lhd_lg();
 
   ~Lhd_floorplanner();
 
@@ -70,7 +73,7 @@ protected:
   const Ntype_area na;
 
   // layout of all child nodes
-  absl::flat_hash_map<Tree_index, geogLayout*> layouts;
+  geogLayout* root_layout;
 
   // at what number of nodes of a given type should they be laid out in a grid?
   absl::flat_hash_map<Ntype_op, unsigned int> grid_thresh;

@@ -18,13 +18,14 @@ void Pass_fplan_makefp::setup() {
   m.add_label_optional("traversal",
                        "LGraph traversal method to use. Valid options are \"hier_lg\", \"flat_node\", and \"hier_node\"",
                        "hier_node");
-
+                       
   m.add_label_optional("filename", "If set, write the floorplan to a file named <filename>.flp as well as back into LiveHD.");
+  m.add_label_optional("aspect", "Requested aspect ratio of the entire floorplan, default is 1.0.", "1.0");
 
   register_pass(m);
 }
 
-void Pass_fplan_makefp::makefp_int(Lhd_floorplanner& fp, bool write_lhd, const std::string_view dest) {
+void Pass_fplan_makefp::makefp_int(Lhd_floorplanner& fp, const std::string_view dest, const float ar) {
   auto t = profile_time::Timer();
 
   t.start();
@@ -34,15 +35,8 @@ void Pass_fplan_makefp::makefp_int(Lhd_floorplanner& fp, bool write_lhd, const s
 
   t.start();
   fmt::print("  creating floorplan...");
-  fp.create();
+  fp.create(ar);
   fmt::print(" done ({} ms).\n", t.time());
-
-  if (write_lhd) {
-    t.start();
-    fmt::print("  writing floorplan to livehd...");
-    fp.write_lhd();
-    fmt::print(" done ({} ms).\n", t.time());
-  }
 
   if (dest.length() > 0) {
     fmt::print("  writing floorplan to file {}...", dest);
@@ -65,18 +59,34 @@ Pass_fplan_makefp::Pass_fplan_makefp(const Eprp_var& var) : Pass("pass.fplan", v
   auto nt = Node_tree(root_lg);
   fmt::print(" done ({} ms).\n", whole_t.time());
 
+  float ar = std::stof(var.get("aspect").data());
+
   if (t_str == "hier_lg") {
-    // Lg_hier_floorp hfp;
-    // makefp_int(hfp, "file");
+    Lg_hier_floorp hfp(std::move(nt));
+    makefp_int(hfp, var.get("filename"), ar);
+
+    profile_time::Timer t;
+    t.start();
+    fmt::print("  writing floorplan to livehd...");
+    hfp.write_lhd_lg();
+    fmt::print(" done ({} ms).\n", t.time());
   } else if (t_str == "flat_node") {
     Node_flat_floorp nffp(std::move(nt));
-    makefp_int(nffp, false, var.get("filename"));
+    makefp_int(nffp, var.get("filename"), ar);
+
+    // flat floorplans have no hierarchy and cannot be written to LiveHD
   } else if (t_str == "hier_node") {
     Node_hier_floorp nhfp(std::move(nt));
-    makefp_int(nhfp, true, var.get("filename"));
+    makefp_int(nhfp, var.get("filename"), ar);
+
+    profile_time::Timer t;
+    t.start();
+    fmt::print("  writing floorplan to livehd...");
+    nhfp.write_lhd_node();
+    fmt::print(" done ({} ms).\n", t.time());
   } else {
     std::string errstr = "unknown traversal method ";
-    throw std::invalid_argument(errstr.append(t_str));
+    error(errstr.append(t_str));
   }
 
   fmt::print("done ({} ms).\n\n", whole_t.time());
@@ -84,11 +94,11 @@ Pass_fplan_makefp::Pass_fplan_makefp(const Eprp_var& var) : Pass("pass.fplan", v
 
 void Pass_fplan_makefp::pass(Eprp_var& var) {
   if (var.lgs.size() == 0) {
-    throw std::invalid_argument("no lgraphs provided!");
+    error("no lgraphs provided!");
   }
 
   if (var.lgs.size() > 1) {
-    throw std::invalid_argument("more than one root lgraph provided!");
+    error("more than one root lgraph provided!");
   }
 
   Pass_fplan_makefp p(var);

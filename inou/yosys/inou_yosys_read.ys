@@ -14,7 +14,7 @@ hierarchy {{top}}
 {{/hierarchy}}
 
 proc
-#opt -fast
+opt -fast
 pmuxtree
 memory_dff
 memory_share
@@ -43,7 +43,7 @@ abc
 maccmap -unmap
 {{/techmap_alumacc}}
 
-#write_ilang pp.il
-#write_verilog pp.v
+write_ilang pp.il
+write_verilog pp.v
 yosys2lg -path {{path}}
 

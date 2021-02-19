@@ -17,29 +17,32 @@ private:
   pin2str_type pin2var;
   absl::flat_hash_map<Node::Compact_class, std::string> mux2vector;
 
-  inline std::string get_scaped_name(const std::string &name) const {
-    if (name.find('.') != std::string::npos) {
-       return std::string("\\") + name + " ";
+  inline static std::string get_scaped_name(const std::string &name) {
+    for(auto ch:name) {
+      if (!std::isalnum(ch) && ch != '_')
+        return std::string("\\") + name + " ";
     }
     return name;
   }
 
-  std::string get_scaped_name(std::string_view wire_name) const {
+  static std::string get_scaped_name(std::string_view wire_name) {
     std::string name{wire_name};
     return get_scaped_name(name);
   }
 
   std::string get_append_to_name(const std::string &name, std::string_view ext) const;
-  std::string get_expression(Node_pin &dpin) const;
-  std::string get_expression(Node_pin &&dpin) const {
+  std::string get_expression(const Node_pin &dpin) const;
+  std::string get_expression(const Node_pin &&dpin) const {
     return get_expression(dpin);
   }
   void add_expression(std::string &txt_seq, std::string_view txt_op, Node_pin &dpin) const;
 
+  void process_flop(std::string &buffer, Node &node);
   void process_mux(std::string &buffer, Node &node);
   void process_simple_node(std::string &buffer, Node &node);
 
   void create_module_io(std::string &buffer, LGraph *lg);
+  void create_subs(std::string &buffer, LGraph *lg);
   void create_combinational(std::string &buffer, LGraph *lg);
   void create_outputs(std::string &buffer, LGraph *lg);
   void create_registers(std::string &buffer, LGraph *lg);

@@ -22,6 +22,7 @@ private:
   std::shared_ptr<Lnast> lnast;
   std::string_view module_name;
   std::string_view path;
+  
   absl::flat_hash_map<Lnast_ntype::Lnast_ntype_int, Ntype_op>   primitive_type_lnast2lg;
   absl::flat_hash_map<std::string_view, Node_pin>               vname2attr_dpin;       // for dummy attribute node construction, vn = variable non-ssa name, dpin = last attr dpin within "any" attributes
   absl::flat_hash_map<std::string, Node_pin>                    name2dpin;             // for scalar variable
@@ -29,7 +30,8 @@ private:
   absl::flat_hash_map<std::string_view, std::vector<Node>>      driver_var2wire_nodes; // for __last_value temporarily wire nodes
   absl::flat_hash_map<Node_pin, std::vector<Node_pin>>          inp2leaf_tg_spins;
   absl::flat_hash_map<Node::Compact, absl::flat_hash_set<Node>> inp_artifacts;
-  absl::flat_hash_set<std::string_view>                         tuple_reg_name_set;
+  absl::flat_hash_set<std::string_view>                         tuple_reg_names;
+  absl::flat_hash_map<std::string_view, absl::flat_hash_set<Node>> reg_vname2attr_get_qpin_nodes;
 protected:
   void top_stmts2lgraph             (LGraph *lg, const Lnast_nid &lnidx_stmts);
   void process_ast_stmts            (LGraph *lg, const Lnast_nid &lnidx_stmts);
@@ -68,6 +70,7 @@ protected:
   void     setup_lnast_to_lgraph_primitive_type_mapping();
 
 
+  static bool is_tmp_var           (std::string_view name) {return name.substr(0,3) == "___" ;} //FIXME->sh: any other way to avoic create tmp string every time?
   static bool is_register          (std::string_view name) {return name.at(0) == '#' ; }
   static bool is_input             (std::string_view name) {return name.at(0) == '$' ; }
   static bool is_output            (std::string_view name) {return name.at(0) == '%' ; }
@@ -83,7 +86,7 @@ protected:
 
   // tuple related
   Node_pin    setup_tuple_ref           (LGraph *lg, std::string_view tup_name);
-  Node_pin    setup_ta_ref              (LGraph *lg, std::string_view tup_name, int16_t);
+  Node_pin    setup_ta_ref_previous_ssa (LGraph *lg, std::string_view tup_name, int16_t);
   Node_pin    setup_field_dpin          (LGraph *lg, std::string_view key_name);
   void        reconnect_to_ff_qpin      (LGraph *lg, const Node &tg_node);
   static bool tuple_get_has_key_name    (const Node &tup_get);

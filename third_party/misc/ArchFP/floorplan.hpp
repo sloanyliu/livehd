@@ -1,33 +1,23 @@
-/* -*- Mode: C++ ; indent-tabs-mode: nil ; c-file-style: "stroustrup" -*-
-
-   Rapid Prototyping Floorplanner Project
-   Author: Greg Faust
-
-   File:   Floorplan.hh     C++ Header file for floorplanner.
-
-*/
+#pragma once
 
 #include <iostream>
-#include <map>
 #include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_set.h"
 #include "core/cell.hpp"
 #include "node_tree.hpp"
 using namespace std;
 
-extern map<string, int> NameCounts;
-extern int              TypeCounts[];
-inline int              Type2Count(Ntype_op compType) { return ++TypeCounts[static_cast<int>(compType)]; }
-inline int              Name2Count(string arg) { return ++NameCounts[arg]; }
-string                  getStringFromInt(int in);
-void                    setNameMode(bool);
+int    Name2Count(const string& arg);
+void clearCount();
+string getStringFromInt(int in);
+void   setNameMode(bool);
 
 // Here is an enumeration for the optimazation goals for a layout manager.
-// These are barely used as the moment, as everything lays it self out in the smallest area
-//      that is closest to the desired aspect ratio.
-enum FPOptimization { Area, AspectRatio };
+// Area: optimize for smallest area (not implemented)
+// SoftAspectRatio: optimize for a given aspect ratio, but generate a legal floorplan (not implemented)
+// HardAspectRatio: optimize for a given aspect ratio, possibly forming a floorplan with gaps / overlaps
+enum FPOptimization { Area, SoftAspectRatio, HardAspectRatio };
 
 // Here is the enumeration for layout hints for the geographic layout.
 enum GeographyHint {
@@ -55,8 +45,8 @@ public:
   dummyComponent(Ntype_op typeArg);
   dummyComponent(string name);
 
-  string   getName() { return name; }
-  Ntype_op getType() { return type; }
+  string   getName() const { return name; }
+  Ntype_op getType() const { return type; }
   void     myPrint();
 };
 
@@ -98,33 +88,31 @@ public:
   int decRefCount() { return refCount -= 1; }
 
   // Allow anyone to get the values of things.
-  virtual double   getX() { return x; }
-  virtual double   getY() { return y; }
-  virtual double   getWidth() { return width; }
-  virtual double   getHeight() { return height; }
-  virtual double   getArea() { return area; }
+  virtual double   getX() const { return x; }
+  virtual double   getY() const { return y; }
+  virtual double   getWidth() const { return width; }
+  virtual double   getHeight() const { return height; }
+  virtual double   getArea() const { return area; }
   virtual double   totalArea() { return area * count; }
-  virtual bool     valid() { return x >= 0.0 && y >= 0.0 && width > 0.0 && height > 0.0; }
-  virtual string   getName() { return name; }
-  virtual Ntype_op getType() { return type; }
-  virtual int      getCount() { return count; }
-  string           getUniqueName() {
-    if (name == " " || name == "")
-      return name;
-    else
-      return name + getStringFromInt(Name2Count(name));
-  }
+  virtual bool     valid() const { return x >= 0.0 && y >= 0.0 && width > 0.0 && height > 0.0 && area > 0.0; }
+  virtual string   getName() const { return name; }
+  virtual Ntype_op getType() const { return type; }
+  virtual int      getCount() const { return count; }
+  string           getUniqueName() const;
 
   // Calculate the output position taking starting offset and mirroring.
-  double calcX(double startX);
-  double calcY(double startY);
+  double calcX(double startX) const;
+  double calcY(double startY) const;
 
   // The default  behavior for ARs is to clamp to the actual width and height.
-  virtual double        getMaxAR() { return getWidth() / getHeight(); }
-  virtual double        getMinAR() { return getMaxAR(); }
-  virtual GeographyHint getHint() { return hint; }
+  virtual double        getMaxAR() const { return getWidth() / getHeight(); }
+  virtual double        getMinAR() const { return getMaxAR(); }
+  virtual GeographyHint getHint() const { return hint; }
 
+  virtual void          setX(int newX) { x = newX; }
+  virtual void          setY(int newY) { y = newY; }
   virtual int           setCount(int newCount) { return count = newCount; }
+  virtual void          setArea(double newArea) { area = newArea; }
   virtual GeographyHint setHint(GeographyHint newHint) { return hint = newHint; }
   virtual void          setSize(double widthArg, double heightArg);
   virtual void          setLocation(double xArg, double yArg);
@@ -134,6 +122,9 @@ public:
   virtual bool         layout(FPOptimization opt, double targetAR = 1.0) = 0;
   virtual void         outputHotSpotLayout(ostream& o, double startX = 0.0, double startY = 0.0);
   virtual unsigned int outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX = 0.0, double startY = 0.0);
+
+  // find a node in tree that can be mapped to this FPObject
+  unsigned int findNode(Node_tree& tree, Tree_index tidx, double calcX, double calcY);
 };
 
 // This class is the lowest level in the component hierarchy.
@@ -160,9 +151,9 @@ public:
   FPCompWrapper(string nameArg, double xArg, double yArg, double widthArg, double heightArg);
   ~FPCompWrapper();
 
-  double          getMinAR() { return minAspectRatio; }
-  double          getMaxAR() { return maxAspectRatio; }
-  dummyComponent* getComp() { return component; }
+  double          getMinAR() const { return minAspectRatio; }
+  double          getMaxAR() const { return maxAspectRatio; }
+  dummyComponent* getComp() const { return component; }
 
   virtual bool layout(FPOptimization opt, double targetAR = 1.0);
 };
@@ -182,23 +173,21 @@ class FPContainer : public FPObject {
   //    containers will need to use the accessors.
   // In this way, we can maintain proper refcounts that can tell us
   //    when things can be deleted.
-  // int        itemCount;
   std::vector<FPObject*> items;
   void                   addComponentAtIndex(FPObject* comp, int index);
   FPObject*              removeComponentAtIndex(int index);
 
 protected:
-
   // These allow safe access to the item list.
-  int       getComponentCount() { return items.size(); }
-  FPObject* getComponent(int index) { return items[index]; }
+  int       getComponentCount() const { return items.size(); }
+  FPObject* getComponent(int index) const { return items[index]; }
   FPObject* removeComponent(int index);
   void      replaceComponent(FPObject* comp, int index);
   void      addComponentToFront(FPObject* comp);
   void      sortByArea();
 
 public:
-  FPContainer();
+  FPContainer(unsigned int rsize = 0);
   ~FPContainer();
 
   // We often need the total area of a container before it is layout out.
@@ -234,7 +223,7 @@ protected:
   void recalcSize();
 
 public:
-  bagLayout();
+  bagLayout(unsigned int rsize);
 
   bool layout(FPOptimization opt, double targetAR = 1.0);
   void outputHotSpotLayout(ostream& o, double startX = 0.0, double startY = 0.0);
@@ -260,7 +249,7 @@ class gridLayout : public FPContainer {
   int yCount;
 
 public:
-  gridLayout();
+  gridLayout(unsigned int rsize);
 
   bool                 layout(FPOptimization opt, double targetAR = 1.0);
   void                 outputHotSpotLayout(ostream& o, double startX = 0.0, double startY = 0.0);
@@ -279,13 +268,13 @@ public:
 class geogLayout : public FPContainer {
   // FPObject** centerItems;    // During layout, we will store up the center items, stick them in a bag, and lay them out last.
   // int        centerItemsCount;
-  bool layoutHelper(double targetWidth, double targetHeight, double curX, double curY, FPObject** layoutStack, int curDepth,
-                    FPObject** centerItems, int centerItemsCount);
-  
-  static void checkHint(int count, GeographyHint hint);
+  bool layoutHelper(FPOptimization opt, double targetWidth, double targetHeight, double curX, double curY, FPObject** layoutStack,
+                    int curDepth, FPObject** centerItems, int centerItemsCount);
+
+  void checkHint(int count, GeographyHint hint) const;
 
 public:
-  geogLayout();
+  geogLayout(unsigned int rsize);
 
   virtual bool      layout(FPOptimization opt, double targetAR = 1.0);
   virtual void      outputHotSpotLayout(ostream& o, double startX = 0.0, double startY = 0.0);
@@ -298,4 +287,3 @@ public:
 // Output Helper Functions.
 ostream& outputHotSpotHeader(const char* filename);
 void     outputHotSpotFooter(ostream& o);
-string   getStringFromInt(int in);

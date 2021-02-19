@@ -9,7 +9,7 @@
 using Lnast_nid                     = mmap_lib::Tree_index;
 using Phi_rtable                    = absl::flat_hash_map<std::string_view, Lnast_nid>; // rtable = resolve_table
 using Cnt_rtable                    = absl::flat_hash_map<std::string_view, int16_t>;
-using Dot_lrhs_table                = absl::flat_hash_map<Lnast_nid, std::pair<bool, Lnast_nid>>;  // for both dot and selection, dot -> (lrhs, paired opr node)
+using Selc_lrhs_table               = absl::flat_hash_map<Lnast_nid, std::pair<bool, Lnast_nid>>;  // sel -> (lrhs, paired opr node)
 using Tuple_var_1st_scope_ssa_table = absl::flat_hash_map<std::string_view, Lnast_nid>; // rtable = resolve_table
 
 
@@ -54,7 +54,6 @@ struct Lnast_node {
   CREATE_LNAST_NODE(_dp_assign)
   CREATE_LNAST_NODE(_as)
   CREATE_LNAST_NODE(_label)
-  CREATE_LNAST_NODE(_dot)
   CREATE_LNAST_NODE(_logical_and)
   CREATE_LNAST_NODE(_logical_or)
   CREATE_LNAST_NODE(_logical_not)
@@ -79,6 +78,7 @@ struct Lnast_node {
   CREATE_LNAST_NODE(_tuple_concat)
   CREATE_LNAST_NODE(_tuple_delete)
   CREATE_LNAST_NODE(_select)
+  CREATE_LNAST_NODE(_dot)
   CREATE_LNAST_NODE(_bit_select)
   CREATE_LNAST_NODE(_range)
   CREATE_LNAST_NODE(_shift_right)
@@ -102,6 +102,7 @@ private:
   std::string      source_filename;
   std::string_view memblock;
   int              memblock_fd;
+  Lnast_nid        undefined_var_nid;
 
   void      do_ssa_trans               (const Lnast_nid  &top_nid);
   void      ssa_lhs_handle_a_statement (const Lnast_nid  &psts_nid, const Lnast_nid &opr_nid);
@@ -120,45 +121,50 @@ private:
   void      resolve_ssa_lhs_subs                (const Lnast_nid &psts_nid);
   void      resolve_ssa_rhs_subs                (const Lnast_nid &psts_nid);
   void      opr_lhs_merge                       (const Lnast_nid &psts_nid);
+  void      insert_tg_q_pin_fetch               (const Lnast_nid &opr_nid);
+  void      collect_reg_hier_name_tup           (const Lnast_nid &opr_nid);
+  void      collect_reg_hier_name_ta            (const Lnast_nid &opr_nid);
   void      update_global_lhs_ssa_cnt_table     (const Lnast_nid &target_nid);
   void      respect_latest_global_lhs_ssa       (const Lnast_nid &target_nid);
   int8_t    check_rhs_cnt_table_parents_chain   (const Lnast_nid &psts_nid, const Lnast_nid &target_key);
   void      update_rhs_ssa_cnt_table            (const Lnast_nid &psts_nid, const Lnast_nid &target_key);
-  void      analyze_dot_lrhs                    (const Lnast_nid &psts_nid);
-  void      analyze_dot_lrhs_if_subtree         (const Lnast_nid &if_nid);
-  void      analyze_dot_lrhs_handle_a_statement (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
+  void      analyze_selc_lrhs                    (const Lnast_nid &psts_nid);
+  void      analyze_selc_lrhs_if_subtree         (const Lnast_nid &if_nid);
+  void      analyze_selc_lrhs_handle_a_statement (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
   void      insert_implicit_dp_parent           (const Lnast_nid &opr_nid);
 
-  bool      is_special_case_of_dot_rhs       (const Lnast_nid &psts_nid,  const Lnast_nid &opr_nid);
+  bool      is_special_case_of_sel_rhs       (const Lnast_nid &psts_nid,  const Lnast_nid &opr_nid);
   void      ssa_rhs_handle_a_operand         (const Lnast_nid &gpsts_nid, const Lnast_nid &opd_nid); //gpsts = grand parent
   void      ssa_rhs_handle_a_operand_special (const Lnast_nid &gpsts_nid, const Lnast_nid &opd_nid);
 
   // tuple operator process
-  void      trans_tuple_opr                    (const Lnast_nid &pats_nid); // from dot/sel to tuple_add/get
+  void      trans_tuple_opr                    (const Lnast_nid &pats_nid); // from sel to tuple_add/get
   void      trans_tuple_opr_if_subtree         (const Lnast_nid &if_nid);
   void      trans_tuple_opr_handle_a_statement (const Lnast_nid &pats_nid, const Lnast_nid &opr_nid);
   bool      check_tuple_table_parents_chain    (const Lnast_nid &psts_nid, std::string_view ref_name);
-  void      dot2local_tuple_chain              (const Lnast_nid &pats_nid, Lnast_nid &dot_nid);
+  void      sel2local_tuple_chain              (const Lnast_nid &pats_nid, Lnast_nid &sel_nid);
   void      merge_tconcat_paired_assign        (const Lnast_nid &psts_nid, const Lnast_nid &concat_nid);
   void      rename_to_real_tuple_name          (const Lnast_nid &psts_nid, const Lnast_nid &tup_nid);
   void      find_cond_nid                      (const Lnast_nid &psts_nid, Lnast_nid &cond_nid, bool &is_else_sts);
   bool      is_attribute_related               (const Lnast_nid &opr_nid);
-  void      dot2attr_set_get                   (const Lnast_nid &psts_nid, Lnast_nid &opr_nid);
+  void      sel2attr_set_get                   (const Lnast_nid &psts_nid, Lnast_nid &opr_nid);
   void      update_tuple_var_table             (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
-  bool      update_tuple_var_1st_scope_ssa_table (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
-  bool      check_tuple_var_1st_scope_ssa_table_parents_chain (const Lnast_nid &psts_nid, std::string_view ref_name);
+  bool      update_tuple_var_1st_scope_ssa_table (const Lnast_nid &psts_nid, const Lnast_nid &target_nid);
+  bool      check_tuple_var_1st_scope_ssa_table_parents_chain (const Lnast_nid &psts_nid, std::string_view ref_name, const Lnast_nid &src_if_nid);
   void      merge_hierarchical_attr_set        (Lnast_nid &opr_nid);
   void      collect_hier_tuple_nids            (Lnast_nid &opr_nid, std::stack<Lnast_nid> &stk_tuple_fields); 
 
   // hierarchical statements node -> symbol table
   absl::flat_hash_map<Lnast_nid, Phi_rtable>       phi_resolve_tables;
   absl::flat_hash_map<Lnast_nid, Cnt_rtable>       ssa_rhs_cnt_tables;
-  absl::flat_hash_map<Lnast_nid, Dot_lrhs_table>   dot_lrhs_tables;
+  absl::flat_hash_map<Lnast_nid, Selc_lrhs_table>  selc_lrhs_tables;
   absl::flat_hash_map<Lnast_nid, Phi_rtable>       new_added_phi_node_tables; // for each if-subtree scope
   absl::flat_hash_set<std::string_view>            tuplized_table;
   absl::flat_hash_map<std::string_view, Lnast_nid> candidates_update_phi_resolve_table;
   absl::flat_hash_map<std::string_view, int16_t>   global_ssa_lhs_cnt_table;
   absl::flat_hash_map<Lnast_nid, Phi_rtable>       tuple_var_1st_scope_ssa_tables; // for chaining parent tuple-chain and local tuple chain, only record the first tuple variable appeared in each local scope
+  absl::flat_hash_set<std::string>                 collected_hier_tuple_reg_name; 
+
 
   // populated during LG->LN pass, maps name -> bitwidth
   absl::flat_hash_map<std::string, uint32_t> from_lgraph_bw_table;
@@ -187,8 +193,10 @@ public:
   std::string_view get_top_module_name() const { return top_module_name; }
   std::string_view get_source() const { return source_filename; }
 
-  bool             is_lhs    (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
-  bool             is_reg    (std::string_view name) { return name.at(0) == '#'; }
+  bool             is_lhs       (const Lnast_nid &psts_nid, const Lnast_nid &opr_nid);
+  bool             is_register  (std::string_view name) { return name.at(0) == '#'; }
+  bool             is_output    (std::string_view name) { return name.at(0) == '%'; }
+  bool             is_input     (std::string_view name) { return name.at(0) == '$'; }
   std::string_view get_name  (const Lnast_nid &nid)  { return get_data(nid).token.get_text(); }
   std::string_view get_vname (const Lnast_nid &nid)  { return get_data(nid).token.get_text(); } //better expression for LGraph passes
   Lnast_ntype      get_type  (const Lnast_nid &nid)  { return get_data(nid).type; }

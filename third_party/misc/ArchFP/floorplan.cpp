@@ -1,21 +1,14 @@
-/* -*- Mode: C ; indent-tabs-mode: nil ; c-file-style: "stroustrup" -*-
-
-   Rapid Prototyping Floorplanner Project
-   Author: Greg Faust
-
-   File:   Floorplan.cc    Code for Floorplanner classes.
-
-*/
-
 #include "floorplan.hpp"
 
 #include <cassert>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <limits>  // for max double value
 #include <sstream>
 #include <stdexcept>
 
+#include "absl/container/flat_hash_map.h"
 #include "ann_place.hpp"
 #include "core/lgedgeiter.hpp"
 #include "mathutil.hpp"
@@ -34,9 +27,11 @@ static bool   yReflect     = false;
 static double yBottom[maxMirrorDepth];
 static double yTop[maxMirrorDepth];
 static int    yMirrorDepth = 0;
-static bool   printNames   = true;
 
-void setNameMode(bool flag) { printNames = flag; }
+absl::flat_hash_map<string, int> NameCounts;
+
+int  Name2Count(const string& arg) { return ++NameCounts[arg]; }
+void clearCount() { NameCounts.clear(); }
 
 void FPContainer::pushMirrorContext(double startX, double startY) {
   if (xMirror) {
@@ -68,21 +63,19 @@ void FPContainer::popMirrorContext() {
   }
 }
 
-inline double FPObject::calcX(double startX) {
+double FPObject::calcX(double startX) const {
   if (xReflect) {
     return xLeft[xMirrorDepth - 1] - (startX + x - xRight[xMirrorDepth - 1] + width);
   } else
     return startX + x;
 }
 
-inline double FPObject::calcY(double startY) {
+double FPObject::calcY(double startY) const {
   if (yReflect) {
     return yTop[yMirrorDepth - 1] - (startY + y - yBottom[yMirrorDepth - 1] + height);
   } else
     return startY + y;
 }
-
-map<string, int> NameCounts;
 
 // Methods for the dummy component class to help with some IO.
 ostream& operator<<(ostream& s, dummyComponent& c) {
@@ -133,44 +126,15 @@ void FPObject::setLocation(double xArg, double yArg) {
 }
 
 void FPObject::outputHotSpotLayout(ostream& o, double startX, double startY) {
-  string uname = (printNames) ? getUniqueName() : " ";
-
-  o << uname << "\t" << getWidth() / 1000 << "\t" << getHeight() / 1000 << "\t" << calcX(startX) / 1000 << "\t"
+  o << getUniqueName() << "\t" << getWidth() / 1000 << "\t" << getHeight() / 1000 << "\t" << calcX(startX) / 1000 << "\t"
     << calcY(startY) / 1000 << "\n";
 }
 
-unsigned int FPObject::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
-  bool found = false;
-
-  Tree_index child_idx = tree.get_first_child(tidx);
-  while (child_idx != tree.invalid_index()) {
-    Node* child = tree.ref_data(child_idx);
-
-    // fmt::print("testing child node {} with parent hier ({}, {})\n", child->debug_name(), child->get_hidx().level,
-    // child->get_hidx().pos);
-    if (child->get_type_op() != getType() || child->get_hier_color() == 1) {
-      child_idx = tree.get_sibling_next(child_idx);
-      continue;
-    }
-
-    found = true;
-    if (verbose) {
-      fmt::print("assigning child node {} to parent hier ({}, {})\n",
-                 child->debug_name(),
-                 child->get_hidx().level,
-                 child->get_hidx().pos);
-    }
-
-    Ann_place p(calcX(startX), calcY(startY), getWidth() / 1000, getHeight() / 1000);
-    child->set_place(p);
-    child->set_hier_color(1);
-
-    break;
-  }
-
-  assert(found);
-
-  return 1;
+string FPObject::getUniqueName() const {
+  if (name == " " || name == "")
+    return name;
+  else
+    return name + std::to_string(Name2Count(name));
 }
 
 // Methods for the FPWrapper class.
@@ -209,14 +173,21 @@ double FPCompWrapper::ARInRange(double AR) {
   double minAR  = getMinAR();
   double retval = AR;
   if (maxAR < 1) {
-    retval = MIN(retval, minAR);
-    retval = MAX(retval, maxAR);
+    assert(false);  // should never happen?
+    // retval = std::min(retval, minAR);
+    // retval = std::max(retval, maxAR);
   } else {
-    retval = MAX(retval, minAR);
-    retval = MIN(retval, maxAR);
+    retval = std::max(retval, minAR);
+    retval = std::min(retval, maxAR);
   }
   if (verbose)
     cout << "Target AR=" << AR << " minAR=" << minAR << " maxAR=" << maxAR << " returnAR=" << retval << "\n";
+
+  if (AR < minAR || AR > maxAR) {
+    cerr << "WARNING: requested AR " << AR << " is outside legal range (" << minAR << ", " << maxAR << "), using " << retval << "."
+         << endl;
+  }
+
   return retval;
 }
 
@@ -226,6 +197,12 @@ void FPCompWrapper::flip() {
   height         = temp;
   minAspectRatio = 1 / minAspectRatio;
   maxAspectRatio = 1 / maxAspectRatio;
+
+  if (minAspectRatio > maxAspectRatio) {
+    double temp    = minAspectRatio;
+    minAspectRatio = maxAspectRatio;
+    maxAspectRatio = temp;
+  }
 }
 
 bool FPCompWrapper::layout(FPOptimization opt, double ratio) {
@@ -243,7 +220,9 @@ bool FPCompWrapper::layout(FPOptimization opt, double ratio) {
 // Methods for the FPcontainer class.
 
 // Default constructor
-FPContainer::FPContainer() : items(), yMirror(false), xMirror(false) {}
+FPContainer::FPContainer(unsigned int rsize) : items(), yMirror(false), xMirror(false) {
+  items.reserve(rsize);  // avoid many memory reallocations due to vector resizing, if possible
+}
 
 FPContainer::~FPContainer() {
   // It's very important to only delete items when their refcount hits zero.
@@ -350,9 +329,7 @@ void FPContainer::sortByArea() {
   }
 }
 
-// TODO.  Should this store the area in itself when done, or leave alone?
 double FPContainer::totalArea() {
-  // if (area != 0) return area;
   area          = 0;
   int itemCount = getComponentCount();
   for (int i = 0; i < itemCount; i++) {
@@ -363,13 +340,50 @@ double FPContainer::totalArea() {
   return area;
 }
 
-static unsigned int findNode(FPObject* obj, Node_tree& tree, Tree_index tidx, double calcX, double calcY) {
-  Ntype_op t = obj->getType();
+unsigned int FPObject::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
+  bool found = false;
+
+  // Tree_index child_idx = tree.get_first_child(tidx);
+  Tree_index child_idx = tree.get_last_free(tidx, getType());
+  while (child_idx != tree.invalid_index()) {
+    Node* child = tree.ref_data(child_idx);
+
+    // fmt::print("testing child node {} with parent hier ({}, {})\n", child->debug_name(), child->get_hidx().level,
+    // child->get_hidx().pos);
+    if (child->get_type_op() != getType() || child->has_place()) {
+      child_idx = tree.get_sibling_next(child_idx);
+      continue;
+    }
+
+    found = true;
+    if (verbose) {
+      fmt::print("assigning child node {} to parent hier ({}, {})\n",
+                 child->debug_name(),
+                 child->get_hidx().level,
+                 child->get_hidx().pos);
+    }
+
+    Ann_place p(calcX(startX), calcY(startY), getWidth(), getHeight());
+    child->set_place(p);
+    child->set_name(Ntype::get_name(getType()));
+
+    tree.set_last_free(tidx, getType(), child_idx);
+
+    break;
+  }
+
+  assert(found);
+
+  return 1;
+}
+
+unsigned int FPObject::findNode(Node_tree& tree, Tree_index tidx, double cX, double cY) {
+  Ntype_op t = getType();
 
   unsigned int count;
 
   if (Ntype::is_synthesizable(t)) {  // leaf node - current hier structure is fine
-    count = obj->outputLGraphLayout(tree, tidx, calcX, calcY);
+    count = outputLGraphLayout(tree, tidx, cX, cY);
   } else if (t == Ntype_op::Sub) {  // Sub node - parameters need to be adjusted
 
     bool found = false;
@@ -378,14 +392,14 @@ static unsigned int findNode(FPObject* obj, Node_tree& tree, Tree_index tidx, do
     while (child_idx != tree.invalid_index()) {
       auto child = tree.ref_data(child_idx);
 
-      if (!child->is_type_sub_present() || child->get_hier_color() == 1) {
+      if (!child->is_type_sub_present() || child->has_place()) {
         child_idx = tree.get_sibling_next(child_idx);
         continue;
       }
 
       LGraph* child_lg = LGraph::open(tree.get_root_lg()->get_path(), child->get_type_sub());
 
-      if (child_lg->get_name() != obj->getName()) {
+      if (child_lg->get_name() != getName()) {
         child_idx = tree.get_sibling_next(child_idx);
         continue;
       }
@@ -394,11 +408,12 @@ static unsigned int findNode(FPObject* obj, Node_tree& tree, Tree_index tidx, do
       // child->get_hidx().pos);
 
       // write placement information to subnode as well
-      Ann_place p(obj->calcX(calcY), obj->calcY(calcY), obj->getWidth() / 1000, obj->getHeight() / 1000);
+      Ann_place p(calcX(cX), calcY(cY), getWidth(), getHeight());
 
       child->set_place(p);
-      child->set_hier_color(1);
-      count = obj->outputLGraphLayout(tree, child_idx, calcX, calcY);
+      child->set_name(getUniqueName());
+
+      count = outputLGraphLayout(tree, child_idx, cX, cY);
       found = true;
 
       break;
@@ -406,9 +421,8 @@ static unsigned int findNode(FPObject* obj, Node_tree& tree, Tree_index tidx, do
 
     assert(found);
   } else if (t == Ntype_op::Invalid) {  // specific kind of layout - current hier structure is fine
-    count = obj->outputLGraphLayout(tree, tidx, calcX, calcY);
+    count = outputLGraphLayout(tree, tidx, cX, cY);
   } else {
-    fmt::print("???\n");
     assert(false);
   }
 
@@ -422,7 +436,7 @@ unsigned int FPContainer::outputLGraphLayout(Node_tree& tree, Tree_index tidx, d
 
   for (int i = 0; i < getComponentCount(); i++) {
     FPObject* obj = getComponent(i);
-    total += findNode(obj, tree, tidx, x + startX, y + startY);
+    total += obj->findNode(tree, tidx, x + startX, y + startY);
   }
 
   popMirrorContext();
@@ -431,7 +445,7 @@ unsigned int FPContainer::outputLGraphLayout(Node_tree& tree, Tree_index tidx, d
 }
 
 // Methods for the GridLayout class.
-gridLayout::gridLayout() : FPContainer() {
+gridLayout::gridLayout(unsigned int rsize) : FPContainer(rsize) {
   type = Ntype_op::Invalid;
   name = "Grid";
 }
@@ -470,7 +484,7 @@ bool gridLayout::layout(FPOptimization opt, double targetAR) {
   // Now layout whatever is below us.
   // We need to set the count to 1 to avoid double counting area.
   obj->setCount(1);
-  obj->layout(AspectRatio, ratio);
+  obj->layout(opt, ratio);
   assert(obj->valid());
   obj->setCount(total);
   double compWidth  = obj->getWidth();
@@ -501,10 +515,10 @@ void gridLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
 
   int    compCount = xCount * yCount;
   string GridName  = getUniqueName();
-  o << "# Start of " << GridName << " Layout of type " << Ntype::get_name(getType()) << ".  There are " << compCount
-    << " components in a " << xCount << " by " << yCount << " grid.\n";
-  o << "# Total Grid Stats: X=" << calcX(startX) << " Y=" << calcY(startY) << " W=" << width << "mm H=" << height
-    << "mm Area=" << area << "mm^2\n";
+  o << "# " << GridName << " stats: X=" << calcX(startX) << ", Y=" << calcY(startY) << ", W=" << width << ", H=" << height
+    << ", area=" << area << "mm²\n";
+  o << "# start " << GridName << " " << Ntype::get_name(getType()) << " grid " << compCount << " " << xCount << " " << yCount
+    << "\n";
   int compNum = 1;
   for (int i = 0; i < yCount; i++) {
     double cy = (i * compHeight) + y + startY;
@@ -514,7 +528,7 @@ void gridLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
       compNum += 1;
     }
   }
-  o << "# End of " << GridName << " Layout.\n";
+  o << "# end " << GridName << "\n";
 }
 
 unsigned int gridLayout::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
@@ -540,7 +554,7 @@ unsigned int gridLayout::outputLGraphLayout(Node_tree& tree, Tree_index tidx, do
     for (int j = 0; j < xCount; j++) {
       double cx = (j * compWidth) + x + startX;
 
-      total += findNode(obj, tree, tidx, cx, cy);
+      total += obj->findNode(tree, tidx, cx, cy);
 
       compNum += 1;
     }
@@ -550,14 +564,13 @@ unsigned int gridLayout::outputLGraphLayout(Node_tree& tree, Tree_index tidx, do
 }
 
 // Methods for Baglayout Class
-bagLayout::bagLayout() : FPContainer() {
+bagLayout::bagLayout(unsigned int rsize) : FPContainer(rsize) {
   type   = Ntype_op::Invalid;
   name   = "Bag";
   locked = false;
 }
 
 bool bagLayout::layout(FPOptimization opt, double targetAR) {
-  (void)opt;
   // If we are locked, don't layout.
   if (locked)
     return true;
@@ -588,12 +601,12 @@ bool bagLayout::layout(FPOptimization opt, double targetAR) {
         = (remWidth > remHeight || i == itemCount - 1) ? (compArea / remHeight) / remHeight : remWidth / (compArea / remWidth);
     if (comp->getCount() > 1) {
       // We have more than one component of the same type, so let the grid layout do the work.
-      gridLayout* GL = new gridLayout();
+      gridLayout* GL = new gridLayout(1);
       GL->addComponent(comp);
       replaceComponent(GL, i);
       comp = GL;
     }
-    comp->layout(AspectRatio, AR);
+    comp->layout(opt, AR);
     assert(comp->valid());
     // Now we have the final component, we can set the location.
     comp->setLocation(nextX, nextY);
@@ -628,8 +641,8 @@ void bagLayout::recalcSize() {
   height = 0;
   for (int i = 0; i < getComponentCount(); i++) {
     FPObject* comp = getComponent(i);
-    width          = MAX(width, comp->getX() + comp->getWidth());
-    height         = MAX(height, comp->getY() + comp->getHeight());
+    width          = std::max(width, comp->getX() + comp->getWidth());
+    height         = std::max(height, comp->getY() + comp->getHeight());
   }
   area = width * height;
 }
@@ -640,17 +653,16 @@ void bagLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
   string groupName;
   if (itemCount != 1) {
     groupName = getUniqueName();
-    o << "# Start of " << groupName << " layout of type " << Ntype::get_name(getType()) << " (" << getComponentCount()
-      << " items).\n";
-    o << "# Total Group Stats: X=" << calcX(startX) << " Y=" << calcY(startY) << " W=" << width << "mm H=" << height
-      << "mm Area=" << area << "mm^2\n";
+    o << "# " << groupName << " stats: X=" << calcX(startX) << ", Y=" << calcY(startY) << ", W=" << width << ", H=" << height
+      << ", area=" << area << "mm²\n";
+    o << "# start " << groupName << " " << Ntype::get_name(getType()) << " bag " << itemCount << "\n";
   }
   for (int i = 0; i < getComponentCount(); i++) {
     FPObject* obj = getComponent(i);
     obj->outputHotSpotLayout(o, x + startX, y + startY);
   }
   if (itemCount != 1)
-    o << "# End of " << groupName << " Layout.\n";
+    o << "# end " << groupName << "\n";
   popMirrorContext();
 }
 
@@ -664,7 +676,7 @@ void fixedLayout::morph(double xFactor, double yFactor) {
 
 // This will read in a hotspot file, and create a bag layout that is locked.
 // NOTE: In general, the layout method on a bag layout manager would not have been able to create the resultant layout.
-fixedLayout::fixedLayout(const char* filename, double scalingFactor) : bagLayout() {
+fixedLayout::fixedLayout(const char* filename, double scalingFactor) : bagLayout(1) {
   locked = true;
 
   ifstream in(filename);
@@ -703,12 +715,12 @@ fixedLayout::fixedLayout(const char* filename, double scalingFactor) : bagLayout
 
   // Let's find out if the baseline x,y positions are at 0, 0.
   // If not, renormalize all the locations.
-  double minX = 2000000000;
-  double minY = 2000000000;
+  double minX = std::numeric_limits<double>::max();
+  double minY = std::numeric_limits<double>::max();
   for (int i = 0; i < getComponentCount(); i++) {
     FPObject* comp = getComponent(i);
-    minX           = MIN(minX, comp->getX());
-    minY           = MIN(minY, comp->getY());
+    minX           = std::min(minX, comp->getX());
+    minY           = std::min(minY, comp->getY());
   }
   if (minX != 0.0 || minY != 0) {
     for (int i = 0; i < getComponentCount(); i++) {
@@ -740,13 +752,13 @@ bool fixedLayout::layout(FPOptimization opt, double targetAR) {
 }
 
 // Geographic Layout.
-geogLayout::geogLayout() : FPContainer() {
+geogLayout::geogLayout(unsigned int rsize) : FPContainer(rsize) {
   type = Ntype_op::Invalid;
   name = "Geog";
 }
 
 // some geography hints only work with certain numbers of items
-void geogLayout::checkHint(int count, GeographyHint hint) {
+void geogLayout::checkHint(int count, GeographyHint hint) const {
   if ((hint == LeftRight || hint == LeftRightMirror || hint == LeftRight180 || hint == TopBottom || hint == TopBottomMirror
        || hint == TopBottom180)
       && count != 2) {
@@ -778,8 +790,6 @@ FPObject* geogLayout::addComponentCluster(string name, int count, double area, d
 }
 
 bool geogLayout::layout(FPOptimization opt, double targetAR) {
-  (void)opt;
-
   // All this routine does is set up some data structures,
   //   and then call the helper to recursively do the layout work.
   // We will keep track of containers we make in a "stack".
@@ -802,7 +812,7 @@ bool geogLayout::layout(FPOptimization opt, double targetAR) {
     cout << "In geogLayout for " << getName() << ".  A=" << area << " W=" << remWidth << " H=" << remHeight << "\n";
 
   // Now do the real work.
-  bool retval = layoutHelper(remWidth, remHeight, 0, 0, layoutStack, 0, centerItems, 0);
+  bool retval = layoutHelper(opt, remWidth, remHeight, 0, 0, layoutStack, 0, centerItems, 0);
 
   // By now, the item list should be empty.
   if (getComponentCount() != 0) {
@@ -821,8 +831,8 @@ bool geogLayout::layout(FPOptimization opt, double targetAR) {
     if (!comp)
       break;
     FPContainer::addComponent(comp);
-    width  = MAX(width, comp->getX() + comp->getWidth());
-    height = MAX(height, comp->getY() + comp->getHeight());
+    width  = std::max(width, comp->getX() + comp->getWidth());
+    height = std::max(height, comp->getY() + comp->getHeight());
   }
   area = width * height;
 
@@ -832,8 +842,8 @@ bool geogLayout::layout(FPOptimization opt, double targetAR) {
   return retval;
 }
 
-bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, double curY, FPObject** layoutStack, int curDepth,
-                              FPObject** centerItems, int centerItemsCount) {
+bool geogLayout::layoutHelper(FPOptimization opt, double remWidth, double remHeight, double curX, double curY,
+                              FPObject** layoutStack, int curDepth, FPObject** centerItems, int centerItemsCount) {
   int itemCount = getComponentCount();
   // Check for the end of the recursion.
   if (itemCount == 0 && centerItemsCount == 0)
@@ -846,7 +856,7 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
     // We will do this by finding the GCD of the counts in the collection of components.
     int gcd = centerItems[0]->getCount();
     for (int i = 1; i < centerItemsCount; i++) gcd = GCD(gcd, centerItems[i]->getCount());
-    bagLayout* BL = new bagLayout();
+    bagLayout* BL = new bagLayout(centerItemsCount);
     for (int i = 0; i < centerItemsCount; i++) {
       FPObject* item = centerItems[i];
       BL->addComponent(item, item->getCount() / gcd);
@@ -860,13 +870,13 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
     FPContainer* FPLayout = BL;
     if (gcd > 1) {
       // Put the bag container into a grid container and lay it out.
-      gridLayout* GL = new gridLayout();
+      gridLayout* GL = new gridLayout(1);
       GL->addComponent(BL, gcd);
       FPLayout = GL;
     }
     // Not sure if we need to set the hint, but when I missed this for the grid below, it was a bug.
     FPLayout->setHint(Center);
-    FPLayout->layout(AspectRatio, targetAR);
+    FPLayout->layout(opt, targetAR);
     assert(FPLayout->valid());
     if (verbose)
       cout << "Laying out Center item(s).  Current x and y are(" << curX << "," << curY << ")\n";
@@ -886,7 +896,7 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
   if (compHint == Center) {
     centerItems[centerItemsCount] = comp;
     centerItemsCount += 1;
-    layoutHelper(remWidth, remHeight, curX, curY, layoutStack, curDepth, centerItems, centerItemsCount);
+    layoutHelper(opt, remWidth, remHeight, curX, curY, layoutStack, curDepth, centerItems, centerItemsCount);
   }
 
   if (compHint == LeftRight || compHint == TopBottom || compHint == LeftRightMirror || compHint == TopBottomMirror
@@ -901,8 +911,8 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
     if (comp->getCount() % 2 == 0) {
       int newCount = comp->getCount() / 2;
       comp->setCount(newCount);
-      bagLayout* BL1 = new bagLayout();
-      bagLayout* BL2 = new bagLayout();
+      bagLayout* BL1 = new bagLayout(1);
+      bagLayout* BL2 = new bagLayout(1);
       BL1->addComponent(comp);
       BL2->addComponent(comp);
       if (compHint == LeftRight || compHint == LeftRightMirror || compHint == LeftRight180) {
@@ -934,7 +944,9 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
   if (compHint == Left || compHint == Top || compHint == Right || compHint == Bottom) {
     // Stuff the comp into a grid, and see if we can layout it out in the desired shape.
     // TODO TODO This assumes a component has an area.  For a container, it will not have an area until it gets layed out.
+
     double totalArea = comp->totalArea();
+    assert(totalArea > 0);
 
     if (verbose)
       cout << "In geog for " << comp->getName() << ", total component area=" << totalArea << "\n";
@@ -962,12 +974,12 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
     double    targetAR = targetWidth / targetHeight;
     FPObject* FPLayout = comp;
     if (comp->getCount() > 1) {
-      gridLayout* grid = new gridLayout();
+      gridLayout* grid = new gridLayout(1);
       grid->addComponent(comp);
       grid->setHint(compHint);
       FPLayout = grid;
     }
-    FPLayout->layout(AspectRatio, targetAR);
+    FPLayout->layout(opt, targetAR);
     assert(FPLayout->valid());
     FPLayout->setLocation(curX, curY);
     // Put the layout on the stack.
@@ -976,14 +988,13 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
       remWidth -= FPLayout->getWidth();
     else if (compHint == Top || compHint == Bottom)
       remHeight -= FPLayout->getHeight();
-    layoutHelper(remWidth, remHeight, newX, newY, layoutStack, curDepth + 1, centerItems, centerItemsCount);
+    layoutHelper(opt, remWidth, remHeight, newX, newY, layoutStack, curDepth + 1, centerItems, centerItemsCount);
   } else if (compHint != Center) {
     cerr << "Hint is not any of the recognized hints.  Hint=" << compHint << "\n";
     cerr << "Component is of type " << Ntype::get_name(comp->getType()) << "\n";
   }
 
-  // TODO Here is where we should do bottom up fixups!!
-  // For now the only recourse is to try more AR flex in components and relayout.
+  // TODO: fixups here?
 
   return true;
 }
@@ -991,15 +1002,14 @@ bool geogLayout::layoutHelper(double remWidth, double remHeight, double curX, do
 void geogLayout::outputHotSpotLayout(ostream& o, double startX, double startY) {
   pushMirrorContext(startX, startY);
   string layoutName = getUniqueName();
-  o << "# Start of " << layoutName << " Layout of type " << Ntype::get_name(getType()) << " (" << getComponentCount()
-    << " items).\n";
-  o << "# Total Cluster Stats: X=" << calcX(startX) << " Y=" << calcY(startY) << " W=" << width << "mm H=" << height
-    << "mm Area=" << area << "mm^2\n";
+  o << "# " << layoutName << " stats: X=" << calcX(startX) << ", Y=" << calcY(startY) << ", W=" << width << ", H=" << height
+    << ", area=" << area << "mm²\n";
+  o << "# start " << layoutName << " " << Ntype::get_name(getType()) << " geog " << getComponentCount() << "\n";
   for (int i = 0; i < getComponentCount(); i++) {
     FPObject* obj = getComponent(i);
     obj->outputHotSpotLayout(o, x + startX, y + startY);
   }
-  o << "# End of " << layoutName << " Layout.\n";
+  o << "# end " << layoutName << "\n";
   popMirrorContext();
 }
 
@@ -1013,6 +1023,7 @@ ostream& outputHotSpotHeader(const char* filename) {
   out << "# FloorPlan output from ArchFP: UVA's Rapid Prototyping FloorPlanner.\n";
   out << "# Formatted for Input to HotSpot.\n";
   out << "# Line Format: <unit-name>\\t<width>\\t<height>\\t<left-x>\\t<bottom-y>\n";
+  out << "# Module Format: <start/end>\\t<name>\\t<type>\\t<items>\\t<grid width (if grid)>\\t<grid height (if grid)>\n";
   out << "# all dimensions are in meters\n";
   out << "# comment lines begin with a '#'\n";
   out << "# comments and empty lines are ignored\n\n";
@@ -1020,14 +1031,4 @@ ostream& outputHotSpotHeader(const char* filename) {
   return out;
 }
 
-void outputHotSpotFooter(ostream& o) {
-  // We don't need to close, as the destructor will do the close for us.
-  // o.close();
-  delete (&o);
-}
-
-string getStringFromInt(int in) {
-  stringstream ss;
-  ss << in;
-  return ss.str();
-}
+void outputHotSpotFooter(ostream& o) { delete (&o); }

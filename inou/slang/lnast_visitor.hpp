@@ -20,11 +20,13 @@ protected:
   std::unique_ptr<Lnast> lnast = std::make_unique<Lnast>("module_name_here", "some_file");
 
   // std::unique_ptr<Lnast> lnast;
-  std::vector<std::string> verilogList;
+
+
+  enum operators { AND, OR, XOR, NOT, PLUS, MINUS, MULT, DIV, MOD};
+  std::vector<operators> verilogList;
   std::vector<std::string> operandList;
   std::vector<std::string> tmpList;
-
-  enum operators { AND, OR, XOR, NOT };
+  void addLnast(const mmap_lib::Tree_index& idx_stmts, operators List, int count, int& first, int& tmp_flag, int& not_flag, int& last_op);
 
 public:
   static inline std::vector<std::unique_ptr<Lnast>> parsed_lnasts;
@@ -64,7 +66,6 @@ public:
     visitDefault(symbol);
     return true;
   }
-
   void handle(const slang::ExplicitImportSymbol& symbol);
   void handle(const slang::WildcardImportSymbol& symbol);
   void handle(const slang::IntegerLiteral& expr);
@@ -78,3 +79,5 @@ public:
   void handle(const slang::InstanceSymbol& symbol);
   void handle(const slang::GenerateBlockSymbol& symbol);
 };
+
+void slang_tree(const slang::RootSymbol &root);

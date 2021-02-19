@@ -1,0 +1,19 @@
+pick = #reg.foo.bar
+
+if (pick == 9) {
+  %out = 12
+}
+
+
+// #reg = (a = 1, b = 2)
+#reg.foo.bar = 55
+#reg.foo.bar = 56
+
+
+poke = #reg.baz
+#reg.baz = 57
+
+%out2 = #reg.foo.bar.__q_pin
+%out3 = #reg.baz.__q_pin
+%out4 = pick
+

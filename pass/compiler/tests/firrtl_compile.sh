@@ -20,23 +20,20 @@ Shifts PlusAnd MaxN ByteSelector Darken HiLoMultiplier SimpleALU Mul
 VecShiftRegisterParam VecShiftRegisterSimple ' 
 
 # pts_hifirrtl_todo='
-# 
-# VendingMachineSwitch VendingMachine'
-
 # passed hifirrtl pattern pool
-pts='PlusAnd Test2 EnableShiftRegister MaxN SingleEvenFilter Coverage Counter
-Decrementer SubModule BundleConnect LogShifter Adder4 Xor6Thread2
-XorSelfThread1 ByteSelector SimpleALU Mux4 Max2 ResetShiftRegister
-Parity RegisterSimple Register RegXor AddNot GCD_3bits Flop Test3 TrivialAdd
-NotAnd Trivial Tail TrivialArith Shifts Darken HiLoMultiplier Accumulator
+pts='EnableShiftRegister Flop Cell_alone MaxN PlusAnd Test2 SingleEvenFilter
+Coverage Counter Decrementer SubModule BundleConnect LogShifter Adder4
+Xor6Thread2 XorSelfThread1 ByteSelector SimpleALU Mux4 Max2 ResetShiftRegister
+Parity RegisterSimple Register RegXor GCD_3bits Test3 TrivialAdd
+Accumulator AddNot HiLoMultiplier Darken Shifts NotAnd TrivialArith Tail Trivial
 LFSR16 VendingMachine VendingMachineSwitch'  
 
-pts_hang='Cell_alone'
 pts_wait_verilog_large_mux_code_gen='Mul Test6 Test1'
 
-# pts='Cell_alone'
+# pts='Test1'
 # pts='Life'
-#pts='VecShiftRegister'
+pts='VecShiftRegister'
+# pts=''
 # pts='VecShiftRegisterParam'
 # pts='VecShiftRegisterSimple '
 # pts='VecSearch '
@@ -125,11 +122,11 @@ firrtl_test() {
     fi
   done
 
-  rm -f *.v
-  rm -f *.dot
-  rm -f *.tcl
-  rm -f lgcheck*
-  rm -rf lgdb
+  # rm -f *.v
+  # rm -f *.dot
+  # rm -f *.tcl
+  # rm -f lgcheck*
+  # rm -rf lgdb
 }
 
 firrtl_test "$pts"
