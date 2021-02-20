@@ -269,6 +269,7 @@ public:
   // Need a wrapper to call this func and put it in a vIter
   [[nodiscard]] bool efind(T &&ele) {
     // finding the correct bitmap to get
+    std::cout << "efind() ran" << std::endl;
     const auto p = ele / (sizeof(T) * 8);
     const auto i = ele % (sizeof(T) * 8);
 
@@ -281,6 +282,7 @@ public:
   }
 
   [[nodiscard]] bool efind(const T &&ele) {
+    std::cout << "efind() ran" << std::endl;
     const auto p = ele / (sizeof(T) * 8);
     const auto i = ele % (sizeof(T) * 8);
 
@@ -383,7 +385,7 @@ public:
         std::cout << "in first if" << std::endl;
         while (!(owner.efind(iData+1))) { //<--- issue is in efind() xD
           ++iData;
-          std::cout << "in while" << std::endl;
+          std::cout << "in while()" << std::endl;
         }
         ++iData;
       } else if (iData == owner.get_max()) {

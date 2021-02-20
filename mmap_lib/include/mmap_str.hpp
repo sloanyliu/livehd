@@ -9,8 +9,6 @@
 #include "mmap_map.hpp"
 
 
-#include "mmap_map.hpp"
-
 namespace mmap_lib {
 
 class str {
@@ -47,13 +45,13 @@ protected:
   std::array<char, 10> e;             // last 10 "special <128" characters ending the string
   uint16_t             _size;         // 2 bytes
   //int                  map_key;
-  using Map = mmap_lib::map<uint32_t, uint32_t>;
-  static Map              string_map;
-  static std::vector<int> string_vector;
+  //using Map = typename mmap_lib::map<uint32_t, uint32_t>;
 
   constexpr bool is_digit(char c) const { return c >= '0' && c <= '9'; }
 
 public:
+  mmap_lib::map<uint32_t, uint32_t> string_map;
+  inline static std::vector<int> string_vector;
   // Must be constexpr to allow fast (constexpr) cmp for things like IDs.
   /*template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
 
@@ -122,23 +120,27 @@ public:
         ++e_pos;
       }
     }
-#if 0
-  // FIXME: compile error
+  
+ 
   template <std::size_t N>
-  constexpr str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {  // N-1 because str includes the zero
+  str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {  // N-1 because str includes the zero
     // the first two charactors
     e[0] = s[0];
     e[1] = s[1];
     // the last eight  charactors
+    //
+    std::cout << "start for" << std::endl;
     for (int i = 0; i < 8; i++) {
-      e[_size - i] = s[_size - i];
+      e[9-i] = s[_size - i];
+      std::cout << e[9-i] << " ";
     }
+    std::cout << "end for" << std::endl;
     // checking if it exists
     char *long_str;
     for (int i = 0; i < _size - 8; i++) {
       long_str[i] = s[i + 2];
     }
-    pair<int, int> pair = str_exists(long_str, _size - 10);
+    std::pair<int, int> pair = str_exists(long_str, _size - 10);
     if (pair.second) {
       ptr_or_start = pair.first;
     } else {
@@ -148,9 +150,22 @@ public:
         // now add the size -10 as a value to the map
         // ptr_ot_start will be the key
       }
+      str::string_map.set(string_vector.size() - (_size - 10), _size - 10);
     }
+    
+    std::cout << "this is ptr_or_start" << ptr_or_start << std::endl;
+    std::cout << "this is e: ";
+    for (int i = 0; i < 10; ++i) { std::cout << e[i] << " "; }
+    std::cout << std::endl;
+    std::cout << "this is string_vector: ";
+    for (std::vector<int>::const_iterator i = string_vector.begin(); i != string_vector.end(); ++i) {
+      std::cout << *i << " ";
+    }
+    std::cout << std::endl;
+
   }
-#endif
+  
+  
   std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
     bool vector_flag = true;
     for (auto i = string_map.begin(), end = string_map.end(); i != end; ++i) {
