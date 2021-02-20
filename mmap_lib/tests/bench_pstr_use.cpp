@@ -10,7 +10,8 @@
 
 
 void mmap_pstr(std::string_view name) {
-  mmap_lib::str foo("yohelloooooo12345678");
+  
+mmap_lib::str foo("yohelloooooo12345678");
   //foo.print_size(); // expect 8
   //foo.print_e(); // 2345678
   //foo.print_PoS(); 
