@@ -269,7 +269,6 @@ public:
   // Need a wrapper to call this func and put it in a vIter
   [[nodiscard]] bool efind(T &&ele) {
     // finding the correct bitmap to get
-    std::cout << "efind() ran" << std::endl;
     const auto p = ele / (sizeof(T) * 8);
     const auto i = ele % (sizeof(T) * 8);
 
@@ -282,7 +281,6 @@ public:
   }
 
   [[nodiscard]] bool efind(const T &&ele) {
-    std::cout << "efind() ran" << std::endl;
     const auto p = ele / (sizeof(T) * 8);
     const auto i = ele % (sizeof(T) * 8);
 
@@ -326,7 +324,7 @@ public:
     T test = 0;
     vset &owner; // a reference to the vset this vIter is a part of
                  // this reference included in order to access vset members
-    T iData;
+    T iData = 0;
   public:
 
     vIter(vset &tmp): iData(0) , owner(tmp){ }
@@ -359,7 +357,7 @@ public:
     //           to see if it makes a difference
     //
     //=================================================
-    vIter operator ++() {
+    vIter& operator ++() {
       /*      
       //if iData < max
       //  while(!(owner.find(iData+1)))
@@ -380,18 +378,30 @@ public:
       }
       std::cout << "make it here?" << std::endl; // <=== ALSO HERE
       */
-      std::cout << "in prefix ++ " << std::endl;
-      if (iData < owner.get_max()) {
-        std::cout << "in first if" << std::endl;
-        while (!(owner.efind(iData+1))) { //<--- issue is in efind() xD
+      //std::cout << "in prefix ++ " << std::endl;
+      int flg = 0;
+      if (iData == owner.get_max()) {
+        std::cout << "already max" << std::endl;
+      } else if (iData > owner.get_max()) {
+        //iData = owner.get_max();
+        std::cout << "more than max" << std::endl;
+      } else if (iData < owner.get_max()) {
+        std::cout << "should increment" << std::endl;
+        while (owner.efind(iData+1) == false) { //<--- issue is in efind() xD
           ++iData;
-          std::cout << "in while()" << std::endl;
+          if (iData == owner.get_max()) {
+            //flg = 1;
+            std::cout << "got to max in the while()" << std::endl;
+            break;
+          }
         }
-        ++iData;
-      } else if (iData == owner.get_max()) {
-        std::cout << "cmon" << std::endl;
+        if (flg == 0) {
+          ++iData;
+        } else {
+          flg = 0;
+        }
       }
-       
+      return *this;
     } //prefix ++i
 
     vIter operator ++(int other) { 
