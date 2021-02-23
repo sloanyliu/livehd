@@ -100,7 +100,6 @@ public:
     }
   }
 #endif
-
   // FIXME: This type of constructor is needed to be a constexpr
   template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
@@ -225,7 +224,6 @@ public:
     for (std::vector<int>::const_iterator i = string_vector.begin(); i != string_vector.end(); ++i) {
       std::cout << *i << " ";
     }
-    std::cout << std::endl;
     */
   }
 
@@ -275,8 +273,6 @@ public:
       std::cout << std::endl;
     }
   }
-  
-  
 
 #if 0
   fixme_const_iterator begin()  const {
