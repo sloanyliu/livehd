@@ -517,14 +517,13 @@ void random_mmap_vset(int max, std::string_view name) {
 
   std::string type_test("mmap_vset ");
   if (name.empty()) {
-    type_test += "(effemeral)";
+    type_test += "_effemeral_" + std::to_string(max);
   } else {
-    type_test += "(persistent)";
+    type_test += "_persistent_" + std::to_string(max);
   }
 
   Lbench                             b(type_test);
   mmap_lib::vset<uint32_t, uint32_t> set("lgdb_bench", name);
-  // mmap_lib::map<uint32_t, uint64_t> map("lgdb_bench", name);
 
   set.clear();
 
@@ -540,26 +539,14 @@ void random_mmap_vset(int max, std::string_view name) {
     for (int i = 0; i < BENCH_INN_SIZE; ++i) {
       auto pos = rng.max(max);
       set.insert(pos);
-      
-      if (set.efind(pos) == false) { std::cout << "did not insert " << pos << std::endl; }
-
       pos = rng.max(max);
 			set.erase(pos);
-      
-      if (set.efind(pos) == true) { std::cout << "did not erase " << pos << std::endl; }
-      
       pos = rng.max(max);
       if (set.find(pos) != set.end()) {
-
         set.erase(pos);
-
-        if (set.efind(pos) == true) { std::cout << "did not erase " << pos << std::endl; }
-
       }
     }
   }
-
-  std::cout << set.get_max() << std::endl;
 
   b.sample("insert/erase dense");
   conta = 0;
@@ -571,22 +558,9 @@ void random_mmap_vset(int max, std::string_view name) {
   //   --> go through the whole map and increment a variable per map index
   //   --> insert a random number into map
   //   --> generate a random num, if num is not end of map, erase it
+ 
   
-  auto it = set.begin();
-  std::cout << "begin of the set: " << it.iter_val() << std::endl;
-  auto end = set.end();
-  std::cout << "end of the set: " << end.iter_val() << std::endl;
-  
-  if (it != end) { std::cout << "!= works" << std::endl; }
-  ++it;  // <-- this is the bad part
-  //if (it != end) { std::cout << "!= works" << std::endl; }
-
-
-
-
-  /*
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    //Problematic for loop, don't know why xD
     for (auto it = set.begin(), end = set.end(); it != end; ++it) {
       conta++; 
     }
@@ -598,7 +572,6 @@ void random_mmap_vset(int max, std::string_view name) {
   }
   b.sample("traversal sparse");
   printf("inserts random %d\n", conta);
-
   
   conta = 0;
 
@@ -613,13 +586,13 @@ void random_mmap_vset(int max, std::string_view name) {
   }
 
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    for (auto it = set.begin(); it != set.end(); ++it) {
+    for (auto it = set.begin(), end = set.end(); it != end; ++it) {
       conta++;
     }
   }
   b.sample("traversal dense");
   printf("inserts random %d\n", conta);
-  */
+  
 }
 
 #if 0

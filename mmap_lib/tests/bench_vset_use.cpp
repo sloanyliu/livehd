@@ -11,8 +11,8 @@
 #include "mmap_map.hpp"
 
 #define BIG_BENCH 400
-#define SMALL_BENCH 400
-
+#define SMALL_BENCH 300
+#define PRELIM_TEST 0 
 
 /*
  * Creates a vset from mmap_lib namespace
@@ -56,6 +56,7 @@ void mmap_vset(int max, std::string_view name) {
 
 	int conta = 0;
 
+  #if PRELIM_TEST
 	// counting
 	std::cout << "Counting...  ";
 	for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
@@ -95,17 +96,27 @@ void mmap_vset(int max, std::string_view name) {
 		}
 	}
 	std::cout << "After erase conta: " << conta << std::endl;
+  #endif
 
 	conta = 0; // reset
 
 	std::cout << "sanity check (printing bucket_len): " << set.bucket_size() << std::endl;
-
+  
 	std::cout << "===== vset BENCH =====" << std::endl;
-
 	std::cout << "===== Insert/Erase 0-299\n";
-	for(int i = 0; i < SMALL_BENCH; ++i) { set.insert(i); }
-	for(int i = 0; i < SMALL_BENCH; ++i) { set.erase(i); }
+	for(int i = 0; i <= SMALL_BENCH; ++i) { set.insert(i); }
+	
+  std::cout << "Using iterator to traverse after inserts" << std::endl;
+  for (auto it = set.begin(), e = set.end(); it != e; ++it) { std::cout << it.iter_val() << " ";}
+  
+  for(int i = 0; i < SMALL_BENCH; ++i) { set.erase(i); }
+  
+  std::cout << "Using iterator to traverse after deletes" << std::endl;
+  for (auto it = set.begin(), e = set.end(); it != e; ++it) { std::cout << it.iter_val() << " ";}
 
+
+  /*
+	std::cout << "===== vset BENCH =====" << std::endl;
 	std::cout << "===== Insert/Erase Dense\n";
 	// INSERT/ERASE DENSE TEST
 	// runs about (BIG * SMALL) times
@@ -146,18 +157,6 @@ void mmap_vset(int max, std::string_view name) {
     if (set.find(pos) != set.end()) {
       set.erase(pos);
     }
-    /*
-		for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
-			auto hold = set.bucket_get_val(it);
-			for (auto j = 0; j < 32; ++j) {
-				if ((hold & 1) == 1) { conta++; }
-				hold = hold >> 1;
-			}
-		}
-    set.insert(rng.max(max));
-
-    auto pos = rng.max(max);
-    set.erase(pos); */
   }
   b.sample("traversal sparse");
 
@@ -179,16 +178,10 @@ void mmap_vset(int max, std::string_view name) {
     for (auto it = set.begin(), end = set.end(); it != end; ++it) {
       conta++;
     }
-		/*for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
-			auto hold = set.bucket_get_val(it);
-			for (auto j = 0; j < 32; ++j) {
-				if ((hold & 1) == 1) { conta++; }
-				hold = hold >> 1;
-			}
-		}*/
   }
   b.sample("traversal dense");
   printf("inserts random %d\n",conta);
+  */
 
 }
 
