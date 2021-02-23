@@ -291,7 +291,7 @@ public:
       return false;
     }
   }
-
+  
 
   // Functions used for iterating, begin() and end()
   [[nodiscard]] bool is_start(T &&ele) {
@@ -319,6 +319,7 @@ public:
     vset &owner; // a reference to the vset this vIter is a part of
                  // this reference included in order to access vset members
     T iData = 0;
+  
   public:
 
     vIter(vset &tmp): iData(0) , owner(tmp){ }
