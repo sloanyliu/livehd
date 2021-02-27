@@ -38,13 +38,14 @@ public:
   void        do_if(const mmap_lib::Tree_index& dot_node_index);
   void        do_cond(const mmap_lib::Tree_index& cond_node_index);
   void        do_tuple(const mmap_lib::Tree_index& tuple_node_index);
-  void        do_select(const mmap_lib::Tree_index& select_node_index, std::string select_type);
+  void        do_select(const mmap_lib::Tree_index& select_node_index, const std::string& select_type);
   void        do_func_def(const mmap_lib::Tree_index& func_def_node_index);
   void        do_func_call(const mmap_lib::Tree_index& func_def_node_index);
   void        do_tposs(const mmap_lib::Tree_index& tposs_node_index);
   std::string resolve_tuple_assign(const mmap_lib::Tree_index& tuple_assign_index);
   std::string resolve_func_cond(const mmap_lib::Tree_index& func_cond_index);
   bool        is_temp_var(std::string_view test_string);  // can go to private/protected section!?
+  bool        has_DblUndrScor(std::string_view test_string);  // can go to private/protected section!?
   // std::string_view get_node_name(Lnast_node node);//can go to private/protected section!?
   bool is_number(std::string_view test_string);
   //  void invalid_node();
