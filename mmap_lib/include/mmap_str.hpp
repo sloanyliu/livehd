@@ -53,54 +53,11 @@ protected:
 public:
   static mmap_lib::map<uint32_t, uint32_t> string_map;
   inline static std::vector<int> string_vector;
-#if 0
-  // Must be constexpr to allow fast (constexpr) cmp for things like IDs.
-  // _size is N-1 because str still includes the \0
-  template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
-  constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
-    auto stop    = _size<4?_size:4;
-    //isptr =  _size<14?false:true;
-    for(auto i=0;i<stop;++i) {
-      ptr_or_start <<= 8;
-      ptr_or_start |= s[i];
-    }
-    auto e_pos = 0;
-    for(auto i=stop;i<_size;++i) {
-      assert(s[i]<128); // FIXME: use ptr if so
-      if (is_digit(s[i]) && i<_size && is_digit(s[i+1])) {
-        uint8_t v = (s[i]-'0')*10+s[i+1]-'0';
-        assert(v<100); // 2 digits only
-        e[e_pos] = 0x80 | v;
-        ++i; // skip one more
-      } else {
-        e[e_pos] = s[i];
-      }
-      ++e_pos;
-    }
-  }
-  template <std::size_t N>
-  constexpr str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
-    auto stop = _size < 4 ? _size : 4;
-    for (auto i = 0; i < stop; ++i) {
-      ptr_or_start <<= 8;
-      ptr_or_start |= s[i];
-    }
-    auto e_pos = 0;
-    for (auto i = stop; i < _size; ++i) {
-      assert(s[i] < 128);  // FIXME: use ptr if so
-      if (is_digit(s[i]) && i<_size && is_digit(s[i+1])) {
-        uint8_t v = (s[i]-'0')*10+s[i+1]-'0';
-        assert(v<100); // 2 digits only
-        e[e_pos] = 0x80 | v;//1000 0000
-        ++i; // skip one more
-      } else {
-        e[e_pos] = s[i];
-      }
-      ++e_pos;
-    }
-  }
-#endif
+  
   // FIXME: This type of constructor is needed to be a constexpr
+   /*"================================= "
+    "============constructor 1========= "
+    "================================== "*/
   template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
     auto stop    = _size<4?_size:4;
@@ -115,7 +72,31 @@ public:
       ++e_pos;
     }
   }
-  
+
+  //  "============helper function to check if a string exists========= "
+  std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
+    bool vector_flag = true;
+    for (auto i = string_map.begin(), end = string_map.end(); i != end; ++i) {
+      uint32_t key   = string_map.get_key(i);
+      uint16_t value = string_map.get(i);
+      if (value != size)
+        continue;
+      for (int i = 0; i < size; i++) {
+        if (string_vector.at(key + i) != string_to_check[i]) {
+          vector_flag = false;
+          break;
+        }
+        if (vector_flag)
+          return std::make_pair(key, value);
+        vector_flag = true;
+      }
+    }
+    return std::make_pair(0, 0);
+  }
+
+   /*"================================= "
+    "============constructor 2========= "
+    "================================== "*/
  
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
@@ -140,42 +121,14 @@ public:
       }
       str::string_map.set(string_vector.size() - (_size - 10), _size - 10);
     }
-    /*
-    std::cout << "this is ptr_or_start: " << ptr_or_start << std::endl;
-    std::cout << "this is e: ";
-    for (int i = 0; i < 10; ++i) { std::cout << e[i] << " "; }
-    std::cout << std::endl;
-    std::cout << "this is string_vector: ";
-    for (std::vector<int>::const_iterator i = string_vector.begin(); i != string_vector.end(); ++i) {
-      std::cout << *i << " ";
-    }
-    std::cout << std::endl;
-    */
 
   }
   
   
-  std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
-    bool vector_flag = true;
-    for (auto i = string_map.begin(), end = string_map.end(); i != end; ++i) {
-      uint32_t key   = string_map.get_key(i);
-      uint16_t value = string_map.get(i);
-      if (value != size)
-        continue;
-      for (int i = 0; i < size; i++) {
-        if (string_vector.at(key + i) != string_to_check[i]) {
-          vector_flag = false;
-          break;
-        }
-        if (vector_flag)
-          return std::make_pair(key, value);
-        vector_flag = true;
-      }
-    }
-    return std::make_pair(0, 0);
-  }
 
-
+   /*"================================= "
+    "============constructor 3========= "
+    "================================== "*/
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
     //claim is to treat it as a normal string 
   	if (_size < 14 ){

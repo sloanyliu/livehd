@@ -110,6 +110,19 @@ void mmap_pstr(std::string_view name) {
   test10.print_e();
   std::cout << "Expecting nothing:  ";
   test10.print_key_val_str();
+
+  std::cout << "================================ " << std::endl;
+  std::cout << "Constructor 2 (size >=14) Tests: " << std::endl;
+  std::cout << "================================ " << std::endl;
+   std::cout << "> Test 11: str(\"01words23456789\") " << std::endl;
+  //char * foo = "hello";
+  mmap_lib::str test1("01words23456789");
+  std::cout << "Expecting \"0 \":  ";
+  test1.print_PoS(); 
+  std::cout << "Expecting \"0123456789\":  ";
+  test1.print_e();
+  std::cout << "Expecting key:0 val:5  string: words  ";
+  test1.print_key_val_str();
 }
 
 
