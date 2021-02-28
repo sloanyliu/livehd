@@ -105,21 +105,24 @@ public:
     e[1] = s[1];
     // the last eight  charactors
     for (int i = 0; i < 8; i++) {
-      e[9-i] = s[_size - i];
+      e[9-i] = s[_size - 1 -i];
     }
     // checking if it exists
-    char *long_str;
+    
+    char long_str[_size-10];
     for (int i = 0; i < _size - 8; i++) {
       long_str[i] = s[i + 2];
     }
+    
     std::pair<int, int> pair = str_exists(long_str, _size - 10);
     if (pair.second) {
       ptr_or_start = pair.first;
     } else {
       for (int i = 0; i < _size - 10; i++) {
-        string_vector.push_back(s[i]);
+        string_vector.push_back(long_str[i]);
       }
-      str::string_map.set(string_vector.size() - (_size - 10), _size - 10);
+      ptr_or_start = string_vector.size()-(_size-10);
+      str::string_map.set(ptr_or_start, _size - 10);
     }
 
   }
@@ -149,10 +152,10 @@ public:
 	    e[1] = sv.at(1);
 	    // the last eight  charactors
 	    for (int i = 0; i < 8; i++) {
-	      e[9-i] = sv.at(_size - i);
+	      e[9-i] = sv.at(_size -1- i);
 	    }
 	    // checking if it exists
-	    char *long_str;
+	    char long_str[_size-10];
 	    for (int i = 0; i < _size - 8; i++) {
 	      long_str[i] = sv.at(i + 2);
 	    }
@@ -161,30 +164,20 @@ public:
 	      ptr_or_start = pair.first;
 	    } else {
 	      for (int i = 0; i < _size - 10; i++) {
-	        string_vector.push_back(sv.at(i));
+	        string_vector.push_back(long_str[i]);
 	      }
-	      str::string_map.set(string_vector.size() - (_size - 10), _size - 10);
+        ptr_or_start = string_vector.size() - (_size-10);
+	      str::string_map.set(ptr_or_start, _size - 10);
 	    }
+      
   	}
-    
-    /* 
-    std::cout << "this is ptr_or_start: " << ptr_or_start << std::endl;
-    std::cout << "this is e: ";
-    for (int i = 0; i < 10; ++i) { std::cout << e[i] << " "; }
-    std::cout << std::endl;
-    std::cout << "This is the size : "<< _size << std::endl;
-    std::cout << "this is string_vector: ";
-    for (std::vector<int>::const_iterator i = string_vector.begin(); i != string_vector.end(); ++i) {
-      std::cout << *i << " ";
-    }
-    */
-  }
+ }
 
   void print_PoS () { 
     std::cout << "This is ptr_or_start: " << std::endl;
-    if (_size > 14) {
+    if (_size >= 14) {
       std::cout << "Pointer: " << ptr_or_start << std::endl;
-    } else if (_size <= 14) {
+    } else if (_size < 14) {
       std::cout << "Start: ";
       // [first] [sec] [thr] [fourth] 
       for (int i = 3; i >= 0; --i) {
@@ -221,7 +214,7 @@ public:
       uint32_t value = string_map.get(it);
       std::cout << key << "   " << value << "   ";
       for (int i = key; i < (key+value); ++i) {
-        std::cout << string_vector.at(i);
+        std::cout << static_cast<char>(string_vector.at(i));
       }
       std::cout << std::endl;
     }
