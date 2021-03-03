@@ -32,16 +32,16 @@ pts_wait_verilog_large_mux_code_gen='Mul Test6 Test1'
 
 # pts='Test1'
 # pts='Life'
-pts='VecShiftRegister'
 # pts=''
 # pts='VecShiftRegisterParam'
 # pts='VecShiftRegisterSimple '
 # pts='VecSearch '
-pts='Xor800Thread8'
-pts='Xor32Thread8'
-pts='Xor64Thread8'
-pts='Xor128Thread8'
-
+# pts='Xor32Thread8'
+# pts='Xor64Thread8'
+# pts='Xor128Thread8'
+# pts='Xor800Thread8'
+pts='VecShiftRegister'
+pts='Xor80000Thread64'
 
 LGSHELL=./bazel-bin/main/lgshell
 LGCHECK=./inou/yosys/lgcheck
@@ -69,7 +69,7 @@ firrtl_test() {
     if [ ! -f ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb ]; then
         echo "ERROR: could not find ${pt}.${FIRRTL_LEVEL}.pb in ${PATTERN_PATH}"
         exit 1
-    fi
+    fi 
 
     ${LGSHELL} "inou.firrtl.tolnast files:${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb |> pass.compiler gviz:true top:${pt} firrtl:true"
     ret_val=$?
@@ -96,7 +96,7 @@ firrtl_test() {
         echo "Successfully generate Verilog: ${pt}.v"
         rm -f  yosys_script.*
     else
-        echo "ERROR: Pyrope compiler failed: verilog generation, testcase: ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb"
+        echo "ERROR: Firrtl compiler failed: verilog generation, testcase: ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb"
         exit 1
     fi
   done
@@ -113,7 +113,7 @@ firrtl_test() {
     echo "----------------------------------------------------"
     
     if [ "${FIRRTL_LEVEL}" == "hi" ]; then
-        python ${POST_IO_RENAME} "${pt}.v"
+        python3 ${POST_IO_RENAME} "${pt}.v"
     fi
 
     ${LGCHECK} --implementation=${pt}.v --reference=./inou/firrtl/tests/verilog_gld/${pt}.gld.v

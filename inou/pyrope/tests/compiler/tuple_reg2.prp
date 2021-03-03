@@ -1,6 +1,6 @@
 pick = #reg.foo.bar
 
-if (pick == 9) {
+if (pick == 56) {
   %out = 12
 }
 
@@ -16,4 +16,5 @@ poke = #reg.baz
 %out2 = #reg.foo.bar.__q_pin
 %out3 = #reg.baz.__q_pin
 %out4 = pick
+%out5 = poke
 
