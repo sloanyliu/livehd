@@ -3,8 +3,11 @@
 
 bazel build -c opt //mmap_lib:all
 #./bazel-bin/mmap_lib/bench_set_use std
-./bazel-bin/mmap_lib/bench_set_use vset
-./bazel-bin/mmap_lib/bench_set_use mmap
+echo -e "\nvset bench"
+time ./bazel-bin/mmap_lib/bench_set_use vset > out.txt
+echo -e "\nmmap bench"
+time ./bazel-bin/mmap_lib/bench_set_use mmap > out.txt
+rm out.txt
 
 exit 2
 

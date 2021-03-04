@@ -1,18 +1,14 @@
 // Visitor set to LiveHD
 
 #pragma once
-
 #include <string_view>
-
 #include "mmap_map.hpp"
 
 namespace mmap_lib {
 
 // vset will have a Key to identify each BitMap
 // data will be the BitMap (various numbers of different bits)
-
 // end() for now returns the Actual last element, need it to return AFTER last
-
 
 template <typename Key, typename T>
 class vset {
@@ -28,8 +24,6 @@ public:
 
   using bucket_iterator       = typename VisitorSet::iterator;
   using const_bucket_iterator = typename VisitorSet::const_iterator;
-
- 
 
   // What does explicit do?
   explicit vset(std::string_view _set_name) : visitor_set(std::string(_set_name) + "_vs") {}
@@ -156,34 +150,27 @@ public:
    * All the erase() functions are void too
    * The funcs intake a number you wish to remove from the set
    */
-  
-  
+   
+ 
   [[nodiscard]] void insert(T &&ele) {
     // find correct index the pos is at
-    const auto p    = ele / (sizeof(T) * 8);  // p will be the key that points to the correct bitmap
-    const auto i    = ele % (sizeof(T) * 8);  // i will be the bit we are interested in in the bitmap
-    T          hold = 0;                      // will hold the bitmap at index p if there is one
-    if (visitor_set.has((Key)p)) {
-      hold = visitor_set.get((Key)p);
-    }                                  // is there a bitmap at key p
+    const auto p    = ele / (sizeof(T) * 8);  // p points to the correct bitmap
+    const auto i    = ele % (sizeof(T) * 8);  // i is the bit we want in the bitmap
+    T          hold = 0;                      // will hold the bitmap at index p 
+    if (visitor_set.has((Key)p)) { hold = visitor_set.get((Key)p); } // get the bitmap at p
     hold = hold | (1 << i);            // modify the bit at pos
     visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
-
     if (ele > max) { max = ele; }
-
   }
 
   [[nodiscard]] void insert(const T &&ele) {
     // find correct index the pos is at
-    const auto p    = ele / (sizeof(T) * 8);  // p will be the key for the bitmap
-    const auto i    = ele % (sizeof(T) * 8);  // i will be the bit we are interested in
-    T          hold = 0;                      // will hold the bitmap at index p if there is one
-    if (visitor_set.has((Key)p)) {
-      hold = visitor_set.get((Key)p);
-    }                                  // is there a bitmap at key p
+    const auto p    = ele / (sizeof(T) * 8);  // p points to the correct bitmap
+    const auto i    = ele % (sizeof(T) * 8);  // i is the bit we want in the bitmap
+    T          hold = 0;                      // will hold the bitmap at index p 
+    if (visitor_set.has((Key)p)) { hold = visitor_set.get((Key)p); } // get the bitmap at p
     hold = hold | (1 << i);            // modify the bit at pos
     visitor_set.set((Key)p, (T)hold);  // put it back in the bitmap
-    
     if (ele > max) { max = ele; }
   }
   
@@ -205,7 +192,12 @@ public:
       } // put it back in the bitmap
     }
 
-    // Need to  add logic to update max    
+    // Need to  add logic to update max
+    //=======================================================
+    // Maybe add some logic here to get rid of the idxs of map that are zero
+    // if hold == 0 --> delete the spot at key p
+    // this way, we avoid needing to traverse it again
+    //=======================================================
     if (ele == max) {
       while (hold == 0) {
         if (p == 0) { max = 0; return; }
