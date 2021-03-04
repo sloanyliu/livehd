@@ -1,5 +1,4 @@
 #!/bin/bash
-rm -rf ./lgdb
 mv -f lbench.trace lbench.trace.old
 
 if [ ! -d ./livehd_regression ]; then
@@ -15,9 +14,10 @@ LGSHELL=./bazel-bin/main/lgshell
 LGCHECK=./inou/yosys/lgcheck
 POST_IO_RENAME=./inou/firrtl/post_io_renaming.py
 PATTERN_PATH=./livehd_regression/synthetic/generated
-LGDB=/local/scrap/masc/swang203
-GVIZ='true'
+LGDB=/local/scrap/masc/swang203/lgdb
+GVIZ='false'
 
+rm -rf $LGDB
 if [ ! -f $LGSHELL ]; then
     if [ -f ./main/lgshell ]; then
         LGSHELL=./main/lgshell
@@ -27,6 +27,7 @@ if [ ! -f $LGSHELL ]; then
     fi
 fi
 
+
 pts=''
 for filename in ./livehd_regression/synthetic/generated/*.hi.pb
 do
@@ -35,8 +36,7 @@ do
 done
 
 
-# pts='Xor8000Thread64'
-pts='Cell_alone'
+pts='Xor8000Thread64'
 
 echo -e "All Benchmark Patterns:" '\n'$pts
 
@@ -55,7 +55,7 @@ firrtl_test() {
         exit 1
     fi 
 
-    ${LGSHELL} "inou.firrtl.tolnast path:${LGDB} files:${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb |> pass.compiler gviz:${GVIZ} top:${pt} firrtl:true"
+    perf stat ${LGSHELL} "inou.firrtl.tolnast path:${LGDB} files:${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb |> pass.compiler gviz:${GVIZ} top:${pt} firrtl:true"
     ret_val=$?
     if [ $ret_val -ne 0 ]; then
       echo "ERROR: could not compile with pattern: ${pt}.${FIRRTL_LEVEL}.pb!"
@@ -74,7 +74,7 @@ firrtl_test() {
     echo "LGraph -> Verilog"
     echo "----------------------------------------------------"
 
-    ${LGSHELL} "lgraph.open path:${LGDB} name:${pt} |> inou.yosys.fromlg hier:true"
+    perf stat ${LGSHELL} "lgraph.open path:${LGDB} name:${pt} |> inou.yosys.fromlg hier:true"
     # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg"
     if [ $? -eq 0 ] && [ -f ${pt}.v ]; then
         echo "Successfully generate Verilog: ${pt}.v"
@@ -85,6 +85,7 @@ firrtl_test() {
     fi
   done
 
+  cat lbench.trace
 
   # # Logic Equivalence Check
   # for pt in $1
@@ -110,11 +111,11 @@ firrtl_test() {
   #   fi
   # done
 
-  # rm -f *.v
-  # rm -f *.dot
-  # rm -f *.tcl
-  # rm -f lgcheck*
-  # rm -rf lgdb
+  rm -f *.v
+  rm -f *.dot
+  rm -f *.tcl
+  rm -f lgcheck*
+  rm -rf lgdb
 }
 
 firrtl_test "$pts"
