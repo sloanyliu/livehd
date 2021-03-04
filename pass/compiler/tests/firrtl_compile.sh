@@ -40,8 +40,7 @@ pts_wait_verilog_large_mux_code_gen='Mul Test6 Test1'
 # pts='Xor64Thread8'
 # pts='Xor128Thread8'
 # pts='Xor800Thread8'
-pts='VecShiftRegister'
-pts='Xor80000Thread64'
+pts='Flop'
 
 LGSHELL=./bazel-bin/main/lgshell
 LGCHECK=./inou/yosys/lgcheck
@@ -62,7 +61,7 @@ firrtl_test() {
   echo ""
   echo ""
   echo "======================================================================"
-  echo "                         LoFIRRTL Full Compilation"
+  echo "                         HiFIRRTL Full Compilation"
   echo "======================================================================"
   for pt in $1
   do

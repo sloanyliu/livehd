@@ -13,6 +13,7 @@ Lnast_tolg::Lnast_tolg(std::string_view _module_name, std::string_view _path) : 
 }
 
 std::vector<LGraph *> Lnast_tolg::do_tolg(std::shared_ptr<Lnast> ln, const Lnast_nid &top_stmts) {
+  Lbench b("pass.lnast_tolg");
   lnast = ln;
   LGraph *lg;
   std::string src{lnast->get_source()};
@@ -420,11 +421,13 @@ Node_pin Lnast_tolg::create_inp_tg(LGraph *lg, std::string_view input_field) {
   auto tup_get_inp = lg->create_node(Ntype_op::TupGet);
   auto tn_spin     = tup_get_inp.setup_sink_pin("tuple_name");
   auto tn_dpin     = name2dpin["$"];
+  /* fmt::print("DEBUG3 tn_dpin:{}\n", tn_dpin.debug_name()); */
   tn_dpin.connect_sink(tn_spin);
 
   auto field_spin = tup_get_inp.setup_sink_pin("field");
   auto pos_spin   = tup_get_inp.setup_sink_pin("position");
   auto subname = input_field.substr(1, input_field.size() - 1);
+  /* fmt::print("DEBUG4 subname:{}\n", subname); */
 
   if (is_const_num(subname)) {
     auto pos_dpin = lg->create_node_const(Lconst(subname)).setup_driver_pin();
@@ -436,9 +439,13 @@ Node_pin Lnast_tolg::create_inp_tg(LGraph *lg, std::string_view input_field) {
 
   auto tg_dpin = tup_get_inp.setup_driver_pin();
 
-#ifndef NDEBUG
+/* #ifndef NDEBUG */
+/*   tg_dpin.set_name(input_field); */
+/*   fmt::print("DEBUG5 tg_dpin:{}\n", tg_dpin.debug_name()); */
+/* #endif */
   tg_dpin.set_name(input_field);
-#endif
+  /* fmt::print("DEBUG5 tg_dpin:{}\n", tg_dpin.debug_name()); */
+  /* fmt::print("DEBUG6 input_field:{}\n", input_field); */
 
   name2dpin[input_field] = tg_dpin;
   return tg_dpin;
@@ -656,8 +663,8 @@ void Lnast_tolg::process_ast_tuple_add_op(LGraph *lg, const Lnast_nid &lnidx_ta)
     return;
   }
 
-  absl::flat_hash_map<int, Node>             ta_map;
-  absl::flat_hash_map<int, std::string_view> ta_name;
+  absl::flat_hash_map<int, Node>        ta_map;
+  absl::flat_hash_map<int, std::string> ta_name;
   int i = 0;
 
   for (const auto &child : lnast->children(lnidx_ta)) {
@@ -781,6 +788,7 @@ Node_pin Lnast_tolg::setup_tuple_ref(LGraph *lg, std::string_view ref_name) {
     I(name2dpin[ref_name].get_name() == ref_name);
     return it->second;
   }
+  /* fmt::print("DEBUG2: ref_name:{}\n", ref_name); */
 
   if (is_input(ref_name))
     return create_inp_tg(lg, ref_name);
@@ -1097,6 +1105,7 @@ void Lnast_tolg::process_ast_attr_set_op(LGraph *lg, const Lnast_nid &lnidx_aset
 
   Node_pin vn_dpin;
   if (is_input(name)) {
+    /* fmt::print("DEBUG0: input_name:{}\n", name); */
     vn_dpin = setup_tuple_ref(lg, lnast->get_name(c0_aset));
     lg->add_edge(vn_dpin, vn_spin);
   } else if (name2dpin.find(aset_ancestor_name) != name2dpin.end()) {
@@ -1114,9 +1123,11 @@ void Lnast_tolg::process_ast_attr_set_op(LGraph *lg, const Lnast_nid &lnidx_aset
   lg->add_edge(av_dpin, av_spin);
 
   aset_node.setup_driver_pin("Y").set_name(name);
-#ifndef NDEBUG
+  /* fmt::print("DEBUG1: aset_dpin_name:{}\n", aset_node.setup_driver_pin("Y").debug_name()); */
+/* #ifndef NDEBUG */
+/*   aset_node.setup_driver_pin("chain").set_name(name);  // just for debug purpose */
+/* #endif */
   aset_node.setup_driver_pin("chain").set_name(name);  // just for debug purpose
-#endif
   name2dpin[name]        = aset_node.get_driver_pin("Y");
   vname2attr_dpin[vname] = aset_node.get_driver_pin("chain");
 }
