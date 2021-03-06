@@ -199,6 +199,26 @@ public:
     // this way, we avoid needing to traverse it again
     //=======================================================
     if (ele == max) {
+      //==============================
+      //===Trying new logic for Max===
+      //==============================
+      // if hold == 0
+      //   delete hold; check the p
+      //   if p == 0: max is 0; return
+      //   else:
+      //     decrement p 
+      //     while p >= 0: check the p
+      //       if p exists: get and check the hold
+      //         if hold == 0: delete hold; decrement p
+      //         else: 
+      //           check hold for next high bit and set max
+      //           return
+      //     max is 0; return 
+      // else 
+      //   check hold for next high bit and set max
+      //   return
+      //
+      
       while (hold == 0) {
         if (p == 0) { max = 0; return; }
         else {
