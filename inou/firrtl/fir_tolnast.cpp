@@ -50,7 +50,7 @@ void Inou_firrtl::toLNAST(Eprp_var& var) {
 }
 
 //----------------Helper Functions--------------------------
-std::string_view Inou_firrtl::create_temp_var(Lnast& lnast) {
+std::string_view Inou_firrtl::create_tmp_var(Lnast& lnast) {
   auto temp_var_name = lnast.add_string(absl::StrCat("___F", tmp_var_cnt));
   tmp_var_cnt++;
   return temp_var_name;
@@ -276,6 +276,8 @@ void Inou_firrtl::init_reg_ref_dots(Lnast& lnast, const std::string& _id,
   // Add register's name to the global list.
   register_names.insert(id.substr(1, id.length() - 1));  // Use substr to remove "#"
 
+
+
   // Specify __bits, if bitwidth is explicit
   if (bitwidth > 0) {
     std::string_view acc_name_bw;
@@ -288,6 +290,13 @@ void Inou_firrtl::init_reg_ref_dots(Lnast& lnast, const std::string& _id,
     auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
     lnast.add_child(idx_asg, Lnast_node::create_ref(acc_name_bw));
     lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(std::to_string(bitwidth))));
+  } else {
+  // if from chirrtl, the register bw is not explicit, create a dummy lhs(#x) = rhs(#x.__q_pin) for SSA to continue
+    std::string_view acc_name;
+    acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__q_pin"));
+    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(id)));
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
   }
 
 
@@ -337,7 +346,7 @@ void Inou_firrtl::InitMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl:
       I(false);
     }
   }
-  auto temp_var_d = create_temp_var(lnast);
+  auto temp_var_d = create_tmp_var(lnast);
   auto idx_dot_d = lnast.add_child(parent_node, Lnast_node::create_select());
   lnast.add_child(idx_dot_d, Lnast_node::create_ref(temp_var_d));
   lnast.add_child(idx_dot_d, Lnast_node::create_ref(mem_name));
@@ -364,7 +373,7 @@ void Inou_firrtl::InitMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl:
   std::vector<std::pair<std::string, std::string_view>> tup_ids;
   for (int i = 0; i < mem.reader_id_size(); i++) {
     auto idx_tup    = lnast.add_child(parent_node, Lnast_node::create_tuple());
-    auto temp_var_t = create_temp_var(lnast);
+    auto temp_var_t = create_tmp_var(lnast);
     lnast.add_child(idx_tup, Lnast_node::create_ref(temp_var_t));
 
     auto idx_asg_l  = lnast.add_child(idx_tup, Lnast_node::create_assign());
@@ -395,7 +404,7 @@ void Inou_firrtl::InitMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl:
 
   for (int j = 0; j < mem.writer_id_size(); j++) {
     auto idx_tup    = lnast.add_child(parent_node, Lnast_node::create_tuple());
-    auto temp_var_t = create_temp_var(lnast);
+    auto temp_var_t = create_tmp_var(lnast);
     lnast.add_child(idx_tup, Lnast_node::create_ref(temp_var_t));
 
     auto idx_asg_l  = lnast.add_child(idx_tup, Lnast_node::create_assign());
@@ -432,7 +441,7 @@ void Inou_firrtl::InitMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl:
 
   for (int k = 0; k < mem.readwriter_id_size(); k++) {
     auto idx_tup    = lnast.add_child(parent_node, Lnast_node::create_tuple());
-    auto temp_var_t = create_temp_var(lnast);
+    auto temp_var_t = create_tmp_var(lnast);
     lnast.add_child(idx_tup, Lnast_node::create_ref(temp_var_t));
 
     /* FIXME: The read and write latencies shouldn't be same for this port,
@@ -469,14 +478,14 @@ void Inou_firrtl::InitMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl:
     tup_ids.emplace_back(mem.readwriter_id(k), temp_var_t);
   }
 
-  auto temp_var_lhs = create_temp_var(lnast);
+  auto temp_var_lhs = create_tmp_var(lnast);
   auto idx_dotLHS   = lnast.add_child(parent_node, Lnast_node::create_select());
   lnast.add_child(idx_dotLHS, Lnast_node::create_ref(temp_var_lhs));
   lnast.add_child(idx_dotLHS, Lnast_node::create_ref(mem_name));
   lnast.add_child(idx_dotLHS, Lnast_node::create_const("__port"));
 
   // Create tuple node that ties port id to tuple node previously created.
-  auto temp_var_t = create_temp_var(lnast);
+  auto temp_var_t = create_tmp_var(lnast);
   auto idx_tupAll = lnast.add_child(parent_node, Lnast_node::create_tuple());
   lnast.add_child(idx_tupAll, Lnast_node::create_ref(temp_var_t));
   for (const auto& port_temp : tup_ids) {
@@ -516,7 +525,7 @@ void Inou_firrtl::InitCMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl
   } else {
     I(false);
   }
-  auto temp_var_s = create_temp_var(lnast);
+  auto temp_var_s = create_tmp_var(lnast);
   auto idx_dot_s = lnast.add_child(parent_node, Lnast_node::create_select());
   lnast.add_child(idx_dot_s, Lnast_node::create_ref(temp_var_s));
   lnast.add_child(idx_dot_s, Lnast_node::create_ref(cmem_name));
@@ -645,13 +654,13 @@ void Inou_firrtl::HandleMemPortPre(Lnast& lnast, Lnast_nid& parent_node, const f
   }
 
   // Now that the port's tuple has been made, attach it to the memory's .__port attribute
-  auto temp_var_L = create_temp_var(lnast);
+  auto temp_var_L = create_tmp_var(lnast);
   auto idx_dotLHS = lnast.add_child(parent_node, Lnast_node::create_select());
   lnast.add_child(idx_dotLHS, Lnast_node::create_ref(temp_var_L));
   lnast.add_child(idx_dotLHS, Lnast_node::create_ref(mem_name));
   lnast.add_child(idx_dotLHS, Lnast_node::create_const("__port"));
 
-  auto temp_var_R = create_temp_var(lnast);
+  auto temp_var_R = create_tmp_var(lnast);
   auto idx_dotRHS = lnast.add_child(parent_node, Lnast_node::create_select());
   lnast.add_child(idx_dotRHS, Lnast_node::create_ref(temp_var_R));
   lnast.add_child(idx_dotRHS, Lnast_node::create_ref(mem_name));
@@ -725,7 +734,7 @@ void Inou_firrtl::create_module_inst(Lnast& lnast, const firrtl::FirrtlPB_Statem
   /*            dot                       assign                      fn_call
    *      /      |        \                / \                     /     |     \
    * ___F0 itup_[inst_name] __last_value   F1 ___F0  otup_[inst_name] [mod_name]  F1 */
-  auto temp_var_name  = create_temp_var(lnast);
+  auto temp_var_name  = create_tmp_var(lnast);
   auto temp_var_name2 = lnast.add_string(absl::StrCat("F", std::to_string(tmp_var_cnt)));
   tmp_var_cnt++;
   auto inst_name = inst.id();
@@ -756,7 +765,7 @@ void Inou_firrtl::create_module_inst(Lnast& lnast, const firrtl::FirrtlPB_Statem
   // If any parameters exist (for ext module), specify those.
   // NOTE->hunter: We currently specify parameters the same way as inputs.
   for (const auto& param : emod_to_param_map[inst.module_id()]) {
-    auto temp_var_name_p  = create_temp_var(lnast);
+    auto temp_var_name_p  = create_tmp_var(lnast);
     auto idx_dot_p = lnast.add_child(parent_node, Lnast_node::create_select());
     lnast.add_child(idx_dot_p, Lnast_node::create_ref(temp_var_name_p));
     lnast.add_child(idx_dot_p, Lnast_node::create_ref(inp_name));
@@ -1031,8 +1040,6 @@ void Inou_firrtl::HandleTypeConvOp(Lnast& lnast, const firrtl::FirrtlPB_Expressi
 std::string_view Inou_firrtl::HandleBundVecAcc(Lnast& ln, const firrtl::FirrtlPB_Expression expr, Lnast_nid& parent_node, const bool is_rhs) {
   auto flattened_str  = FlattenExpression(ln, parent_node, expr);
   auto alter_full_str = get_full_name(ln, parent_node, flattened_str, false); // Note: I put false here so if reg I get the "#"
-  /* fmt::print("DEBUG-0 flattened_str:{}\n", flattened_str); */
-  /* fmt::print("DEBUG-1 alter_full_str:{}\n", alter_full_str); */
 
   if (alter_full_str[0] == '$') {
     flattened_str = absl::StrCat("$inp_", flattened_str);
@@ -1161,7 +1168,7 @@ void Inou_firrtl::split_hier_name(std::string_view full_name, std::vector<std::p
 std::string_view Inou_firrtl::CreateSelectsFromStr(Lnast& ln, Lnast_nid& parent_node, const std::string& full_name) {
   I((full_name.find(".") != std::string::npos));
 
-  auto tmp_var_name = create_temp_var(ln);
+  auto tmp_var_name = create_tmp_var(ln);
   std::vector<std::pair<std::string_view, Inou_firrtl::Leaf_type>> hier_subnames;
   hier_subnames.emplace_back(std::make_pair(tmp_var_name, Leaf_type::Ref));
   split_hier_name(full_name, hier_subnames);
@@ -1544,7 +1551,7 @@ void Inou_firrtl::InitialExprAdd(Lnast& lnast, const firrtl::FirrtlPB_Expression
       lnast.add_child(idx_asg, Lnast_node::create_ref(rhs));
       break;
       /* auto expr_name = lnast.add_string(ReturnExprString(lnast, rhs_expr.sub_index().expression(), parent_node, true)); */
-      /* auto temp_var_name = create_temp_var(lnast); */
+      /* auto temp_var_name = create_tmp_var(lnast); */
 
       /* auto idx_select = lnast.add_child(parent_node, Lnast_node::create_select()); */
       /* lnast.add_child(idx_select, Lnast_node::create_ref(temp_var_name)); */
@@ -1559,7 +1566,7 @@ void Inou_firrtl::InitialExprAdd(Lnast& lnast, const firrtl::FirrtlPB_Expression
     case firrtl::FirrtlPB_Expression::kSubAccess: {  // SubAccess
       auto expr_name  = lnast.add_string(ReturnExprString(lnast, rhs_expr.sub_access().expression(), parent_node, true));
       auto index_name = lnast.add_string(ReturnExprString(lnast, rhs_expr.sub_access().index(), parent_node, true));
-      auto temp_var_name = create_temp_var(lnast);
+      auto temp_var_name = create_tmp_var(lnast);
 
       auto idx_select = lnast.add_child(parent_node, Lnast_node::create_select());
       lnast.add_child(idx_select, Lnast_node::create_ref(temp_var_name));
@@ -1619,7 +1626,6 @@ std::string Inou_firrtl::ReturnExprString(Lnast& lnast, const firrtl::FirrtlPB_E
     }
     case firrtl::FirrtlPB_Expression::kUintLiteral: {     // UIntLiteral
       expr_string = absl::StrCat(expr.uint_literal().value().value(), "ubits", expr.uint_literal().width().value());
-      /* expr_string = expr.uint_literal().value().value(); */
       break;
     }
     case firrtl::FirrtlPB_Expression::kSintLiteral: {     // SIntLiteral
@@ -1628,12 +1634,12 @@ std::string Inou_firrtl::ReturnExprString(Lnast& lnast, const firrtl::FirrtlPB_E
       break;
     }
     case firrtl::FirrtlPB_Expression::kValidIf: {  // ValidIf
-      expr_string = create_temp_var(lnast);
+      expr_string = create_tmp_var(lnast);
       HandleValidIfAssign(lnast, expr, parent_node, expr_string);
       break;
     }
     case firrtl::FirrtlPB_Expression::kMux: {  // Mux
-      expr_string = create_temp_var(lnast);
+      expr_string = create_tmp_var(lnast);
       HandleMuxAssign(lnast, expr, parent_node, expr_string);
       break;
     }
@@ -1645,7 +1651,7 @@ std::string Inou_firrtl::ReturnExprString(Lnast& lnast, const firrtl::FirrtlPB_E
     }
     case firrtl::FirrtlPB_Expression::kPrimOp: {  // PrimOp
       // This case is special. We need to create a set of nodes for it and return the lhs of that node.
-      expr_string = create_temp_var(lnast);
+      expr_string = create_tmp_var(lnast);
       ListPrimOpInfo(lnast, expr.prim_op(), parent_node, expr_string);
       break;
     }
