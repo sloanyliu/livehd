@@ -345,34 +345,15 @@ public:
     
     vIter& operator ++() {
       int flg = 0;
-      if (iData == owner.get_max()) {
-        ;
-        //return *this;
-        //++iData // --> need to find out how to return AFTER end
-        //std::cout << "already max" << std::endl;
-      } else if (iData > owner.get_max()) {
+      if (iData == owner.max) {
+        ++iData; return *this;
+      } else if (iData > owner.max) {
         return *this;
-        //std::cout << "more than max" << std::endl;
-      } else if (iData < owner.get_max()) {
-        //std::cout << "should increment" << std::endl;
+      } else if (iData < owner.max) {
         while (owner.efind(iData+1) == false) { 
           ++iData;
-          /*
-          if (iData == owner.get_max()) {
-            flg = 1;
-            //std::cout << "got to max in the while()" << std::endl;
-            break;
-          }
-          */
         }
         ++iData;
-        /*
-        if (flg == 0) {
-          ++iData;
-        } else {
-          flg = 0;
-        }
-        */
       }
       return *this;
     } //prefix ++i
@@ -442,11 +423,8 @@ public:
 
   [[nodiscard]] vIter begin() {
     vIter tmp(*this);
-    if (visitor_set.empty() == true) {
-      //Exception?
-      //Assertion?
-      return tmp;
-    }
+    tmp.iter_change(0);
+    if (visitor_set.empty() == true) { return tmp; }
     
     for (auto i = 0; i <= max; ++i) {
       if (vset::efind(i) == true) {
@@ -454,8 +432,6 @@ public:
         return tmp;
       }
     }
-    //Exception?
-    //Assertion?
     return tmp;
   }
   
@@ -469,7 +445,7 @@ public:
     //tmp.iter_change(vset::get_max()+1);
     
     // does not include last element of set
-    tmp.iter_change(vset::get_max() + 1); 
+    tmp.iter_change(max + 1); 
     return tmp;
   }
   
@@ -480,7 +456,7 @@ public:
       tmp.iter_change(ele);
       return tmp;
     } else { // if it does not exist, it equals end
-      tmp.iter_change(vset::get_max() + 1);
+      tmp.iter_change(max + 1);
       return tmp;
     }
   }
