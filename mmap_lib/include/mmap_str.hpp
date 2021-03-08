@@ -79,7 +79,6 @@ public:
 
   //  "============helper function to check if a string exists========= "
   std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
-
     std::string_view sv(string_to_check);   // string to sv
     auto it = string_map2.find(sv);         // find the sv in the string_map<sv, bool>
     if (it == string_map2.end()) {          // if we can't find the sv 
@@ -120,10 +119,10 @@ public:
  
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
-    // the first two charactors
+    // the first two characters
     e[0] = s[0];
     e[1] = s[1];
-    // the last eight  charactors
+    // the last eight  characters
     for (int i = 0; i < 8; i++) {
       e[9-i] = s[_size - 1 -i];
     }
@@ -133,7 +132,7 @@ public:
     for (int i = 0; i < (_size - 10); i++) {
       long_str[i] = s[i + 2];
     } 
-
+    
     std::pair<int, int> pair = str_exists(long_str, _size - 10);
 
     if (pair.second) {
@@ -169,9 +168,7 @@ public:
 	       e[e_pos] = sv.at(i);
 	       ++e_pos;
 	  	}
-
   	} else {
-
   		e[0] = sv.at(0);
 	    e[1] = sv.at(1);
 	    // the last eight  characters
@@ -180,7 +177,7 @@ public:
 	    }
 	    // checking if it exists
 	    char long_str[_size-10];
-	    for (int i = 0; i < _size - 8; i++) {
+	    for (int i = 0; i < _size - 10; i++) {
 	      long_str[i] = sv.at(i + 2);
 	    }
 	    std::pair<int, int> pair = str_exists(long_str, _size - 10);
@@ -193,16 +190,15 @@ public:
         ptr_or_start = string_vector.size() - (_size-10);
 	      //str::string_map.set(ptr_or_start, _size - 10);
 	    }
-      
   	}
  }
 
   void print_PoS () { 
-    std::cout << "This is ptr_or_start: " << std::endl;
+    std::cout << "ptr_or_start is";
     if (_size >= 14) {
-      std::cout << "Pointer: " << ptr_or_start << std::endl;
+      std::cout << "(ptr): " << ptr_or_start << std::endl;
     } else if (_size < 14) {
-      std::cout << "Start: ";
+      std::cout << "(start): ";
       // [first] [sec] [thr] [fourth] 
       for (int i = 3; i >= 0; --i) {
         std::cout << char(ptr_or_start >> (i * 8));
@@ -212,34 +208,28 @@ public:
   }
 
   void print_e () {
-    std::cout << "this is e: ";
-    for (int i = 0; i < 10; ++i) { std::cout << e[i] << " "; }
-    std::cout << std::endl;
+    std::cout << "e is: [ ";
+    for (int i = 0; i < e.size(); ++i) { std::cout << e[i] << " "; }
+    std::cout << "]" << std::endl;
   }
 
   void print_StrVec () {
-    std::cout << "this is string_vector: ";
-    /*
-    for (std::vector<int>::const_iterator i : string_vector) {
-      std::cout << i << std::endl;
-    }
-    */
+    std::cout << "StrVec{ ";
     for (std::vector<int>::const_iterator i = string_vector.begin(); i != string_vector.end(); ++i) 
     {
       std::cout << char(*i) << " ";
     }
-    std::cout << std::endl;
+    std::cout << "}" << std::endl;
   }
 
-
-  void print_key_val_str () {
-    std::cout << "\nSV_in_Map:  " << "Position_in_vector(from map):  " << std::endl;
+  void print_StrMap () {
+    std::cout << "StrMap{ ";
     for (auto it = string_map2.begin(), end = string_map2.end(); it != end; ++it) {
-      std::string_view key = string_map2.get_key(it);
+      std::string key = std::string(string_map2.get_key(it));
       uint32_t value = string_map2.get(it);
-      std::cout << key << "   " << value << "   ";
-      std::cout << std::endl;
+      std::cout << "<" << key << ", " << value << "> ";
     }
+    std::cout << "}" << std::endl;
   }
 
   
