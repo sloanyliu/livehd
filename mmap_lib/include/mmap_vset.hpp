@@ -355,19 +355,24 @@ public:
         //std::cout << "more than max" << std::endl;
       } else if (iData < owner.get_max()) {
         //std::cout << "should increment" << std::endl;
-        while (owner.efind(iData+1) == false) { //<--- issue is in efind() xD
+        while (owner.efind(iData+1) == false) { 
           ++iData;
+          /*
           if (iData == owner.get_max()) {
             flg = 1;
             //std::cout << "got to max in the while()" << std::endl;
             break;
           }
+          */
         }
+        ++iData;
+        /*
         if (flg == 0) {
           ++iData;
         } else {
           flg = 0;
         }
+        */
       }
       return *this;
     } //prefix ++i
@@ -457,8 +462,6 @@ public:
   [[nodiscard]] vIter end() {
     vIter tmp(*this);
     if (visitor_set.empty() == true) {
-      //Exception?
-      //Assertion?
       return tmp;
     }
     
@@ -466,7 +469,7 @@ public:
     //tmp.iter_change(vset::get_max()+1);
     
     // does not include last element of set
-    tmp.iter_change(vset::get_max()); 
+    tmp.iter_change(vset::get_max() + 1); 
     return tmp;
   }
   
@@ -476,9 +479,8 @@ public:
     if (vset::efind(ele+0)) { 
       tmp.iter_change(ele);
       return tmp;
-    } else {
-      //Exception?
-      //Assertion?
+    } else { // if it does not exist, it equals end
+      tmp.iter_change(vset::get_max() + 1);
       return tmp;
     }
   }

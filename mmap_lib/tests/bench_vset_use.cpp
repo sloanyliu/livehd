@@ -27,6 +27,8 @@ void random_mmap_set(int max, std::string_view name) {
 
   mmap_lib::map<uint32_t, bool> map(name.empty() ? "" : "lgdb_bench", name);
 
+  int conta = 0, conta2 = 0;
+
   for (int n = 1; n < BENCH_OUT_SIZE; ++n) {
     for (int i = 0; i < BENCH_INN_SIZE; ++i) {
       auto pos = rng.max(max);
@@ -34,13 +36,18 @@ void random_mmap_set(int max, std::string_view name) {
       pos = rng.max(max);
       map.erase(pos);
       pos = rng.max(max);
-      if (map.find(pos) != map.end())
-        map.erase(pos);
+      if (map.find(pos) != map.end()) {
+        map.erase(pos); 
+        ++conta;
+      } else { ++conta2; }
     }
   }
-
   b.sample("insert/erase dense");
-  int conta = 0;
+  
+  printf("found %d elements\n", conta);
+  printf("could not find %d elements\n", conta2);
+  
+  /*
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
     for (auto it = map.begin(), end = map.end(); it != end; ++it) {
       conta++;
@@ -70,35 +77,15 @@ void random_mmap_set(int max, std::string_view name) {
   b.sample("traversal dense");
 
   printf("inserts random %d\n", conta);
+  */
 }
 
-template<typename k, typename v>
-void test_erase(mmap_lib::vset<k, v>& temp) {
-  temp.clear();
-  int conta = 0;  // reset
-  
-#if 0
-  // INSERT/ERASE DENSE TEST
-  // runs about (BIG * SMALL) times
-  // each run:
-  //   --> generate rand num, insert that num into the map
-  //   --> generate another rand num, erase that num from the map
-  //   --> generate another rand num, if this num is not the end of the map, erase
 
-  for (int n = 1; n < BENCH_OUT_SIZE; ++n) {
-    for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-      auto pos = rng.max(max);
-      set.insert(pos);
-      pos = rng.max(max);
-			set.erase(pos);
-      pos = rng.max(max);
-      if (set.find(pos) != set.end()) {
-        set.erase(pos);
-      }
-    }
-  }
-#endif
-  conta = 0;
+
+
+template<typename k, typename v>
+void test_vset_erase(mmap_lib::vset<k, v>& temp) {
+  temp.clear();
 }
 
 
@@ -117,12 +104,10 @@ void random_mmap_vset(int max, std::string_view name) {
   Lbench                             b(type_test);
   mmap_lib::vset<uint32_t, uint32_t> set("lgdb_bench", name);
 
-  test_erase(set);
-
-  #if 0
+  //test_erase(set);
   set.clear();
 
-  int conta = 0;  // reset
+  int conta = 0, conta2 = 0;  // reset
   // INSERT/ERASE DENSE TEST
   // runs about (BIG * SMALL) times
   // each run:
@@ -138,12 +123,18 @@ void random_mmap_vset(int max, std::string_view name) {
 			set.erase(pos);
       pos = rng.max(max);
       if (set.find(pos) != set.end()) {
+        ++conta;
         set.erase(pos);
-      }
+      } else { ++conta2; }
     }
   }
-
-  b.sample("insert/erase dense");
+  
+  b.sample("insert/erase dense"); 
+  
+  printf("found %d elements\n", conta);
+  printf("could not find %d elements\n", conta2);
+  
+#if 0
   conta = 0;
   
   
