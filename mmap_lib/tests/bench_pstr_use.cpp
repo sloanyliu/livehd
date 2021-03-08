@@ -63,6 +63,7 @@ void mmap_pstr(std::string_view name) {
   std::cout << "Expecting nothing:  ";
   test5.print_key_val_str();  
 
+  /*
   std::cout << "================================ " << std::endl;
   std::cout << "Constructor 3 (string_view) Tests: " << std::endl;
   std::cout << "================================ " << std::endl;
@@ -111,6 +112,7 @@ void mmap_pstr(std::string_view name) {
   std::cout << "Expecting nothing:  ";
   test10.print_key_val_str();
 
+  */
   std::cout << "================================ " << std::endl;
   std::cout << "Constructor 2 (size >=14) Tests: " << std::endl;
   std::cout << "================================ " << std::endl;
@@ -123,16 +125,21 @@ void mmap_pstr(std::string_view name) {
   test11.print_e();
   std::cout << "Expecting key:0 val:5  string: words  ";
   test11.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test11.print_StrVec();
 
-  std::cout << "> Test 12: str(\"98words76543210\") " << std::endl;
+  std::cout << "> Test 12: str(\"98words76543210\") " << std::endl;  
   mmap_lib::str test12("98words76543210");
-  std::cout << "Expecting \"0 \":  ";
+  std::cout << "Expecting \"0 \": ";  
   test12.print_PoS(); 
   std::cout << "Expecting \"9876543210\":  ";
   test12.print_e();
   std::cout << "Expecting key:0 val:5  string: words  ";
   test12.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test12.print_StrVec();
 
+  
   std::cout << "> Test 13: str(\"01sloan23456789\") " << std::endl;
   mmap_lib::str test13("01sloan23456789");
   std::cout << "Expecting \"5 \":  ";
@@ -141,6 +148,8 @@ void mmap_pstr(std::string_view name) {
   test13.print_e();
   std::cout << "Expecting key:5 val:5  string: sloan  ";
   test13.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test13.print_StrVec();
   
   std::cout << "> Test 14: str(\"01andy23456789\") " << std::endl;
   mmap_lib::str test14("01andy23456789");
@@ -150,6 +159,8 @@ void mmap_pstr(std::string_view name) {
   test14.print_e();
   std::cout << "Expecting key:10 val:4  string: andy  ";
   test14.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test14.print_StrVec();
 
   std::cout << "> Test 15: str(\"hisloanbuzzball\") " << std::endl;
   mmap_lib::str test15("hisloanbuzzball");
@@ -159,6 +170,8 @@ void mmap_pstr(std::string_view name) {
   test15.print_e();
   std::cout << "Expecting key:5 val:5  string: sloan  ";
   test15.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test15.print_StrVec();
   
   std::cout << "> Test 16: str(\"--this_var_will_bee_very_longbuzzball\") " << std::endl;
   mmap_lib::str test16("--this_var_will_bee_very_longbuzzball");
@@ -168,7 +181,10 @@ void mmap_pstr(std::string_view name) {
   test16.print_e();
   std::cout << "Expecting key:14 val:27  string: this_var_will_bee_very_long  ";
   test16.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test16.print_StrVec();
 
+  /*
   std::cout << "> Test 17: str(\"lonng_andalsjdfkajsdkfljkalsjdfkljaskldjfklajdkslfjalsdjfllaskdfjklajskdlfjklasjdfljasdklfjklasjdflasjdflkajsdflkjakljdfkljaldjfkjakldsjfjaklsjdfjklajsdfjaklsfasjdklfjklajskdljfkljlaksjdklfjlkajsdklfjkla01words23456789\") " << std::endl;
   mmap_lib::str test17("lonng_andalsjdfkajsdkfljkalsjdfkljaskldjfklajdkslfjalsdjfllaskdfjklajskdlfjklasjdfljasdklfjklasjdflasjdflkajsdflkjakljdfkljaldjfkjakldsjfjaklsjdfjklajsdfjaklsfasjdklfjklajskdljfkljlaksjdklfjlkajsdklfjkla01words23456789");
   std::cout << "Expecting \"41 \":  ";
@@ -177,6 +193,8 @@ void mmap_pstr(std::string_view name) {
   test17.print_e();
   std::cout << "Expecting key:41 val:... string: ... ";
   test17.print_key_val_str();
+  std::cout << "String_vector(): " << std::endl;
+  test17.print_StrVec();
 
   std::cout << "> Test 18: str(\"hidifferentbuzzball\") " << std::endl;
   mmap_lib::str test18("hidifferentbuzzball");
@@ -186,7 +204,12 @@ void mmap_pstr(std::string_view name) {
   test18.print_e();
   std::cout << "Expecting key:249 val:9  string: different  ";
   test18.print_key_val_str();
- 
+  std::cout << "String_vector(): " << std::endl;
+  test18.print_StrVec();
+  */
+
+  /*
+
   std::cout << "================================================= " << std::endl;
   std::cout << "Constructor 3 (string view with size >=14) Tests: " << std::endl;
   std::cout << "================================================= " << std::endl;
@@ -208,6 +231,7 @@ void mmap_pstr(std::string_view name) {
   test20.print_e();
   std::cout << "Expecting key: 10 value :4 string:andy ";
   test20.print_key_val_str();
+*/
 }
 
 

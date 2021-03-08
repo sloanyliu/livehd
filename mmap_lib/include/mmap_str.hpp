@@ -51,9 +51,9 @@ protected:
 
 
 public:
-  static mmap_lib::map<uint32_t, uint32_t> string_map; //LUT  <our class str, position in vector>
-#if 0
-  inline static mmap_lib::map<std::string_view, bool> string_map;
+  static mmap_lib::map<uint32_t, uint32_t> string_map; //LUT
+#if 1
+  static mmap_lib::map<std::string_view, uint32_t> string_map2;
 #endif
 
   inline static std::vector<int> string_vector;
@@ -79,15 +79,18 @@ public:
 
   //  "============helper function to check if a string exists========= "
   std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
-#if 0
-    std::string_view sv(string_to_check);
-    auto it = string_map.find(sv);
-    if (it==string_map.end()) {
-      it = string_map.insert(sv,false);
-    }
-    return std::make_pair(it.first, size);
-#endif
 
+    std::string_view sv(string_to_check);   // string to sv
+    auto it = string_map2.find(sv);         // find the sv in the string_map<sv, bool>
+    if (it == string_map2.end()) {          // if we can't find the sv 
+      string_map2.set(sv, string_vector.size());        // we insert a new one
+      return std::make_pair(0,0);
+    } else {
+      /* <sv, uint32_t> */
+      return std::make_pair(string_map2.get(it), size); // otherwise, return the found one
+    }
+
+#if 0
     bool vector_flag = true;
     
     // the line below should be constant time
@@ -107,7 +110,8 @@ public:
         vector_flag = true;
       }
     }
-    return std::make_pair(0, 0);
+    return std::make_pair(0/*pos in vector*/, 0/*size of str*/);
+#endif
   }
 
    /*"================================= "
@@ -126,11 +130,12 @@ public:
     // checking if it exists
     
     char long_str[_size-10];
-    for (int i = 0; i < _size - 8; i++) {
+    for (int i = 0; i < (_size - 10); i++) {
       long_str[i] = s[i + 2];
-    }
-    
+    } 
+
     std::pair<int, int> pair = str_exists(long_str, _size - 10);
+
     if (pair.second) {
       ptr_or_start = pair.first;
     } else {
@@ -138,9 +143,8 @@ public:
         string_vector.push_back(long_str[i]);
       }
       ptr_or_start = string_vector.size()-(_size-10);
-      str::string_map.set(ptr_or_start, _size - 10);
+      //str::string_map.set(ptr_or_start, _size - 10);
     }
-
   }
   
   
@@ -187,7 +191,7 @@ public:
 	        string_vector.push_back(long_str[i]);
 	      }
         ptr_or_start = string_vector.size() - (_size-10);
-	      str::string_map.set(ptr_or_start, _size - 10);
+	      //str::string_map.set(ptr_or_start, _size - 10);
 	    }
       
   	}
@@ -227,18 +231,19 @@ public:
     std::cout << std::endl;
   }
 
+
   void print_key_val_str () {
-    std::cout << "Key:  " << "Val:  " << "String:  " << std::endl;
-    for (auto it = string_map.begin(), end = string_map.end(); it != end; ++it) {
-      uint32_t key   = string_map.get_key(it);
-      uint32_t value = string_map.get(it);
+    std::cout << "\nSV_in_Map:  " << "Position_in_vector(from map):  " << std::endl;
+    for (auto it = string_map2.begin(), end = string_map2.end(); it != end; ++it) {
+      std::string_view key = string_map2.get_key(it);
+      uint32_t value = string_map2.get(it);
       std::cout << key << "   " << value << "   ";
-      for (int i = key; i < (key+value); ++i) {
-        std::cout << static_cast<char>(string_vector.at(i));
-      }
       std::cout << std::endl;
     }
   }
+
+  
+
 
 #if 0
   fixme_const_iterator begin()  const {
@@ -404,5 +409,6 @@ public:
 
 //For static string_map
 mmap_lib::map<uint32_t, uint32_t> str::string_map;
+mmap_lib::map<std::string_view, uint32_t> str::string_map2;
 
 }  // namespace mmap_lib

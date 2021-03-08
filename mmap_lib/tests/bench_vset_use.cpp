@@ -76,6 +76,8 @@ template<typename k, typename v>
 void test_erase(mmap_lib::vset<k, v>& temp) {
   temp.clear();
   int conta = 0;  // reset
+  
+#if 0
   // INSERT/ERASE DENSE TEST
   // runs about (BIG * SMALL) times
   // each run:
@@ -95,8 +97,7 @@ void test_erase(mmap_lib::vset<k, v>& temp) {
       }
     }
   }
-
-  b.sample("insert/erase dense");
+#endif
   conta = 0;
 }
 
