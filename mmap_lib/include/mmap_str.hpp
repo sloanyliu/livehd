@@ -44,24 +44,16 @@ protected:
   uint32_t             ptr_or_start;  // 4 chars if _size < 14, ptr to mmap otherwise
   std::array<char, 10> e;             // last 10 "special <128" characters ending the string
   uint16_t             _size;         // 2 bytes
-  //int                  map_key;
-  //using Map = typename mmap_lib::map<uint32_t, uint32_t>;
-
   constexpr bool is_digit(char c) const { return c >= '0' && c <= '9'; }
 
 
 public:
-  static mmap_lib::map<uint32_t, uint32_t> string_map; //LUT
-#if 1
+  //static mmap_lib::map<uint32_t, uint32_t> string_map; //LUT
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
-#endif
-
   inline static std::vector<int> string_vector;
   
   // FIXME: This type of constructor is needed to be a constexpr
-   /*"================================= "
-    "============constructor 1========= "
-    "================================== "*/
+   /*===========constructor 1=========*/
   template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
     auto stop    = _size<4?_size:4;
@@ -77,7 +69,7 @@ public:
     }
   }
 
-  //  "============helper function to check if a string exists========= "
+  // helper function to check if a string exists
   std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);   // string to sv
     auto it = string_map2.find(sv);         // find the sv in the string_map<sv, bool>
@@ -113,10 +105,7 @@ public:
 #endif
   }
 
-   /*"================================= "
-    "============constructor 2========= "
-    "================================== "*/
- 
+  /*==========constructor 2==========*/
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
     // the first two characters
@@ -148,13 +137,11 @@ public:
   
   
 
-   /*"================================= "
-    "============constructor 3========= "
-    "================================== "
+  /*============constructor 3=========
     sv might not have null terminator
     don't copy one beyond what you need
     keep copying till we find a \0
-    */
+  */
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
     //claim is to treat it as a normal string 
   	if (_size < 14 ){
@@ -191,7 +178,7 @@ public:
 	      //str::string_map.set(ptr_or_start, _size - 10);
 	    }
   	}
- }
+  }
 
   void print_PoS () { 
     std::cout << "ptr_or_start is";
@@ -260,7 +247,7 @@ public:
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
   [[nodiscard]] constexpr std::size_t max_size() const { return 65535; }
-
+  
   [[nodiscard]] constexpr bool empty() const { return 0 == _size; }
 
   template <std::size_t N>
@@ -276,6 +263,7 @@ public:
     }
     return ptr_or_start == ptr_or_start && _size == rhs._size;
   }
+  
   constexpr bool operator!=(const str &rhs) const { return !(*this == rhs); }
 
   constexpr char operator[](std::size_t pos) const {
@@ -398,7 +386,7 @@ public:
 };
 
 //For static string_map
-mmap_lib::map<uint32_t, uint32_t> str::string_map;
+//mmap_lib::map<uint32_t, uint32_t> str::string_map;
 mmap_lib::map<std::string_view, uint32_t> str::string_map2;
 
 }  // namespace mmap_lib

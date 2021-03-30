@@ -13,6 +13,8 @@ namespace mmap_lib {
 template <typename Key, typename T>
 class vset {
 
+
+//FIXME: info sentinel?
 private:
   T max = 0;
   T min = 0;
@@ -29,7 +31,7 @@ public:
   explicit vset(std::string_view _set_name) : visitor_set(std::string(_set_name) + "_vs") {}
   explicit vset(std::string_view _path, std::string_view _set_name) : visitor_set(_path, std::string(_set_name) + "_vs") {}
 
-  // Clears the whole data structures
+  // Clears the whole data structure
   void clear() { 
     visitor_set.clear();
     max = 0;
@@ -255,7 +257,6 @@ public:
       } // put it back in the bitmap
     }
     
-    // Need to  add logic to update max    
     if (ele == max) {
       while (hold == 0) {
         if (p == 0) { max = 0; return; }
