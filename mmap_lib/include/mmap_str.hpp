@@ -48,8 +48,11 @@ protected:
 
 
 public:
+  //string_map2 holds the long_str as a string_view (key), and the size (val) 
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  inline static std::vector<int> string_vector; 
+  
+  // this holds all the raw data, (int kinda weird?)
+  inline static std::vector<int> string_vector; // ptr_or_start points here! 
   
   //===========constructor 1=========
   template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
@@ -275,7 +278,23 @@ public:
         for (auto i = 0; i < 8; ++i) { 
           if (e[9-i] != rhs[_size - i]) { return false; }
         }
+
         //***use ptr_or_start to get long_str and compare
+        // 1) Use ptr_or_start to interact with string_map2 to get the string out
+        // 2) Whatever comes from string_map2 will need to interact with string_vector
+        // 3) then from StringVector, we can get the actual string
+        //
+        /* helper function to check if a string exists
+        std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) { 
+          std::string_view sv(string_to_check);   // string to sv
+          auto it = string_map2.find(sv);         // find the sv in the string_map2
+          if (it == string_map2.end()) {          // if we can't find the sv
+            //<std::string_view, uint32_t> string_map2
+            string_map2.set(sv, string_vector.size());  // we insert a new one
+            return std::make_pair(0,0);
+          } else {
+            return std::make_pair(string_map2.get(it), size); //found it, return
+          }*/
       }
     }
     return false;  // FIXME
