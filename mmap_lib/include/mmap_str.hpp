@@ -41,44 +41,46 @@ protected:
   // The only drawback is that to compute size, it needs to iterate over the e
   // field, but asking size is not a common operation in LiveHD
 
-  uint32_t             ptr_or_start;  // 4 chars if _size < 14, ptr to mmap otherwise
-  std::array<char, 10> e;             // last 10 "special <128" characters ending the string
-  uint16_t             _size;         // 2 bytes
+  uint32_t ptr_or_start;  // 4 chars if _size < 14, is a ptr to string_map2 otherwise
+  std::array<char, 10> e; // last 10 "special <128" characters ending the string
+  uint16_t _size;          // 2 bytes
   constexpr bool is_digit(char c) const { return c >= '0' && c <= '9'; }
 
 
 public:
-  //static mmap_lib::map<uint32_t, uint32_t> string_map; //LUT
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  inline static std::vector<int> string_vector;
+  inline static std::vector<int> string_vector; 
   
-  // FIXME: This type of constructor is needed to be a constexpr
-   /*===========constructor 1=========*/
-  template<std::size_t N, typename = std::enable_if_t<(N-1)<14>>
+  //===========constructor 1=========
+  template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
-    auto stop    = _size<4?_size:4;
-    //isptr =  _size<14?false:true;
-    for(auto i=0;i<stop;++i) {
+    // if _size is less than 4, then whole thing will be in ptr_or_start
+    auto stop = _size < 4 ? _size : 4;
+    // ptr_or_start will hold first 4 chars
+    // | first | second | third | forth |
+    // 31      23       15      7       0 
+    for(auto i = 0; i < stop; ++i) {
       ptr_or_start <<= 8;
       ptr_or_start |= s[i];
     }
-    auto e_pos   = 0u;
-    for(auto i=stop ;i<N-1;++i) { // 8 (not 10 to allow to grow a bit) last positions
-       e[e_pos] = s[i];
+    auto e_pos = 0u; // e indx starts at 0
+    // stores rest in e, starting from stop to end of string
+    for(auto i = stop; i < N - 1; ++i) {
+      e[e_pos] = s[i];
       ++e_pos;
     }
   }
 
   // helper function to check if a string exists
-  std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) {
+  std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) { 
     std::string_view sv(string_to_check);   // string to sv
-    auto it = string_map2.find(sv);         // find the sv in the string_map<sv, bool>
-    if (it == string_map2.end()) {          // if we can't find the sv 
-      string_map2.set(sv, string_vector.size());        // we insert a new one
+    auto it = string_map2.find(sv);         // find the sv in the string_map2
+    if (it == string_map2.end()) {          // if we can't find the sv
+      //<std::string_view, uint32_t> string_map2
+      string_map2.set(sv, string_vector.size());  // we insert a new one
       return std::make_pair(0,0);
     } else {
-      /* <sv, uint32_t> */
-      return std::make_pair(string_map2.get(it), size); // otherwise, return the found one
+      return std::make_pair(string_map2.get(it), size); //found it, return
     }
 
 #if 0
@@ -105,30 +107,28 @@ public:
 #endif
   }
 
-  /*==========constructor 2==========*/
+  //==========constructor 2==========
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
-    // the first two characters
+    // the first two characters saved in e
     e[0] = s[0];
     e[1] = s[1];
-    // the last eight  characters
-    for (int i = 0; i < 8; i++) {
-      e[9-i] = s[_size - 1 -i];
-    }
-    // checking if it exists
-    
-    char long_str[_size-10];
-    for (int i = 0; i < (_size - 10); i++) {
-      long_str[i] = s[i + 2];
-    } 
-    
+    // the last eight characters saved in e
+    for (int i = 0; i < 8; i++) { e[9 - i] = s[_size - 1 - i]; }
+    // used to hold long part (saved in vector)
+    char long_str[_size-10];     
+    // filling long_str with long part of string
+    for (int i = 0; i < (_size - 10); ++i) { long_str[i] = s[i + 2]; } 
+    // checking if long part of string already exists in vector
     std::pair<int, int> pair = str_exists(long_str, _size - 10);
 
+    // if string exists in vector, get the ptr to it in string_map2
+    // pair is (position in string_map2, size of string)
     if (pair.second) {
       ptr_or_start = pair.first;
-    } else {
-      for (int i = 0; i < _size - 10; i++) {
-        string_vector.push_back(long_str[i]);
+    } else { // if string is not in vector, put it in vector
+      for (int i = 0; i < _size - 10; i++) { 
+        string_vector.push_back(long_str[i]); 
       }
       ptr_or_start = string_vector.size()-(_size-10);
       //str::string_map.set(ptr_or_start, _size - 10);
@@ -137,21 +137,16 @@ public:
   
   
 
-  /*============constructor 3=========
-    sv might not have null terminator
-    don't copy one beyond what you need
-    keep copying till we find a \0
-  */
+  //============constructor 3=========
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
-    //claim is to treat it as a normal string 
   	if (_size < 14 ){
-		auto stop    = _size<4?_size:4;
+		auto stop = _size<4?_size:4;
 	    for(auto i=0;i<stop;++i) {
 	      ptr_or_start <<= 8;
 	      ptr_or_start |= sv.at(i);
 	    }
 	    auto e_pos   = 0u;
-	    for(auto i=stop;i<_size;++i) { // 8 (not 10 to allow to grow a bit) last positions
+	    for(auto i=stop;i<_size;++i) {
 	       e[e_pos] = sv.at(i);
 	       ++e_pos;
 	  	}
@@ -251,7 +246,31 @@ public:
   [[nodiscard]] constexpr bool empty() const { return 0 == _size; }
 
   template <std::size_t N>
-  constexpr bool operator==(const char (&s)[N]) const {
+  constexpr bool operator==(const char (&rhs)[N]) const {
+    //printf("string is %s\n", rhs);
+    
+    // if length is less than 14
+    if (N < 14) {
+      // checking ptr_or_start for first 4 chars
+      auto idx = 0;
+      for (auto i = N<=4 ? ((N-1) * 8) : 24; i >= 0; i-=8) {
+        // if any chars don't match here, return false
+        if (((ptr_or_start >> i) & 0xff) != (rhs[i++] & 0xff)) { return false; }
+      }
+      // if size is greater than 4, check e, otherwise return verdict
+      bool cont = N <= 4 ? false : true;
+      if (!cont) { return true; }
+      else {
+        // checking e one at a time with rest of chars in string
+        for (auto i = 4; i < N - 1; ++i) {
+          if (e[i-4] != rhs[i]) { return false; }
+        }
+        return true;
+      }
+    } else if (N > 14) {
+      return false;
+      // check e and use ptr_or_start to get string from map to do check
+    }
     return false;  // FIXME
     // return str(s) == *this;
   }
