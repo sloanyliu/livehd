@@ -246,30 +246,37 @@ public:
   [[nodiscard]] constexpr bool empty() const { return 0 == _size; }
 
   template <std::size_t N>
-  constexpr bool operator==(const char (&rhs)[N]) const {
-    //printf("string is %s\n", rhs);
-    
+  constexpr bool operator==(const char (&rhs)[N]) const { 
     // if length is less than 14
-    if (N < 14) {
-      // checking ptr_or_start for first 4 chars
-      auto idx = 0;
-      for (auto i = N<=4 ? ((N-1) * 8) : 24; i >= 0; i-=8) {
-        // if any chars don't match here, return false
-        if (((ptr_or_start >> i) & 0xff) != (rhs[i++] & 0xff)) { return false; }
-      }
-      // if size is greater than 4, check e, otherwise return verdict
-      bool cont = N <= 4 ? false : true;
-      if (!cont) { return true; }
-      else {
-        // checking e one at a time with rest of chars in string
-        for (auto i = 4; i < N - 1; ++i) {
+    // we just check ptr_or_start and e
+    auto rhs_size = N - 1;
+    // if size doesnt match, false
+    if (_size != rhs_size) { 
+      return false;
+    // If size matches, keep comparing
+    } else {
+      // if size is less than 14, actually need to check e and p_o_s
+      if (_size < 14) {
+        // checking p_o_s for first 4 chars
+        for (auto i = _size<=4 ? ((_size) * 8) : 24; i >= 0; i -= 8) {
+          // if any chars don't match here, return false
+          if (((ptr_or_start >> i) & 0xff) != (rhs[i++] & 0xff)) { return false; }
+        }
+        // if _size is 4 or less than 4, then only needed to check p_o_s
+        if (_size == rhs_size && _size <= 4) { return true; }
+        // checking e for rest of chars
+        for (auto i = 4; i < _size; ++i) {
           if (e[i-4] != rhs[i]) { return false; }
         }
-        return true;
+        return true; 
+      } else if (_size >= 14) {
+        // e now holds first 2 and last 8
+        if (e[0] != rhs[0] || e[1] != rhs[1]) { return false; }
+        for (auto i = 0; i < 8; ++i) { 
+          if (e[9-i] != rhs[_size - i]) { return false; }
+        }
+        //***use ptr_or_start to get long_str and compare
       }
-    } else if (N > 14) {
-      return false;
-      // check e and use ptr_or_start to get string from map to do check
     }
     return false;  // FIXME
     // return str(s) == *this;
