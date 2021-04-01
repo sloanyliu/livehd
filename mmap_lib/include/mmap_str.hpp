@@ -48,7 +48,7 @@ protected:
 
 
 public:
-  //string_map2 holds the long_str as a string_view (key), and the size (val) 
+  //string_map2 <sv of long_str (key), and position in str_vec (val)> 
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
   
   // this holds all the raw data, (int kinda weird?)
@@ -250,21 +250,32 @@ public:
 
   template <std::size_t N>
   constexpr bool operator==(const char (&rhs)[N]) const { 
-    // if length is less than 14
-    // we just check ptr_or_start and e
+    #if 1
     auto rhs_size = N - 1;
     // if size doesnt match, false
+    printf("_size is: %d, rhs_size is: %d\n", _size, rhs_size);
     if (_size != rhs_size) { 
+      printf("size not match\n"); 
       return false;
-    // If size matches, keep comparing
-    } else {
-      // if size is less than 14, actually need to check e and p_o_s
+    } else { // If size matches, keep comparing
+      // if size is less than 14, only check e and p_o_s
+      printf("size matches!\n");
       if (_size < 14) {
         // checking p_o_s for first 4 chars
+        //FIXME
+        //=========================PROBLEM===========================
+        // Should not be returning false on line 272 but it is
+        // figure out why
         for (auto i = _size<=4 ? ((_size) * 8) : 24; i >= 0; i -= 8) {
           // if any chars don't match here, return false
-          if (((ptr_or_start >> i) & 0xff) != (rhs[i++] & 0xff)) { return false; }
+          if (((ptr_or_start >> i) & 0xff) != (rhs[i++] & 0xff)) { 
+            printf("mismatch in ptr_or_start\n");
+            return false; 
+          }
         }
+        //
+        //==========================================================
+        //
         // if _size is 4 or less than 4, then only needed to check p_o_s
         if (_size == rhs_size && _size <= 4) { return true; }
         // checking e for rest of chars
@@ -278,27 +289,22 @@ public:
         for (auto i = 0; i < 8; ++i) { 
           if (e[9-i] != rhs[_size - i]) { return false; }
         }
-
-        //***use ptr_or_start to get long_str and compare
-        // 1) Use ptr_or_start to interact with string_map2 to get the string out
-        // 2) Whatever comes from string_map2 will need to interact with string_vector
-        // 3) then from StringVector, we can get the actual string
-        //
-        /* helper function to check if a string exists
-        std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) { 
-          std::string_view sv(string_to_check);   // string to sv
-          auto it = string_map2.find(sv);         // find the sv in the string_map2
-          if (it == string_map2.end()) {          // if we can't find the sv
-            //<std::string_view, uint32_t> string_map2
-            string_map2.set(sv, string_vector.size());  // we insert a new one
-            return std::make_pair(0,0);
-          } else {
-            return std::make_pair(string_map2.get(it), size); //found it, return
-          }*/
+        // Getting data from string_vector and comparing with rest of rhs 
+        auto j = 2; // long_str starts at index (2) goes to index (_size - 8)
+        // for loop goes from p_o_s to p_o_s + _size-10 
+        for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {
+          if (string_vector.at(i) != rhs[j]) { return false; }
+          j = j < _size-8 ? j+1 : j;
+        }
+        return true;
       }
     }
-    return false;  // FIXME
-    // return str(s) == *this;
+    return false;
+    #endif
+
+    #if 0
+    return str(rhs) == *this;//saves rhs into vec and map if rhs.size >= 14
+    #endif
   }
 
   constexpr bool operator==(const str &rhs) const {
@@ -311,7 +317,10 @@ public:
   
   constexpr bool operator!=(const str &rhs) const { return !(*this == rhs); }
 
-  constexpr char operator[](std::size_t pos) const {
+  template <std::size_t N>
+  constexpr bool operator!=(const char (&rhs)[N]) const { return !(*this == rhs); }
+  
+    constexpr char operator[](std::size_t pos) const {
 #ifndef NDEBUG
     if (pos >= _size)
       throw std::out_of_range("");

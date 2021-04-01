@@ -82,7 +82,11 @@ void test_eq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
 
 int main(int argc, char **argv) {
   //mmap_pstr_ctor_tests();
-  mmap_lib::str tt1("hello_world");
+  mmap_lib::str tt1("hello");
+  test_ctor(tt1, "hello");
   if (tt1 == "hello") { std::cout << "yolo" << std::endl; }  
+  else { std::cout << "oops\n"; }
+  tt1.print_StrMap();
+  tt1.print_StrVec();
   return 0;
 }
