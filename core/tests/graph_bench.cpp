@@ -1,19 +1,19 @@
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
 #include "absl/container/flat_hash_map.h"
 #include "lgedgeiter.hpp"
 #include "lgraph.hpp"
 
-LGraph* create_some_random_lgraph() {
-  LGraph* lg = LGraph::create("lgdb_bench", "random", "-");
+Lgraph* create_some_random_lgraph() {
+  Lgraph* lg = Lgraph::create("lgdb_bench", "random", "-");
 
   I(false);
 
   return lg;
 }
 
-void populate_graph(LGraph* lg) {
+void populate_graph(Lgraph* lg) {
   (void)lg;
 #if 0
   absl::flat_hash_map<Node::Compact, graph::Bi_adjacency_list::Vert> map2g2vertex;
@@ -41,7 +41,7 @@ void populate_graph(LGraph* lg) {
 #endif
 }
 
-void lgraph_counts(LGraph* lg) {
+void lgraph_counts(Lgraph* lg) {
   int nodes = 0;
   int edges = 0;
   for (auto node : lg->fast()) {
@@ -55,7 +55,7 @@ void lgraph_counts(LGraph* lg) {
   fmt::print("Lgraph, nodes: {}, edges: {}\n", nodes, edges);
 }
 
-int traverse_lgraph_nodes(LGraph* lg) {
+int traverse_lgraph_nodes(Lgraph* lg) {
   int i = 0;
   for (const auto& node : lg->fast()) {
     (void)node;
@@ -64,7 +64,7 @@ int traverse_lgraph_nodes(LGraph* lg) {
   return i;
 }
 
-int traverse_lgraph_in(LGraph* lg) {
+int traverse_lgraph_in(Lgraph* lg) {
   int i = 0;
   for (const auto& node : lg->fast()) {
     (void)node;
@@ -76,7 +76,7 @@ int traverse_lgraph_in(LGraph* lg) {
   return i;
 }
 
-int traverse_lgraph_out(LGraph* lg) {
+int traverse_lgraph_out(Lgraph* lg) {
   int i = 0;
   for (const auto& node : lg->fast()) {
     (void)node;
@@ -91,12 +91,12 @@ int traverse_lgraph_out(LGraph* lg) {
 int main(int argc, char** argv) {
   fmt::print("benchmark the graph\n");
 
-  LGraph* lg;
+  Lgraph* lg;
   if (argc == 1) {
     lg = create_some_random_lgraph();
   } else if (argc == 3) {
     fmt::print("benchmark the graph lgdb:{} name:{}\n", argv[1], argv[2]);
-    lg = LGraph::open(argv[1], argv[2]);
+    lg = Lgraph::open(argv[1], argv[2]);
   } else {
     fmt::print("usage:\n\t{} <lgdb> <lg_name>\n", argv[0]);
     exit(-2);
@@ -112,8 +112,8 @@ int main(int argc, char** argv) {
   auto start      = std::chrono::high_resolution_clock::now();
   auto stop       = std::chrono::high_resolution_clock::now();
   auto duration   = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  int  x = 0;
-  int  micros = 1000000;
+  int  x          = 0;
+  int  micros     = 1000000;
 
   fmt::print("--------------------------Nodes--------------------\n");
   start = std::chrono::high_resolution_clock::now();
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
   }
   stop     = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  fmt::print("Traverse LGraph {} times took {}s\n", iterations, duration.count() / micros);
+  fmt::print("Traverse Lgraph {} times took {}s\n", iterations, duration.count() / micros);
 
   fmt::print("--------------------------Nodes+in--------------------\n");
   start = std::chrono::high_resolution_clock::now();
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
   }
   stop     = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  fmt::print("Traverse LGraph {} times took {}s\n", iterations, duration.count() / micros);
+  fmt::print("Traverse Lgraph {} times took {}s\n", iterations, duration.count() / micros);
 
   fmt::print("--------------------------Nodes+out--------------------\n");
   start = std::chrono::high_resolution_clock::now();
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
   }
   stop     = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  fmt::print("Traverse LGraph {} times took {}s\n", iterations, duration.count() / micros);
+  fmt::print("Traverse Lgraph {} times took {}s\n", iterations, duration.count() / micros);
 
   fmt::print("x:{} opt/check\n", x);
 

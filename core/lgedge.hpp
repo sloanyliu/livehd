@@ -1,12 +1,12 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 #pragma once
 
-#include "lgraph_base_core.hpp"
 #include "cell.hpp"
+#include "lgraph_base_core.hpp"
 
 class Node_pin;
 
-typedef int64_t SIndex_ID;  // Short Edge_raw must be signed +- offset
+typedef int64_t SIndex_id;  // Short Edge_raw must be signed +- offset
 
 struct __attribute__((packed)) LEdge_Internal {  // 6 bytes total
 protected:
@@ -22,12 +22,12 @@ public:
 
   bool     is_snode() const { return snode; }
   bool     is_input() const { return input; }
-  Index_ID get_idx() const {
+  Index_id get_idx() const {
     I(raw_idx);
     return raw_idx;
   }
 
-  bool set(Index_ID _idx, Port_ID _inp_pid, bool _input) {
+  bool set(Index_id _idx, Port_ID _inp_pid, bool _input) {
     I(_idx < (1LL << (Index_bits - 1)));
     I(_inp_pid < (1 << Port_bits));
 
@@ -39,7 +39,7 @@ public:
     return true;
   }
 
-  void set_idx(Index_ID _idx) {
+  void set_idx(Index_id _idx) {
     I(snode == 0);
     I(_idx < ((1LL << Index_bits) - 1));
     raw_idx = _idx.value;
@@ -49,27 +49,27 @@ public:
 struct __attribute__((packed)) SEdge_Internal {  // 3 bytes total
   bool      snode : 1;                           //  1 bit
   bool      input : 1;                           //  1 bit
-  SIndex_ID ridx : 19;                           //  relative
+  SIndex_id ridx : 19;                           //  relative
   Port_ID   inp_pid : 3;                         //  3 bits ; abs
 
   bool     is_snode() const { return snode; }
   bool     is_input() const { return input; }
   Port_ID  get_inp_pid() const { return inp_pid; }
-  Index_ID get_page_idx() const;
+  Index_id get_page_idx() const;
 
-  Index_ID get_idx(Index_ID idx) const {
+  Index_id get_idx(Index_id idx) const {
     I(ridx);
     I(idx == get_page_idx());
     return idx + ridx;
   }
 
-  bool set(Index_ID _idx, Port_ID _inp_pid, bool _input) {
+  bool set(Index_id _idx, Port_ID _inp_pid, bool _input) {
     if (_inp_pid > 7) {  // 3 bits
       // fmt::print("P:{}\n",_inp_pid);
       return false;
     }
-    Index_ID  abs_idx   = static_cast<SIndex_ID>(get_page_idx());
-    SIndex_ID delta_idx = static_cast<SIndex_ID>(_idx) - abs_idx;
+    Index_id  abs_idx   = static_cast<SIndex_id>(get_page_idx());
+    SIndex_id delta_idx = static_cast<SIndex_id>(_idx) - abs_idx;
     if (delta_idx >= ((1 << 18) - 1) || delta_idx < (-((1 << 18) - 1))) {
       // fmt::print("D:{}\n",delta_idx);
       return false;
@@ -85,11 +85,11 @@ struct __attribute__((packed)) SEdge_Internal {  // 3 bytes total
   }
 };
 
-class LGraph;
+class Lgraph;
 
 class __attribute__((packed)) Edge_raw {  // 3 bytes total
 protected:
-  friend class LGraph;
+  friend class Lgraph;
   friend class Node_internal;
   friend class Node_pin;
 
@@ -99,7 +99,7 @@ protected:
 #pragma clang diagnostic ignored "-Wunused"
   uint64_t pad2 : 22;
 #pragma clang diagnostic pop
-  Index_ID get_page_idx() const;
+  Index_id get_page_idx() const;
 
   Port_ID get_dst_pid() const;
 
@@ -112,18 +112,18 @@ protected:
     return l->get_inp_pid();
   }
 
-  static const Edge_raw *find_edge(const Edge_raw *bt, const Edge_raw *et, Index_ID ptr_nid, Port_ID inp_pod, Port_ID dst_pid);
+  static const Edge_raw *find_edge(const Edge_raw *bt, const Edge_raw *et, Index_id ptr_nid, Port_ID inp_pod, Port_ID dst_pid);
 
-  Index_ID get_self_idx() const;  // WARNING: it can point to overflow. Be careful!
+  Index_id get_self_idx() const;  // WARNING: it can point to overflow. Be careful!
 
 public:
   friend struct Node_internal_Page;
   friend class Node_internal;
-  friend class LGraph_Base;
+  friend class Lgraph_Base;
   friend struct LEdge;
   friend struct SEdge;
 
-  int  next_node_inc() const { return is_snode() ? 1 : 2; }
+  int next_node_inc() const { return is_snode() ? 1 : 2; }
 
   bool is_input() const { return input; }
 
@@ -134,11 +134,11 @@ public:
     I(snode == reinterpret_cast<const SEdge_Internal *>(this)->is_snode());
   }
 
-  Node_pin get_out_pin(LGraph *g, LGraph *cg, const Hierarchy_index &hidx, Index_ID idx) const;
-  Node_pin get_inp_pin(LGraph *g, LGraph *cg, const Hierarchy_index &hidx, Index_ID idx) const;
+  Node_pin get_out_pin(Lgraph *g, Lgraph *cg, const Hierarchy_index &hidx, Index_id idx) const;
+  Node_pin get_inp_pin(Lgraph *g, Lgraph *cg, const Hierarchy_index &hidx, Index_id idx) const;
 
-  Index_ID get_self_nid() const;
-  Index_ID get_idx() const {
+  Index_id get_self_nid() const;
+  Index_id get_idx() const {
     const SEdge_Internal *s = reinterpret_cast<const SEdge_Internal *>(this);
     if (is_snode())
       return s->get_idx(get_page_idx());
@@ -148,7 +148,7 @@ public:
   }
   void dump() const {
     const SEdge_Internal *s = reinterpret_cast<const SEdge_Internal *>(this);
-    Index_ID              a = -1;
+    Index_id              a = -1;
     if (is_snode())
       a = s->ridx;
 
@@ -190,7 +190,7 @@ class Node_internal;
 
 struct __attribute__((packed)) Node_internal_Page {
   Node_state state : 3;  // 1byte
-  uint8_t    pad1[7];    // 7bytes waste just to get Index_ID aligned
+  uint8_t    pad1[7];    // 7bytes waste just to get Index_id aligned
   uint32_t   idx;        // 4bytes 32bits but for speed
   uint32_t   free_idx;   // 4bytes 32bits to the first free node
 #pragma clang diagnostic push
@@ -198,7 +198,7 @@ struct __attribute__((packed)) Node_internal_Page {
   uint8_t pad2[32 - 16];
 #pragma clang diagnostic pop
 
-  Index_ID get_idx() const { return idx; }
+  Index_id get_idx() const { return idx; }
 
   static const Node_internal_Page &get(const SEdge_Internal *ptr) {
     // Every 1 Page a full Node is reserved for pointer keeping
@@ -218,7 +218,7 @@ struct __attribute__((packed)) Node_internal_Page {
   bool is_page_align() const {
     return ((((uint64_t)this) & 0xFFF) == 0);  // page align.
   }
-  void set_page(Index_ID _idx) {
+  void set_page(Index_id _idx) {
     I(is_page_align());
     I(_idx < (1LL << Index_bits));
     idx   = _idx;
@@ -266,8 +266,8 @@ private:
 
 protected:
   friend class Edge_raw;
-  friend class LGraph;
-  Index_ID get_self_idx() const;  // WARNING: It can point to overflow
+  friend class Lgraph;
+  Index_id get_self_idx() const;  // WARNING: It can point to overflow
 
 public:
   Node_internal() { reset(); }
@@ -316,9 +316,7 @@ public:
     return n;
   }
 
-  uint8_t get_num_local_edges() const {
-    return get_num_local_inputs() + get_num_local_outputs();
-  }
+  uint8_t get_num_local_edges() const { return get_num_local_inputs() + get_num_local_outputs(); }
 
   Ntype_op get_type() const {
     I(is_master_root());
@@ -330,16 +328,16 @@ public:
   }
 
   void reset() {
-    state        = Last_node_state;
-    root         = 1;
-    bits         = 0;
-    dst_pid      = 0;
-    inp_pos      = 0;  // SEdge uses 1, LEdge uses 2
-    out_pos      = 0;  // SEdge uses 1, LEdge uses 2
-    inp_long     = 0;
-    out_long     = 0;
-    nid          = 0;
-    type         = 0;
+    state    = Last_node_state;
+    root     = 1;
+    bits     = 0;
+    dst_pid  = 0;
+    inp_pos  = 0;  // SEdge uses 1, LEdge uses 2
+    out_pos  = 0;  // SEdge uses 1, LEdge uses 2
+    inp_long = 0;
+    out_long = 0;
+    nid      = 0;
+    type     = 0;
   }
 
   bool is_deleted() const {
@@ -360,15 +358,13 @@ public:
     return root;
   }
   constexpr bool is_graph_output() const {
-    return nid == 2; // Hardcoded_output_nid
+    return nid == 2;  // Hardcoded_output_nid
   }
   constexpr bool is_graph_input() const {
-    return nid == 1; // Hardcoded_input_nid
+    return nid == 1;  // Hardcoded_input_nid
   }
-  constexpr bool is_graph_io() const {
-    return is_graph_input() || is_graph_output();
-  }
-  bool is_master_root() const {
+  constexpr bool is_graph_io() const { return is_graph_input() || is_graph_output(); }
+  bool           is_master_root() const {
     I(is_node_state());
     bool ms = nid == get_self_idx().value;
     if (ms)
@@ -385,11 +381,11 @@ public:
     I(eid < (1 << Port_bits));
     dst_pid = eid;
   }
-  Index_ID get_nid() const {
+  Index_id get_nid() const {
     I(nid);
     return nid;
   }
-  Index_ID get_master_root_nid() const {
+  Index_id get_master_root_nid() const {
     I(nid);
     if (likely(root))
       return nid;
@@ -402,13 +398,13 @@ public:
   const Node_internal &get_root() const;
   const Node_internal &get_master_root() const;
 
-  void set_nid(Index_ID _nid) {
+  void set_nid(Index_id _nid) {
     I(_nid < (1LL << Index_bits));
     nid = _nid.value;
     GI(nid == get_self_idx().value, root);
   }
 
-  inline const Node_internal &get(Index_ID idx2) const {
+  inline const Node_internal &get(Index_id idx2) const {
     const Node_internal *root_n = this;
     return root_n[idx2.value - get_self_idx().value];
   }
@@ -425,24 +421,24 @@ public:
     return *root_n;
   }
 
-  Index_ID get_next() const {
+  Index_id get_next() const {
     I(is_next_state());
     uint32_t *idx_upp = (uint32_t *)(&sedge[0]);
     return *idx_upp;
   }
 
-  void set_next_state(Index_ID _idx) {
+  void set_next_state(Index_id _idx) {
     I(is_next_state());
     uint32_t *idx_upp = (uint32_t *)(&sedge[0]);
     *idx_upp          = _idx.value;
   }
-  void force_next_state(Index_ID _idx) {
+  void force_next_state(Index_id _idx) {
     state             = Next_node_state;
     uint32_t *idx_upp = (uint32_t *)(&sedge[0]);
     *idx_upp          = _idx.value;
   }
 
-  void push_next_state(Index_ID _idx) {
+  void push_next_state(Index_id _idx) {
     I(is_last_state());
 
     I((inp_pos + out_pos + 2) < Num_SEdges);
@@ -496,7 +492,7 @@ public:
       inp_pos++;
     }
   }
-  bool has_local_edges() const { return inp_pos>0 || out_pos>0; }
+  bool has_local_edges() const { return inp_pos > 0 || out_pos > 0; }
   bool has_local_inputs() const { return inp_pos > 0; }
   bool has_local_outputs() const { return out_pos > 0; }
   int  get_space_available() const {

@@ -10,6 +10,8 @@
 #include <climits>
 #include <functional>
 #include <map>
+#include <mutex>
+#include <iostream>
 
 #include "absl/container/flat_hash_map.h"
 
@@ -32,7 +34,7 @@ struct mmap_gc_entry {
     fd   = -1;
   }
   void touch_age() {
-    if ((age+1)==global_age || (global_age>>14))
+    if ((age + 1) == global_age || (global_age >> 14))
       return;
     age = global_age++;
   }
@@ -45,14 +47,16 @@ struct mmap_gc_entry {
 
 class mmap_gc {
 protected:
+  static inline std::mutex lgs_mutex;
+
   using gc_pool_type = absl::flat_hash_map<void *, mmap_gc_entry>;  // pointer stability for delete
   static inline gc_pool_type mmap_gc_pool;
 
   static inline int n_open_mmaps = 0;
   static inline int n_open_fds   = 0;
 
-  static inline int n_max_mmaps = 2048;
-  static inline int n_max_fds   = 750;
+  static inline int n_max_mmaps = 500;
+  static inline int n_max_fds   = 500;
 
   static void recycle_older() {
     // Recycle around 1/2 of the newer open fds with mmap
@@ -62,11 +66,14 @@ protected:
 
     std::vector<mmap_gc_entry> sorted;
     for (auto it : mmap_gc_pool) {
-      if (it.second.fd < 0) continue;
-      if (it.second.base == nullptr) continue; // just open, no mmap
+      if (it.second.fd < 0)
+        continue;
+      if (it.second.base == nullptr)
+        continue;  // just open, no mmap
 
       may_recycle_fds++;
-      if (it.second.base) may_recycle_mmaps++;
+      if (it.second.base)
+        may_recycle_mmaps++;
 
       assert(it.first == it.second.base);
       sorted.emplace_back(it.second);
@@ -75,21 +82,22 @@ protected:
     int n_recycle_fds   = may_recycle_fds == 1 ? 1 : may_recycle_fds / 2;
     int n_recycle_mmaps = may_recycle_mmaps == 1 ? 1 : may_recycle_mmaps / 2;
 
-    if (n_open_fds < n_max_fds && may_recycle_fds > 4) n_recycle_fds = may_recycle_fds / 4;
-    if (n_open_mmaps < n_max_mmaps && may_recycle_mmaps > 4) n_recycle_mmaps = may_recycle_mmaps / 4;
+    if (n_open_fds < n_max_fds && may_recycle_fds > 4)
+      n_recycle_fds = may_recycle_fds / 4;
+    if (n_open_mmaps < n_max_mmaps && may_recycle_mmaps > 4)
+      n_recycle_mmaps = may_recycle_mmaps / 4;
 
 #ifdef MMAP_GC_TRACE
     std::cerr << "trying:"
-      << " may_recycle_fds:" << may_recycle_fds << " may_recycle_mmaps:" << may_recycle_mmaps
-      << " n_recycle_fds:" << n_recycle_fds << " n_recycle_mmaps:" << n_recycle_mmaps
-      << " n_open_mmaps:" << n_open_mmaps << " n_max_mmaps:" << n_max_mmaps
-      << " n_open_fds:" << n_open_fds << " n_max_fds:" << n_max_fds << "\n";
+              << " may_recycle_fds:" << may_recycle_fds << " may_recycle_mmaps:" << may_recycle_mmaps
+              << " n_recycle_fds:" << n_recycle_fds << " n_recycle_mmaps:" << n_recycle_mmaps << " n_open_mmaps:" << n_open_mmaps
+              << " n_max_mmaps:" << n_max_mmaps << " n_open_fds:" << n_open_fds << " n_max_fds:" << n_max_fds << "\n";
 #endif
 
     std::sort(sorted.begin(), sorted.end(), [](const mmap_gc_entry &a, const mmap_gc_entry &b) { return a.age < b.age; });
 
     if (MMAP_LIB_UNLIKELY(mmap_gc_entry::global_age > 32768)) {  // infrequent but enough for coverage/testing
-      mmap_gc_entry::global_age = sorted.size()+1;
+      mmap_gc_entry::global_age = sorted.size() + 1;
       int age                   = 1;
       for (const auto e : sorted) {
         auto it        = mmap_gc_pool.find(e.base);
@@ -97,11 +105,11 @@ protected:
       }
     }
 
-    if (n_recycle_fds > sorted.size()/2) {
-      n_recycle_fds = 1+sorted.size() / 2;
+    if (n_recycle_fds > sorted.size() / 2) {
+      n_recycle_fds = 1 + sorted.size() / 2;
     }
-    if (n_recycle_mmaps > sorted.size()/2) {
-      n_recycle_mmaps = 1+sorted.size() / 2;
+    if (n_recycle_mmaps > sorted.size() / 2) {
+      n_recycle_mmaps = 1 + sorted.size() / 2;
     }
 #ifndef NDEBUG
     if (sorted.size() > 2) {
@@ -112,25 +120,29 @@ protected:
 
     int n_gc = 0;
     for (const auto e : sorted) {
-      if (n_recycle_fds == 0 && n_recycle_mmaps == 0) break;
+      if (n_recycle_fds == 0 && n_recycle_mmaps == 0)
+        break;
       auto it = mmap_gc_pool.find(e.base);
       assert(it != mmap_gc_pool.end());
       bool done = mmap_gc::recycle_int(it, false);
       if (done) {
-        if (e.base) n_recycle_mmaps--;
+        if (e.base)
+          n_recycle_mmaps--;
         n_recycle_fds--;
         mmap_gc_pool.erase(it);
         n_gc++;
       }
     }
-    if (n_gc==0) { // try with force
+    if (n_gc == 0) {  // try with force
       for (const auto e : sorted) {
-        if (n_recycle_fds == 0 && n_recycle_mmaps == 0) break;
+        if (n_recycle_fds == 0 && n_recycle_mmaps == 0)
+          break;
         auto it = mmap_gc_pool.find(e.base);
         assert(it != mmap_gc_pool.end());
-        bool done = mmap_gc::recycle_int(it, true); // force (do not give an option)
+        bool done = mmap_gc::recycle_int(it, true);  // force (do not give an option)
         assert(done);
-        if (e.base) n_recycle_mmaps--;
+        if (e.base)
+          n_recycle_mmaps--;
         n_recycle_fds--;
         mmap_gc_pool.erase(it);
         n_gc++;
@@ -138,9 +150,8 @@ protected:
     }
 
 #ifdef MMAP_GC_TRACE
-    std::cerr << "gc:" << n_gc
-      << " n_open_mmaps:" << n_open_mmaps << " n_max_mmaps:" << n_max_mmaps
-      << " n_open_fds:" << n_open_fds << " n_max_fds:" << n_max_fds << "\n";
+    std::cerr << "gc:" << n_gc << " n_open_mmaps:" << n_open_mmaps << " n_max_mmaps:" << n_max_mmaps << " n_open_fds:" << n_open_fds
+              << " n_max_fds:" << n_max_fds << "\n";
 #endif
     assert(n_gc);
   }
@@ -164,16 +175,12 @@ protected:
       return false;
     }
 
-    if (it->first==nullptr) {
+    if (it->first == nullptr) {
       std::cerr << "EIN ";
     }
 #ifdef MMAP_GC_TRACE
-    std::cerr
-      << "mmap_gc_pool del name:" << it->second.name
-      << " fd:" << it->second.fd
-      << " base:" << it->first
-      << " base[0]:" << *(int *)it->first
-      << std::endl;
+    std::cerr << "mmap_gc_pool del name:" << it->second.name << " fd:" << it->second.fd << " base:" << it->first
+              << " base[0]:" << *(int *)it->first << std::endl;
 #endif
 
     //::msync(it->first, it->second.size, MS_SYNC);
@@ -253,6 +260,8 @@ public:
   /* LCOV_EXCL_STOP */
 
   static void delete_file(void *base) {
+    std::lock_guard<std::mutex> guard(lgs_mutex);
+
     auto it = mmap_gc_pool.find(base);
     assert(it != mmap_gc_pool.end());
     assert(it->second.fd >= 0);
@@ -267,30 +276,35 @@ public:
   // mmap_map.hpp:    mmap_txt_fd = mmap_gc::open(mmap_name + "txt");
   // mmap_vector.hpp: mmap_fd     = mmap_gc::open(mmap_name);
   static int open(const std::string &name) {
+    {
+      std::lock_guard<std::mutex> guard(lgs_mutex);
+
 #ifdef MMAP_GC_TRACE
-    std::cerr << "mmap_gc_pool open filename:" << name
-      << " n_open_fds=" << n_open_fds
-      << " n_open_mmaps=" << n_open_mmaps
-      << "\n";
+      std::cerr << "mmap_gc_pool open filename:" << name << " n_open_fds=" << n_open_fds << " n_open_mmaps=" << n_open_mmaps
+                << "\n";
 #endif
 #ifndef NDEBUG
-    for (const auto &e : mmap_gc_pool) {
-      if (e.second.fd < 0) continue;
-      assert(e.second.name != name); // No name duplicate (may be OK for multithreaded access)
-    }
+      for (const auto &e : mmap_gc_pool) {
+        if (e.second.fd < 0)
+          continue;
+        assert(e.second.name != name);  // No name duplicate (may be OK for multithreaded access)
+      }
 #endif
 
-    if (n_open_fds > 500) {
-      recycle_older();
-    }
+      if (n_open_fds > 500) {
+        recycle_older();
+      }
 
-    int fd = ::open(name.c_str(), O_RDWR | O_CREAT, 0644);
-    if (fd >= 0) {
-      n_open_fds++;
-      return fd;
+      int fd = ::open(name.c_str(), O_RDWR | O_CREAT, 0644);
+      if (fd >= 0) {
+        n_open_fds++;
+        return fd;
+      }
     }
     try_collect_fd();
-    fd = ::open(name.c_str(), O_RDWR | O_CREAT, 0644);
+    std::lock_guard<std::mutex> guard(lgs_mutex);
+
+    auto fd = ::open(name.c_str(), O_RDWR | O_CREAT, 0644);
     if (fd >= 0) {
       n_open_fds++;
       return fd;
@@ -307,6 +321,8 @@ public:
   // mmap_map.hpp:    mmap_gc::recycle(mmap_base);
   // mmap_vector.hpp: mmap_gc::recycle(mmap_base);
   static void recycle(void *base) {
+    std::lock_guard<std::mutex> guard(lgs_mutex);
+
     // Remove from gc
     auto it = mmap_gc_pool.find(base);
     assert(it != mmap_gc_pool.end());
@@ -323,6 +339,8 @@ public:
   // std::bind(&map<MaxLoadFactor100, Key, T, Hash>::gc_function, this, std::placeholders::_1));
   static std::tuple<void *, size_t> mmap(std::string_view name, int fd, size_t size,
                                          std::function<bool(void *, bool)> gc_function) {
+    std::lock_guard<std::mutex> guard(lgs_mutex);
+
     auto [base, final_size] = mmap_step(name, fd, size);
     if (base == MAP_FAILED) {
       try_collect_mmap();
@@ -344,7 +362,7 @@ public:
     entry.base        = base;
 
     assert(mmap_gc_pool.find(base) == mmap_gc_pool.end());
-    //std::cerr << "mmap_gc_pool add name:" << name << " fd:" << fd << " base:" << base << std::endl;
+    // std::cerr << "mmap_gc_pool add name:" << name << " fd:" << fd << " base:" << base << std::endl;
     mmap_gc_pool[base] = entry;
 
     return {base, final_size};
@@ -353,6 +371,8 @@ public:
   // mmap_vector.hpp: mmap_base     = reinterpret_cast<uint8_t *>(mmap_gc::remap(mmap_name, mmap_base, old_mmap_size, mmap_size));
   // mmap_map.hpp:    mmap_txt_base = reinterpret_cast<uint64_t *>(mmap_gc::remap(mmap_name, mmap_txt_base, mmap_txt_size, size));
   static std::tuple<void *, size_t> remap(std::string_view mmap_name, void *mmap_old_base, size_t old_size, size_t new_size) {
+    std::lock_guard<std::mutex> guard(lgs_mutex);
+
     if (new_size & 0xFFF) {
       new_size >>= 12;
       new_size++;
@@ -386,16 +406,16 @@ public:
       base = ::mmap(0, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, it->second.fd, 0);  // no superpages
       /* LCOV_EXCL_START */
       if (base == MAP_FAILED) {
-        std::cerr << "ERROR: OS X 1 could not allocate " << mmap_name << "txt with " << new_size/1024 << "KB\n";
+        std::cerr << "ERROR: OS X 1 could not allocate " << mmap_name << "txt with " << new_size / 1024 << "KB\n";
         exit(-1);
       }
       /* LCOV_EXCL_STOP */
     } else {
       // Painful new allocation, and then copy
-      base = ::mmap(0, new_size, PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+      base = ::mmap(0, new_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
       /* LCOV_EXCL_START */
       if (base == MAP_FAILED) {
-        std::cerr << "ERROR: OS X 2 could not allocate " << mmap_name << "txt with " << new_size/1024 << "KB\n";
+        std::cerr << "ERROR: OS X 2 could not allocate " << mmap_name << "txt with " << new_size / 1024 << "KB\n";
         exit(-1);
       }
       /* LCOV_EXCL_STOP */
@@ -429,6 +449,8 @@ public:
   }
 
   static void try_collect_fd() {
+    std::lock_guard<std::mutex> guard(lgs_mutex);
+
     // std::cerr << "try_collect_fd\n";
     if (n_open_fds < n_max_fds) {  // readjust max
       n_max_fds = 1 + 3 * n_open_fds / 4;
@@ -437,7 +459,6 @@ public:
     }
     recycle_older();
   }
-
 };
 
 }  // namespace mmap_lib

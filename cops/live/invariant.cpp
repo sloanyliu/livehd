@@ -1,8 +1,8 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
-#include <iostream>
-
 #include "invariant.hpp"
+
+#include <iostream>
 
 void Invariant_boundaries::serialize(Invariant_boundaries* ib, std::ostream& ofs) {
   ofs << "Invariant_boundaries: " << ib->top << " ##sep: " << ib->hierarchical_separator << std::endl;
@@ -88,7 +88,7 @@ Invariant_boundaries* Invariant_boundaries::deserialize(std::istream& ifs) {
   }
 
   ifs >> size1;
-  Index_ID tmp_idx;
+  Index_id tmp_idx;
   for (int i = 0; i < size1; i++) {
     ifs >> tmpid >> bit >> size2;
     Net_ID net = std::make_pair(tmpid, bit);

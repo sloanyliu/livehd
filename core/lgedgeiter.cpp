@@ -19,7 +19,7 @@ void Fast_edge_iterator::Fast_iter::go_next() {
 
   nid = current_g->fast_next(nid);
   if (visit_sub) {
-    while(!nid.is_invalid()) { // Skip SubGraph present
+    while (!nid.is_invalid()) {  // Skip SubGraph present
       Node node(current_g, current_g, Hierarchy_tree::root_index(), nid);
       if (!node.is_type_sub_present())
         break;
@@ -49,7 +49,7 @@ void Fast_edge_iterator::Fast_iter::go_next() {
       hidx.invalidate();
     } else {
       I(nid == 0);
-      I(hidx.is_invalid()); // no hierarhical, it should be already invalid
+      I(hidx.is_invalid());  // no hierarhical, it should be already invalid
     }
   }
 }
@@ -64,8 +64,8 @@ Fast_edge_iterator::Fast_iter Fast_edge_iterator::begin() const {
   auto nid = top_g->fast_first();
 
   if (nid) {
-    Fast_iter it(top_g, top_g, visit_sub?Hierarchy_tree::root_index():Hierarchy_tree::invalid_index(), nid, visit_sub);
-    if (visit_sub) { // && top_g->is_type_sub(nid)) {
+    Fast_iter it(top_g, top_g, visit_sub ? Hierarchy_tree::root_index() : Hierarchy_tree::invalid_index(), nid, visit_sub);
+    if (visit_sub) {  // && top_g->is_type_sub(nid)) {
       Node node(top_g, top_g, Hierarchy_tree::root_index(), nid);
       if (node.is_type_sub_present())
         ++it;
@@ -81,7 +81,7 @@ Flow_base_iterator::Flow_base_iterator(bool _visit_sub)
   linear_phase = true;
 }
 
-Flow_base_iterator::Flow_base_iterator(LGraph *lg, bool _visit_sub)
+Flow_base_iterator::Flow_base_iterator(Lgraph *lg, bool _visit_sub)
     : global_it(lg->fast(_visit_sub).begin()), visit_sub(_visit_sub) {
   linear_phase = true;
 }
@@ -135,7 +135,7 @@ void Fwd_edge_iterator::Fwd_iter::topo_add_chain_fwd(const Node_pin &dst_pin) {
   pending_stack.push_back(dst_node);
 }
 
-void Fwd_edge_iterator::Fwd_iter::fwd_get_from_linear(LGraph *top) {
+void Fwd_edge_iterator::Fwd_iter::fwd_get_from_linear(Lgraph *top) {
   I(linear_phase);
 
   current_node.invalidate();
@@ -275,7 +275,7 @@ void Fwd_edge_iterator::Fwd_iter::fwd_get_from_pending() {
   } while (true);
 }
 
-void Fwd_edge_iterator::Fwd_iter::fwd_first(LGraph *lg) {
+void Fwd_edge_iterator::Fwd_iter::fwd_first(Lgraph *lg) {
   I(!lg->is_empty());
   I(current_node.is_invalid());
   I(linear_phase);
@@ -304,7 +304,7 @@ void Fwd_edge_iterator::Fwd_iter::fwd_next() {
   GI(!current_node.is_invalid(), current_node.get_class_lgraph()->is_valid_node(current_node.get_nid()));
 }
 
-void Bwd_edge_iterator::Bwd_iter::bwd_first(LGraph *lg) {
+void Bwd_edge_iterator::Bwd_iter::bwd_first(Lgraph *lg) {
   (void)lg;
   I(pending_stack.empty());
   I(unvisited.empty());

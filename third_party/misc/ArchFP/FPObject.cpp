@@ -1,10 +1,9 @@
-#include "ann_place.hpp"
-#include "lgraph.hpp"
-#include "cell.hpp"
-
-#include "helpers.hpp"
-
 #include "FPObject.hpp"
+
+#include "ann_place.hpp"
+#include "cell.hpp"
+#include "helpers.hpp"
+#include "lgraph.hpp"
 
 FPObject::FPObject()
     : refCount(0)
@@ -61,7 +60,7 @@ unsigned int FPObject::findNode(Node_tree& tree, Tree_index tidx, double cX, dou
   unsigned int sub_count;
 
   if (Ntype::is_synthesizable(t)) {  // leaf node - current hier structure is fine
-    sub_count = outputLGraphLayout(tree, tidx, cX, cY);
+    sub_count = outputLgraphLayout(tree, tidx, cX, cY);
   } else if (t == Ntype_op::Sub) {  // Sub node - parameters need to be adjusted
 
     bool found = false;
@@ -75,7 +74,7 @@ unsigned int FPObject::findNode(Node_tree& tree, Tree_index tidx, double cX, dou
         continue;
       }
 
-      LGraph* child_lg = LGraph::open(tree.get_root_lg()->get_path(), child->get_type_sub());
+      Lgraph* child_lg = Lgraph::open(tree.get_root_lg()->get_path(), child->get_type_sub());
 
       if (child_lg->get_name() != getName()) {
         child_idx = tree.get_sibling_next(child_idx);
@@ -91,15 +90,15 @@ unsigned int FPObject::findNode(Node_tree& tree, Tree_index tidx, double cX, dou
       child->set_place(p);
       child->set_instance_name(getUniqueName());
 
-      sub_count = outputLGraphLayout(tree, child_idx, cX, cY);
-      found = true;
+      sub_count = outputLgraphLayout(tree, child_idx, cX, cY);
+      found     = true;
 
       break;
     }
 
     assert(found);
   } else if (t == Ntype_op::Invalid) {  // specific kind of layout - current hier structure is fine
-    sub_count = outputLGraphLayout(tree, tidx, cX, cY);
+    sub_count = outputLgraphLayout(tree, tidx, cX, cY);
   } else {
     assert(false);
   }
@@ -107,7 +106,7 @@ unsigned int FPObject::findNode(Node_tree& tree, Tree_index tidx, double cX, dou
   return sub_count;
 }
 
-unsigned int FPObject::outputLGraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
+unsigned int FPObject::outputLgraphLayout(Node_tree& tree, Tree_index tidx, double startX, double startY) {
   bool found = false;
 
   // Tree_index child_idx = tree.get_first_child(tidx);

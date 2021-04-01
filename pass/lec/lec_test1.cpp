@@ -5,10 +5,10 @@
 #include <string>
 
 #include "eprp_utils.hpp"
-#include "lezminisat.hpp"
-#include "lezsat.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "lezminisat.hpp"
+#include "lezsat.hpp"
 #include "lgraph.hpp"
 #include "pass_lec.hpp"
 
@@ -19,7 +19,7 @@ protected:
   void SetUp() override {}
 };
 
-TEST_F(LecMainTest, NoLGraphTest) {
+TEST_F(LecMainTest, NoLgraphTest) {
   // Attempt 2 to add to Git for review
 
   lezMiniSAT sat;

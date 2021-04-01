@@ -33,6 +33,8 @@ if [ $# -eq 0 ]; then
   # FIRRTL_LEVEL='lo'
   FIRRTL_LEVEL='hi'
 
+  # pts='Adder4'
+
 else
   file=$(basename $1)
   if [ "${file#*.}" == "hi.pb" ]; then
@@ -49,13 +51,13 @@ else
     echo "Warning: Experimental Chirrtl extension"
   else
     echo "Illegal FIRRTL extension. Either ch.pb, hi.pb or lo.pb"
-    exit -3
+    exit 1
   fi
 
   PATTERN_PATH=$(dirname $1)
   if [ -f "${PATTERN_PATH}/${file}.${FIRRTL_LEVEL}.pb" ]; then
     echo "Could not access test ${pts} at path ${PATTERN_PATH}"
-    exit -3
+    exit 1
   fi
 fi
 
@@ -63,15 +65,13 @@ pts_wait_verilog_large_mux_code_gen='Mul Test6 Test1'
 
 # pts='Test1'
 # pts='Life'
-# pts=''
 # pts='VecShiftRegisterParam'
 # pts='VecShiftRegisterSimple '
 # pts='VecSearch '
-# pts='Xor32Thread8'
-# pts='Xor64Thread8'
-# pts='Xor128Thread8'
-# pts='Xor800Thread8'
 # pts='Flop'
+# pts='VecShiftRegister '
+
+
 
 LGSHELL=./bazel-bin/main/lgshell
 LGCHECK=./inou/yosys/lgcheck
@@ -121,13 +121,14 @@ firrtl_test() {
     echo "----------------------------------------------------"
 
     ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
+    ret_val=$?
     # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg"
-    if [ $? -eq 0 ] && [ -f ${pt}.v ]; then
+    if [ $ret_val -eq 0 ] && [ -f ${pt}.v ]; then
         echo "Successfully generate Verilog: ${pt}.v"
         rm -f  yosys_script.*
     else
         echo "ERROR: Firrtl compiler failed: verilog generation, testcase: ${PATTERN_PATH}/${pt}.${FIRRTL_LEVEL}.pb"
-        exit 1
+        exit $ret_val
     fi
   done
 
@@ -147,12 +148,12 @@ firrtl_test() {
     fi
 
     ${LGCHECK} --implementation=${pt}.v --reference=./inou/firrtl/tests/verilog_gld/${pt}.gld.v
-
-    if [ $? -eq 0 ]; then
+    ret_val=$?
+    if [ $ret_val -eq 0 ]; then
       echo "Successfully pass LEC!"
     else
-        echo "FAIL: "${pt}".v !== "${pt}".gld.v"
-        exit 1
+        echo "FAIL: ${pt}.v !== ${pt}.gld.v"
+        exit $ret_val
     fi
   done
 

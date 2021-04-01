@@ -190,7 +190,7 @@ void Chunkify_verilog::elaborate() {
     bool endmodule_found = false;
     if (scan_is_token(Token_id_alnum)) {
       auto txt = scan_text();
-      //fmt::print("T:{}\n",txt);
+      // fmt::print("T:{}\n",txt);
       if (txt == "module") {
         if (in_module) {
           scan_error(fmt::format("unexpected nested modules"));
@@ -229,7 +229,7 @@ void Chunkify_verilog::elaborate() {
       if (last_input || last_output) {
         if (in_module && scan_is_prev_token(Token_id_alnum) && inside_task_function == 0) {
 #if 1
-          // FIXME: bug in char_array prevents to use sview. Delete this once we move to LGraph 0.2 (mmap_map/mmap_bimap)
+          // FIXME: bug in char_array prevents to use sview. Delete this once we move to Lgraph 0.2 (mmap_map/mmap_bimap)
           std::string label{scan_prev_text()};
 #else
           auto label = scan_prev_text();

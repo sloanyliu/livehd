@@ -9,24 +9,21 @@ pts_long_time='firrtl_gcd'
 # pts_tbd='tup_out1 tup_out2'
 pts_after_micro='hier_tuple4 tuple_reg3 '
 
-pts='tuple_reg tuple_reg2 reg_bits_set bits_rhs reg__q_pin scalar_tuple
-hier_tuple_io hier_tuple3 hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2
-hier_tuple lhs_wire tuple_copy if firrtl_tail hier_tuple_nested_if2 lhs_wire2
-tuple_copy2 counter_nested_if counter lhs_wire adder_stage capricious_bits4
-capricious_bits firrtl_gcd_3bits nested_if firrtl_tail3 logic capricious_bits2
-scalar_reg_out_pre_declare firrtl_tail2 hier_tuple_nested_if
-hier_tuple_nested_if3 hier_tuple_nested_if4 hier_tuple_nested_if5
-hier_tuple_nested_if6 hier_tuple_nested_if7 '
 
-# pts='tuple_reg2'
-# pts='tuple_reg'
-# pts='pp'
+pts='reg_bits_set bits_rhs reg__q_pin scalar_tuple
+hier_tuple_io hier_tuple3 hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2
+hier_tuple lhs_wire tuple_copy if hier_tuple_nested_if2 lhs_wire2 tuple_copy2
+counter lhs_wire adder_stage capricious_bits4 capricious_bits
+logic capricious_bits2 scalar_reg_out_pre_declare firrtl_tail2
+hier_tuple_nested_if hier_tuple_nested_if3 hier_tuple_nested_if4
+hier_tuple_nested_if5 hier_tuple_nested_if6 hier_tuple_nested_if7 firrtl_tail
+firrtl_gcd_3bits nested_if firrtl_tail3 counter_nested_if tuple_nested1 tuple_empty_attr'
+
+#pts='tuple_reg tuple_nested2'
+#pts='tuple_reg tuple_reg2'
 
 # pts='vector'
 # pts='vector2'
-
-# pts='pp'
-# pts='pp2'
 
 # pts='hier_tuple_nested_if8'  # LNAST_TO failure
 
@@ -111,7 +108,7 @@ Pyrope_compile () {
       if [ $? -eq 0 ]; then
         echo "Successfully pass LEC!"
       else
-          echo "FAIL: "${pt}".v !== "${pt}".gld.v"
+          echo "FAIL: ${pt}.v !== ${pt}.gld.v"
           exit 1
       fi
   done
@@ -202,11 +199,10 @@ Pyrope_compile_hier () {
   if [ $? -eq 0 ]; then
       echo "Successfully pass logic equivilence check!"
   else
-      echo "FAIL: "${top_module}".v !== "${top_module}".gld.v"
+      echo "FAIL: ${top_module}.v !== ${top_module}.gld.v"
       exit 1
   fi
 }
-
 
 rm -rf ./lgdb
 Pyrope_compile "$pts"
@@ -215,8 +211,9 @@ Pyrope_compile_hier "$pts_hier1"
 rm -rf ./lgdb
 Pyrope_compile_hier "$pts_hier2"
 
+# Do not remove verilog, I tend to have tests cases in homedirectory
+#rm -f *.v
+rm -f ./*.dot
+rm -f ./lgcheck*
+rm -f ./*.tcl
 
-rm -f *.dot
-rm -f *.v
-rm -f lgcheck*
-rm -f *.tcl

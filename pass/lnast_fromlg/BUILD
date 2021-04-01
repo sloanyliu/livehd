@@ -1,18 +1,22 @@
-#  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+# This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//tools:copt_default.bzl", "COPTS")
 
 cc_library(
     name = "pass_lnast_fromlg",
-    srcs = glob(["*.cpp"],exclude=["*test*.cpp"]),
+    srcs = glob(
+        ["*.cpp"],
+        exclude = ["*test*.cpp"],
+    ),
     hdrs = glob(["*.hpp"]),
-    visibility = ["//visibility:public"],
-    includes = ["."],
-    alwayslink=True,
     copts = COPTS,
+    includes = ["."],
+    visibility = ["//visibility:public"],
     deps = [
         "//pass/common:pass",
-    ]
+    ],
+    alwayslink = True,
 )
 
 sh_test(
@@ -22,9 +26,10 @@ sh_test(
         "//inou/yosys:verilog_tests",
         "//main:lgshell",
     ],
+    tags = ["fixme"],
     deps = [
         "//inou/yosys:scripts",
-    ]
+    ],
 )
 
 sh_test(
@@ -34,7 +39,8 @@ sh_test(
         "//inou/pyrope:pyrope_tests",
         "//main:lgshell",
     ],
+    tags = ["fixme"],
     deps = [
         "//inou/yosys:scripts",
-    ]
+    ],
 )

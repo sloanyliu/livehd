@@ -4,13 +4,13 @@
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
+#include "lgraph.hpp"
 #include "lgtuple.hpp"
 #include "pass.hpp"
-#include "lgraph.hpp"
 
 class Lgcpp_plugin {
 public:
-  using Comptime_fn = std::function<void(LGraph *lg, const std::shared_ptr<Lgtuple> inp, std::shared_ptr<Lgtuple> out)>;
+  using Comptime_fn = std::function<void(Lgraph *lg, const std::shared_ptr<Lgtuple> inp, std::shared_ptr<Lgtuple> out)>;
   using Map_setup   = absl::flat_hash_map<std::string, Comptime_fn>;
 
 protected:

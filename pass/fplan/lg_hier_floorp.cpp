@@ -11,18 +11,18 @@ Lg_hier_floorp::Lg_hier_floorp(Node_tree&& nt_arg) : Lhd_floorplanner(std::move(
 
 // can't return geogLayouts since ArchFP calls totalArea on components, which breaks if geogLayouts have no children (returns 0 for
 // area)
-geogLayout* Lg_hier_floorp::load_lg_modules(LGraph* lg) {
+FPContainer* Lg_hier_floorp::load_lg_modules(Lgraph* lg) {
   const std::string_view path = root_lg->get_path();
 
   // count and load subnodes only
-  absl::flat_hash_map<LGraph*, unsigned int> sub_lg_count;
-  lg->each_sub_fast([&](Node& n, Lg_type_id lgid) {
+  absl::flat_hash_map<Lgraph*, unsigned int> sub_lg_count;
+  lg->each_local_sub_fast([&](Node& n, Lg_type_id lgid) {
     (void)n;
-    LGraph* sub_lg = LGraph::open(path, lgid);
+    Lgraph* sub_lg = Lgraph::open(path, lgid);
     sub_lg_count[sub_lg]++;
   });
 
-  geogLayout* l = new geogLayout(sub_lg_count.size());
+  FPContainer* l = new annLayout(sub_lg_count.size());
   l->setName(lg->get_name().data());
 
   if (sub_lg_count.empty()) {
@@ -42,7 +42,7 @@ geogLayout* Lg_hier_floorp::load_lg_modules(LGraph* lg) {
     l->setArea(area);
     return l;
   }
-  
+
   l->setType(Ntype_op::Sub);
 
   for (auto pair : sub_lg_count) {
@@ -52,7 +52,7 @@ geogLayout* Lg_hier_floorp::load_lg_modules(LGraph* lg) {
       fmt::print("generating subcomponent {}\n", sub_lg->get_name());
     }
 
-    geogLayout* subl = load_lg_modules(sub_lg);
+    FPContainer* subl = load_lg_modules(sub_lg);
 
     if (debug_print) {
       fmt::print("done, area {:.3f}.\n", subl->getArea());
@@ -67,17 +67,14 @@ geogLayout* Lg_hier_floorp::load_lg_modules(LGraph* lg) {
       l->addComponentCluster(subl->getName(),
                              count,
                              subl->getArea(),
-                             8.0,
-                             1.0,
-                             randomHint(count));
+                             8.0, // TODO: guessing on valid AR range here
+                             1.0);
     } else {
-      l->addComponent(subl, count, randomHint(count));
+      l->addComponent(subl, count);
     }
   }
 
   return l;
 }
 
-void Lg_hier_floorp::load() {
-  root_layout = load_lg_modules(root_lg);
-}
+void Lg_hier_floorp::load() { root_layout = load_lg_modules(root_lg); }

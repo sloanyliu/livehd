@@ -1,7 +1,7 @@
+#!/bin/bash
 
 #----------------------------------------- Firrtl start --------------------------------
 
-#!/bin/bash
 rm -rf ./lgdb
 # FIRRTL_LEVEL='lo'
 FIRRTL_LEVEL='hi'
@@ -20,7 +20,7 @@ VecShiftRegister Counter VecSearch ResetShiftRegister Parity
 EnableShiftRegister GCD_3bits Flop Accumulator LFSR16 BundleConnect SubModule
 Decrementer Test1 Test2 Test3 Test6 TrivialAdd NotAnd Trivial Tail TrivialArith
 Shifts PlusAnd MaxN ByteSelector Darken HiLoMultiplier SimpleALU Mul
-VecShiftRegisterParam VecShiftRegisterSimple ' 
+VecShiftRegisterParam VecShiftRegisterSimple '
 
 
 pts='EnableShiftRegister Flop Cell_alone MaxN PlusAnd Test2 SingleEvenFilter
@@ -28,7 +28,7 @@ Coverage Counter Decrementer SubModule BundleConnect LogShifter Adder4
 Xor6Thread2 XorSelfThread1 ByteSelector SimpleALU Mux4 Max2 ResetShiftRegister
 Parity RegisterSimple Register RegXor GCD_3bits Test3 TrivialAdd
 Accumulator AddNot HiLoMultiplier Darken Shifts NotAnd TrivialArith Tail Trivial
-LFSR16 VendingMachine VendingMachineSwitch'  
+LFSR16 VendingMachine VendingMachineSwitch'
 
 
 LGSHELL=./bazel-bin/main/lgshell
@@ -99,7 +99,7 @@ firrtl_test() {
     echo "----------------------------------------------------"
     echo "Logic Equivalence Check"
     echo "----------------------------------------------------"
-    
+
     if [ "${FIRRTL_LEVEL}" == "hi" ]; then
         python3 ${POST_IO_RENAME} "${pt}.v"
     fi
@@ -109,16 +109,16 @@ firrtl_test() {
     if [ $? -eq 0 ]; then
       echo "Successfully pass LEC!"
     else
-        echo "FAIL: "${pt}".v !== "${pt}".gld.v"
+        echo "FAIL: ${pt}.v !== ${pt}.gld.v"
         exit 1
     fi
   done
 
-  rm -f *.v
-  rm -f *.dot
+  rm -f ./*.v
+  rm -f ./*.dot
   rm -f lgcheck*
   rm -rf lgdb
-  rm -f *.tcl
+  rm -f ./*.tcl
 }
 
 firrtl_test "$pts"
@@ -137,12 +137,12 @@ pts_long_time='firrtl_gcd'
 
 pts='tuple_reg tuple_reg2 reg_bits_set bits_rhs reg__q_pin scalar_tuple
 hier_tuple_io hier_tuple3 hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2
-hier_tuple lhs_wire tuple_copy if firrtl_tail hier_tuple_nested_if2 lhs_wire2
-tuple_copy2 counter_nested_if counter lhs_wire adder_stage capricious_bits4
-capricious_bits firrtl_gcd_3bits nested_if firrtl_tail3 logic capricious_bits2
-scalar_reg_out_pre_declare firrtl_tail2 hier_tuple_nested_if
-hier_tuple_nested_if3 hier_tuple_nested_if4 hier_tuple_nested_if5
-hier_tuple_nested_if6 hier_tuple_nested_if7 '
+hier_tuple lhs_wire tuple_copy if hier_tuple_nested_if2 lhs_wire2 tuple_copy2
+counter_nested_if counter lhs_wire adder_stage capricious_bits4 capricious_bits
+nested_if logic capricious_bits2 scalar_reg_out_pre_declare firrtl_tail2
+hier_tuple_nested_if hier_tuple_nested_if3 hier_tuple_nested_if4
+hier_tuple_nested_if5 hier_tuple_nested_if6 hier_tuple_nested_if7 firrtl_tail
+firrtl_gcd_3bits firrtl_tail3'
 
 
 
@@ -228,7 +228,7 @@ Pyrope_compile () {
       if [ $? -eq 0 ]; then
         echo "Successfully pass LEC!"
       else
-          echo "FAIL: "${pt}".v !== "${pt}".gld.v"
+          echo "FAIL: ${pt}.v !== ${pt}.gld.v"
           exit 1
       fi
   done
@@ -318,11 +318,10 @@ Pyrope_compile_hier () {
   if [ $? -eq 0 ]; then
       echo "Successfully pass logic equivilence check!"
   else
-      echo "FAIL: "${top_module}".v !== "${top_module}".gld.v"
+      echo "FAIL: ${top_module}.v !== ${top_module}.gld.v"
       exit 1
   fi
 }
-
 
 rm -rf ./lgdb
 Pyrope_compile_hier "$pts_hier1"
@@ -331,14 +330,8 @@ Pyrope_compile_hier "$pts_hier2"
 rm -rf ./lgdb
 Pyrope_compile "$pts"
 
-
-rm -f *.dot
-rm -f *.v
-rm -f lgcheck*
-
-
-
-
-
+#rm -f *.v
+rm -f ./*.dot
+rm -f ./lgcheck*
 
 

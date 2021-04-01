@@ -9,11 +9,11 @@
 
 class Label_synth {
 private:
-  const bool        verbose;
-  const bool        hier;
+  const bool verbose;
+  const bool hier;
 
 public:
-  void label(LGraph *g);
+  void label(Lgraph *g);
 
   Label_synth(bool _verbose, bool _hier);
 };

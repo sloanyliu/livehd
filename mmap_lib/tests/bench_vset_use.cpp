@@ -1,14 +1,15 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
+#include <type_traits>
+#include <vector>
+
+#include "flat_hash_map.hpp"
 #include "fmt/format.h"
 #include "iassert.hpp"
-#include <vector>
-#include "lrand.hpp"
 #include "lbench.hpp"
-#include "flat_hash_map.hpp"
-#include <type_traits>
-#include "mmap_vset.hpp"
+#include "lrand.hpp"
 #include "mmap_map.hpp"
+#include "mmap_vset.hpp"
 
 #define BENCH_OUT_SIZE 100
 #define BENCH_INN_SIZE 100
@@ -367,13 +368,13 @@ void mmap_vset(int max, std::string_view name) {
   }
   b.sample("traversal sparse");
 
-  printf("inserts random %d\n",conta);
+  printf("inserts random %d\n", conta);
   conta = 0;
 
-	std::cout << "===== Traversal Dense\n";
-	// TRAVERSAL DENSE TEST
-	// --> First, for every num in domain of max, generate 4 random nums and erase them from map
-	// --> runs (200) times -> each time go through whole map and incrememt number per map index
+  std::cout << "===== Traversal Dense\n";
+  // TRAVERSAL DENSE TEST
+  // --> First, for every num in domain of max, generate 4 random nums and erase them from map
+  // --> runs (200) times -> each time go through whole map and incrememt number per map index
   for (int i = 0; i < max; ++i) {
     set.erase(rng.max(max));
     set.erase(rng.max(max));
@@ -392,16 +393,13 @@ void mmap_vset(int max, std::string_view name) {
 
 }
 
-
-
-
 int main(int argc, char **argv) {
   bool run_mmap_vset = false;
 	
   if (argc>1) {
     if (strcasecmp(argv[1],"vset") == 0) {
       run_mmap_vset = true;
-		}
+    }
   } else {
     run_mmap_vset = true;
   }

@@ -1,16 +1,17 @@
-
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//tools:copt_default.bzl", "COPTS")
 
 cc_library(
     name = "prplib",
-    srcs = glob(["*.cpp"],exclude=["*test*.cpp"]),
+    srcs = glob(
+        ["*.cpp"],
+        exclude = ["*test*.cpp"],
+    ),
     hdrs = glob(["*.hpp"]),
-    visibility = ["//visibility:public"],
-    includes = ["."],
     copts = COPTS,
+    includes = ["."],
+    visibility = ["//visibility:public"],
     deps = [
         "//lgcpp/common:lgcpp",
-    ]
+    ],
 )
-
-

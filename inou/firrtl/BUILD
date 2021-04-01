@@ -1,7 +1,5 @@
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
-load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-
 load("//tools:copt_default.bzl", "COPTS")
 
 proto_library(
@@ -17,31 +15,30 @@ cc_proto_library(
 cc_library(
     name = "inou_firrtl_cpp",
     srcs = [
-        "inou_firrtl.cpp",
-        "fir_tolnast.cpp",
-        "lnast_tofir.cpp",
         "find_circuit_comps.cpp",
+        "fir_tolnast.cpp",
+        "inou_firrtl.cpp",
         "inou_firrtl.hpp",
+        "lnast_tofir.cpp",
     ],
     hdrs = ["inou_firrtl.hpp"],
-    visibility = ["//visibility:public"],
-    includes = ["."],
-    alwayslink=True,
     copts = COPTS,
+    includes = ["."],
+    visibility = ["//visibility:public"],
     deps = [
         ":firrtl_cc_proto",
         "//pass/common:pass",
     ],
+    alwayslink = True,
 )
 
-sh_test(
-    name = "firrtl_test_livehd.sh",
-    srcs = ["tests/firrtl_test_livehd.sh"],
-    data = [
-        "//inou/yosys:verilog_tests",
-        "//main:lgshell",
+filegroup(
+    name = "firrtl_tests",
+    srcs = glob([
+        "tests/proto/*.pb",  # Protobuf tests
+        "tests/verilog_gld/*.v",  # Verilog golden models
+    ]) + [
+        "post_io_renaming.py",  # Script to match livehd to firrtl names
     ],
-    deps = [
-        "//inou/yosys:scripts"
-    ]
+    visibility = ["//visibility:public"],
 )

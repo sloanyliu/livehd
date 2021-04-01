@@ -12,17 +12,17 @@
 #include "likely.hpp"
 #include "mmap_tree.hpp"
 
-// LGraph basic core types used all over
+// Lgraph basic core types used all over
 using Lg_type_id  = Explicit_type<uint32_t, struct Lg_type_id_struct, 0>;  // Global used all over
-using Index_ID    = Explicit_type<uint32_t, struct Index_ID_struct, 0>;
+using Index_id    = Explicit_type<uint32_t, struct Index_id_struct, 0>;
 using Lut_type_id = Explicit_type<uint32_t, struct Lut_type_id_struct, 0>;
 
 class Hierarchy_data {  // 64bits total
 public:
   Lg_type_id lgid;
-  Index_ID   up_nid;
+  Index_id   up_nid;
   Hierarchy_data() : lgid(0), up_nid(0) {}
-  Hierarchy_data(const Lg_type_id& _class_id, const Index_ID& _nid) : lgid(_class_id), up_nid(_nid) {}
+  Hierarchy_data(const Lg_type_id& _class_id, const Index_id& _nid) : lgid(_class_id), up_nid(_nid) {}
 
   bool is_invalid() const { return lgid == 0; }
 };
@@ -33,14 +33,14 @@ struct Lg_type_id_hash {
   size_t operator()(const Lg_type_id& obj) const { return obj.value; }
 };
 
-struct Index_ID_hash {
-  size_t operator()(const Index_ID& obj) const { return obj.value; }
+struct Index_id_hash {
+  size_t operator()(const Index_id& obj) const { return obj.value; }
 };
 
 using Port_ID = uint16_t;  // ports have a set order (a-b != b-a)
 
-constexpr Index_ID Hardcoded_input_nid  = 1;
-constexpr Index_ID Hardcoded_output_nid = 2;
+constexpr Index_id Hardcoded_input_nid  = 1;
+constexpr Index_id Hardcoded_output_nid = 2;
 
 constexpr int Index_bits = 31;  // 31 bit to have Sink/Driver + Index in 32 bits
 constexpr int Port_bits  = 15;
@@ -60,17 +60,17 @@ protected:
     Setup_path(std::string_view path);
   };
 
-  Setup_path  _p;  // Must be first in base object
-  std::string path;
-  std::string name;
+  Setup_path        _p;  // Must be first in base object
+  std::string       path;
+  std::string       name;
   const std::string unique_name;
-  std::string long_name;
-  Lg_type_id  lgid;
+  const std::string long_name;
+  const Lg_type_id  lgid;
 
   bool locked;
 
   Lgraph_base_core() = delete;
-  explicit Lgraph_base_core(std::string_view _path, std::string_view _name, Lg_type_id lgid);
+  explicit Lgraph_base_core(std::string_view _path, std::string_view _name, Lg_type_id _lgid);
   virtual ~Lgraph_base_core(){};
 
 public:
@@ -79,7 +79,7 @@ public:
   virtual void clear();
   virtual void sync();
 
-  const std::string &get_unique_name() const { return unique_name; }
+  const std::string& get_unique_name() const { return unique_name; }
 
   std::string_view get_name() const { return std::string_view(name); }
 

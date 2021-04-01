@@ -4,14 +4,13 @@
 
 #include <string>
 
+#include "lgraph.hpp"
 #include "pass.hpp"
 #include "rapidjson/document.h"
-#include "lgraph.hpp"
 
 class Inou_json : public Pass {
 private:
 protected:
-
   static void tolg(Eprp_var &var);
   static void fromlg(Eprp_var &var);
 
@@ -21,6 +20,5 @@ public:
   static void setup();
 };
 
-void from_json(LGraph *g, rapidjson::Document &document);
-void to_json(LGraph *lg, const std::string &filename);
-
+void from_json(Lgraph *g, rapidjson::Document &document);
+void to_json(Lgraph *lg, const std::string &filename);

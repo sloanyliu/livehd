@@ -1,13 +1,14 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <array>
 #include <cstdint>
 #include <string_view>
-#include <stdio.h>
-#include <stdlib.h>
-#include "mmap_map.hpp"
 
+#include "mmap_map.hpp"
 
 namespace mmap_lib {
 
@@ -46,7 +47,6 @@ protected:
   uint16_t _size;          // 2 bytes
   constexpr bool is_digit(char c) const { return c >= '0' && c <= '9'; }
 
-
 public:
   //string_map2 <sv of long_str (key), and position in str_vec (val)> 
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
@@ -74,12 +74,12 @@ public:
     }
   }
 
-  // helper function to check if a string exists
+  //=====helper function to check if a string exists in string_vector=====
   std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) { 
     std::string_view sv(string_to_check);   // string to sv
     auto it = string_map2.find(sv);         // find the sv in the string_map2
     if (it == string_map2.end()) {          // if we can't find the sv
-      //<std::string_view, uint32_t> string_map2
+      //<std::string_view, uint32_t(position in vec)> string_map2
       string_map2.set(sv, string_vector.size());  // we insert a new one
       return std::make_pair(0,0);
     } else {
@@ -114,12 +114,11 @@ public:
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
     // the first two characters saved in e
-    e[0] = s[0];
-    e[1] = s[1];
+    e[0] = s[0]; e[1] = s[1];
     // the last eight characters saved in e
     for (int i = 0; i < 8; i++) { e[9 - i] = s[_size - 1 - i]; }
-    // used to hold long part (saved in vector)
-    char long_str[_size-10];     
+    
+    char long_str[_size-10]; // holds the long part     
     // filling long_str with long part of string
     for (int i = 0; i < (_size - 10); ++i) { long_str[i] = s[i + 2]; } 
     // checking if long part of string already exists in vector
@@ -133,17 +132,16 @@ public:
       for (int i = 0; i < _size - 10; i++) { 
         string_vector.push_back(long_str[i]); 
       }
-      ptr_or_start = string_vector.size()-(_size-10);
-      //str::string_map.set(ptr_or_start, _size - 10);
+      ptr_or_start = string_vector.size() - (_size - 10);
     }
   }
   
   
 
-  //============constructor 3=========
+  //============constructor 3============
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
-  	if (_size < 14 ){
-		auto stop = _size<4?_size:4;
+  	if (_size < 14 ){ // constructor 1 logic
+		  auto stop = _size<4?_size:4;
 	    for(auto i=0;i<stop;++i) {
 	      ptr_or_start <<= 8;
 	      ptr_or_start |= sv.at(i);
@@ -153,7 +151,7 @@ public:
 	       e[e_pos] = sv.at(i);
 	       ++e_pos;
 	  	}
-  	} else {
+  	} else { // constructor 2 logic
   		e[0] = sv.at(0);
 	    e[1] = sv.at(1);
 	    // the last eight  characters
@@ -173,7 +171,6 @@ public:
 	        string_vector.push_back(long_str[i]);
 	      }
         ptr_or_start = string_vector.size() - (_size-10);
-	      //str::string_map.set(ptr_or_start, _size - 10);
 	    }
   	}
   }
@@ -216,8 +213,6 @@ public:
     }
     std::cout << "}" << std::endl;
   }
-
-  
 
 
 #if 0
@@ -319,8 +314,8 @@ public:
 
   template <std::size_t N>
   constexpr bool operator!=(const char (&rhs)[N]) const { return !(*this == rhs); }
-  
-    constexpr char operator[](std::size_t pos) const {
+
+  constexpr char operator[](std::size_t pos) const {
 #ifndef NDEBUG
     if (pos >= _size)
       throw std::out_of_range("");
@@ -355,36 +350,33 @@ public:
   std::size_t rfind(const char *s, std::size_t pos, std::size_t n) const;
   std::size_t rfind(const char *s, std::size_t pos = 0) const;
 
-  //returns a pstr from two objects (pstr)
+  // returns a pstr from two objects (pstr)
   static str concat(const str &a, const str &b);
   static str concat(std::string_view a, const str &b);
   static str concat(const str &a, std::string_view b);
-  static str concat(const str &a, int v); // just puts two things together concat(x, b); -> x.append(b)
-                                          //                               concat(b, x); -> b.append(x)
-
+  static str concat(const str &a, int v);  // just puts two things together concat(x, b); -> x.append(b)
+                                           //                               concat(b, x); -> b.append(x)
 
   str append(const str &b) const;
   str append(std::string_view b) const;
   str append(int b) const;
 
-
-  std::vector<str> split(const char chr); // used as a tokenizing func, return vector of pstr's
-
+  std::vector<str> split(const char chr);  // used as a tokenizing func, return vector of pstr's
 
   /*
   bool is_i() const{ // starts with digit -> is integer
-    //this fun works when str size is <14   
+    //this fun works when str size is <14
     //if(!isptr){
       char chars[5];
       std::cout << "chars[] inside is_i(): ";
       for (int i =3, j=0;i>=0;i--,j++){
          chars[j] = (ptr_or_start >> (i*sizeof(char)*8)) & 0x000000ff;
          std::cout << chars[j];
-      } 
+      }
       std::cout << std::endl;
       if (chars[0]!='-' and( chars[0]<'0' or chars[0]> '9')) {
         std::cout << "Non-number char detected in ptr_or_start[0]\n";
-        return false; 
+        return false;
       }
       for (int i= 1; i<(_size>4?4:_size);i++){
         switch (chars[i]){
@@ -407,22 +399,22 @@ public:
         }
       }
     //}
-    return true;  
-  } 
-  
+    return true;
+  }
+
 
   // How to handle if it's not an int?
   // what to return/exceptions?
   int64_t to_i() const { // only works if _size < 14
-    
-    if (this.is_i()) {  
+
+    if (this.is_i()) {
       int64_t hold = 0;
       // convert ptr_or_start first
       // convert e next
     } else {
       return;
-    } 
-    
+    }
+
   } // convert to integer
 */
   bool        is_i() const;  // starts with digit -> is integer
@@ -439,8 +431,7 @@ public:
   str substr(size_t start, size_t end) const;
 };
 
-//For static string_map
-//mmap_lib::map<uint32_t, uint32_t> str::string_map;
+// For static string_map
 mmap_lib::map<std::string_view, uint32_t> str::string_map2;
 
 }  // namespace mmap_lib

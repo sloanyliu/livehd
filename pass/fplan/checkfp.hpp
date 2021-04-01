@@ -11,9 +11,9 @@ public:
   static void pass(Eprp_var& v);
 
 private:
-  LGraph* root_lg;
+  Lgraph* root_lg;
 
-  // checks all other nodes for overlapping floorplans, returns overlapping node or 
+  // checks all other nodes for overlapping floorplans, returns overlapping node or
   // invalid node if no overlaps found.
   Node check_bb(const Node& n);
 };

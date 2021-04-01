@@ -74,11 +74,13 @@ void mmap_pstr_ctor_tests() {
   */
 }
 
+
+#if 0
 template<std::size_t N>
 void test_eq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
   return (ts == rs) == ans;
 }
-
+#endif
 
 int main(int argc, char **argv) {
   //mmap_pstr_ctor_tests();

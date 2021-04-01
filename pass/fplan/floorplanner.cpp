@@ -1,13 +1,16 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 #include "floorplanner.hpp"
-#include "helpers.hpp"
 
+#include <typeinfo>
+
+#include "annotate.hpp"
 #include "cell.hpp"
 #include "core/ann_place.hpp"
 #include "core/lgedgeiter.hpp"
-#include "annotate.hpp"
+#include "helpers.hpp"
 
-Lhd_floorplanner::Lhd_floorplanner(Node_tree&& nt_arg) : root_lg(nt_arg.get_root_lg()), nt(std::move(nt_arg)), na(root_lg->get_path()) {
+Lhd_floorplanner::Lhd_floorplanner(Node_tree&& nt_arg)
+    : root_lg(nt_arg.get_root_lg()), nt(std::move(nt_arg)), na(root_lg->get_path()) {
   // set how many nodes of a given type must be encountered before they are put in a grid together
   // thresholds can be 0, in which case that type of leaf is never put in a grid.
   for (uint8_t type = 0; type < (uint8_t)Ntype_op::Last_invalid; type++) {
@@ -24,7 +27,7 @@ Lhd_floorplanner::Lhd_floorplanner(Node_tree&& nt_arg) : root_lg(nt_arg.get_root
 Lhd_floorplanner::~Lhd_floorplanner() {
   delete root_layout;
   root_layout = nullptr;
-  root_lg = nullptr;
+  root_lg     = nullptr;
 }
 
 GeographyHint Lhd_floorplanner::randomHint(int count) const {
@@ -36,6 +39,45 @@ GeographyHint Lhd_floorplanner::randomHint(int count) const {
   }
 
   return hint_seq[sel];
+}
+
+FPContainer* Lhd_floorplanner::makeNode(const mmap_lib::map<Node::Compact, GeographyHint>& hint_map, const Tree_index tidx, size_t size) {
+  FPContainer* l;
+  if (!tidx.is_root() && hint_map.has(nt.get_data(tidx).get_compact())) {
+    l = new geogLayout(size);
+  } else {
+    l = new annLayout(size);
+  }
+
+  return l;
+}
+
+void Lhd_floorplanner::addSub(FPContainer* c, const mmap_lib::map<Node::Compact, GeographyHint>& hint_map, const Node::Compact& child_c,
+                              FPObject* comp, int count) {
+  if (typeid(*c) == typeid(geogLayout)) {
+    if (hint_map.has(child_c)) {
+      GeographyHint hint = hint_map.get(child_c);
+      static_cast<geogLayout*>(c)->addComponent(comp, count, hint);
+    } else {
+      static_cast<geogLayout*>(c)->addComponent(comp, count, randomHint(count));
+    }
+  } else {
+    static_cast<annLayout*>(c)->addComponent(comp, count);
+  }
+}
+
+void Lhd_floorplanner::addLeaf(FPContainer* c, const mmap_lib::map<Node::Compact, GeographyHint>& hint_map, const Node::Compact& child_c,
+                               Ntype_op type, int count, double area, double maxARArg, double minARArg) {
+  if (typeid(*c) == typeid(geogLayout)) {
+    if (hint_map.has(child_c)) {
+      GeographyHint hint = hint_map.get(child_c);
+      static_cast<geogLayout*>(c)->addComponentCluster(type, count, area, maxARArg, minARArg, hint);
+    } else {
+      static_cast<geogLayout*>(c)->addComponentCluster(type, count, area, maxARArg, minARArg, randomHint(count));
+    }
+  } else {
+    static_cast<annLayout*>(c)->addComponentCluster(type, count, area, maxARArg, minARArg);
+  }
 }
 
 void Lhd_floorplanner::create(FPOptimization opt, float ar) {
@@ -52,13 +94,13 @@ void Lhd_floorplanner::write_file(const std::string_view filename) {
 }
 
 void Lhd_floorplanner::write_lhd_node() {
-  Ann_node_place::clear(nt.get_root_lg()); // clear out any existing node placements
-  clearCount(); // clear ArchFP name counts
+  Ann_node_place::clear(nt.get_root_lg());  // clear out any existing node placements
+  clearCount();                             // clear ArchFP name counts
 
-  unsigned int placed_nodes = root_layout->outputLGraphLayout(nt, nt.root_index());
+  unsigned int placed_nodes = root_layout->outputLgraphLayout(nt, nt.root_index());
 
   unsigned int node_count = 0;
-  root_lg->each_hier_fast_direct([&node_count](const Node& n) {
+  root_lg->each_hier_fast([&node_count](const Node& n) {
     if (!n.is_type_synth()) {
       return true;
     }
@@ -82,11 +124,7 @@ void Lhd_floorplanner::write_lhd_node() {
 
     if (debug_print) {
       const Ann_place& p = n.get_place();
-      fmt::print("x: {:.3f}, y: {:.3f}, width: {:.3f}, height: {:.3f}\n",
-                 p.get_x(),
-                 p.get_y(),
-                 p.get_width(),
-                 p.get_height());
+      fmt::print("x: {:.3f}, y: {:.3f}, width: {:.3f}, height: {:.3f}\n", p.get_x(), p.get_y(), p.get_width(), p.get_height());
     }
 
     return true;
@@ -96,6 +134,4 @@ void Lhd_floorplanner::write_lhd_node() {
   I(node_count == placed_nodes);
 }
 
-void Lhd_floorplanner::write_lhd_lg() {
-  fmt::print("(not imp)\n");
-}
+void Lhd_floorplanner::write_lhd_lg() { fmt::print("(not imp)\n"); }

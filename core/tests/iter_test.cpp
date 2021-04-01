@@ -6,9 +6,8 @@
 #include "lgedgeiter.hpp"
 #include "lgraph.hpp"
 #include "mmap_tree.hpp"
-
-#include "thread_pool.hpp"
 #include "spmc.hpp"
+#include "thread_pool.hpp"
 
 bool failed = false;
 
@@ -23,7 +22,7 @@ void                                    setup_test_order() {
   test_order_sequence = 1;
 }
 
-void check_test_order(LGraph *top) {
+void check_test_order(Lgraph *top) {
   for (auto node : top->fast(true)) {
     if (node.is_type_sub_present())
       continue;
@@ -67,7 +66,7 @@ void check_test_order(LGraph *top) {
 }
 
 // performs Topological Sort on a given DAG
-void do_fwd_traversal(LGraph *lg, const std::string &name) {
+void do_fwd_traversal(Lgraph *lg, const std::string &name) {
   {
     Lbench b("core.ITER_" + name + "_fast");
 
@@ -100,7 +99,7 @@ void generate_graphs(int n) {
 
   for (int i = 0; i < n; i++) {
     std::string                    gname = "test_" + std::to_string(i);
-    LGraph *                       g     = LGraph::create("lgdb_iter_test", gname, "test");
+    Lgraph *                       g     = Lgraph::create("lgdb_iter_test", gname, "test");
     std::vector<Node_pin::Compact> spins;
     std::vector<Node_pin::Compact> dpins;
 
@@ -207,7 +206,7 @@ void generate_graphs(int n) {
 bool fwd(int n) {
   for (int i = 0; i < n; i++) {
     std::string gname = "test_" + std::to_string(i);
-    LGraph *    g     = LGraph::open("lgdb_iter_test", gname);
+    Lgraph *    g     = Lgraph::open("lgdb_iter_test", gname);
     if (g == nullptr)
       return false;
 
@@ -225,7 +224,7 @@ bool fwd(int n) {
 bool bwd(int n) {
   for (int i = 0; i < n; i++) {
     std::string gname = "test_" + std::to_string(i);
-    LGraph *    g     = LGraph::open("lgdb_iter_test", gname);
+    Lgraph *    g     = Lgraph::open("lgdb_iter_test", gname);
     if (g == 0)
       return false;
 
@@ -275,7 +274,7 @@ bool bwd(int n) {
 
 void simple_line() {
   std::string gname   = "top_0";
-  LGraph *    g0      = LGraph::create("lgdb_iter_test", "g0", "test");
+  Lgraph *    g0      = Lgraph::create("lgdb_iter_test", "g0", "test");
   auto &      sfuture = g0->ref_library()->setup_sub("future", "test");
   if (!sfuture.has_pin("fut_i"))
     sfuture.add_input_pin("fut_i", 10);
@@ -283,9 +282,9 @@ void simple_line() {
     sfuture.add_output_pin("fut_o", 11);
   g0->ref_library()->sync();
 
-  LGraph *s0 = LGraph::create("lgdb_iter_test", "s0", "test");
-  LGraph *s1 = LGraph::create("lgdb_iter_test", "s1", "test");
-  LGraph *s2 = LGraph::create("lgdb_iter_test", "s2", "test");
+  Lgraph *s0 = Lgraph::create("lgdb_iter_test", "s0", "test");
+  Lgraph *s1 = Lgraph::create("lgdb_iter_test", "s1", "test");
+  Lgraph *s2 = Lgraph::create("lgdb_iter_test", "s2", "test");
 
   auto g0_i_pin = g0->add_graph_input("g0_i", 1, 0);
   auto g0_o_pin = g0->add_graph_output("g0_o", 2, 0);
@@ -350,8 +349,8 @@ void simple_line() {
 
 void simple(int num) {
   std::string gname = "simple_iter";
-  LGraph *    g     = LGraph::create("lgdb_iter_test", gname, "test");
-  LGraph *    sub_g = LGraph::create("lgdb_iter_test", "sub", "test");
+  Lgraph *    g     = Lgraph::create("lgdb_iter_test", gname, "test");
+  Lgraph *    sub_g = Lgraph::create("lgdb_iter_test", "sub", "test");
 
   for (int i = 0; i < 256; i++) {
     // Disconnected IOs from 1000-1512
@@ -507,7 +506,7 @@ protected:
   std::thread  pth;
   bool running;
 
-  void worker(LGraph *lg, bool visit_sub) {
+  void worker(Lgraph *lg, bool visit_sub) {
     for(auto node:lg->forward(visit_sub)) {
       while(true) {
         auto done = queue.enqueue(node);
@@ -560,7 +559,7 @@ public:
     bool is_invalid() const { return current_node.is_invalid(); }
   };
 
-  Decouple_forward_iterator(LGraph *lg, bool visit_sub) {
+  Decouple_forward_iterator(Lgraph *lg, bool visit_sub) {
     running = true;
     pth = std::thread([this, lg, visit_sub] { this->worker(lg, visit_sub); });
   }
@@ -595,24 +594,23 @@ public:
 #endif
 
 int main(int argc, char **argv) {
-
-  if (argc==3 || argc==4) {
+  if (argc == 3 || argc == 4) {
     int niters = 30;
-    if (argc==4) {
+    if (argc == 4) {
       niters = atoi(argv[3]);
     }
 
     fmt::print("benchmarking path:{} name:{} niters:{}\n", argv[1], argv[2], niters);
-    auto *lg = LGraph::open(argv[1], argv[2]);
+    auto *lg = Lgraph::open(argv[1], argv[2]);
 
     Lbench bench("fwd.custom");
-    int total = 0;
+    int    total = 0;
 //#define ITER_MMAP 1
 #define ITER_DIRECT 1
-//#define ITER_THREAD 1
-//#define ITER_VECTOR 1
-//#define ITER_VECTOR_CHECK_ORDER 1
-//#define ITER_TREE 1
+    //#define ITER_THREAD 1
+    //#define ITER_VECTOR 1
+    //#define ITER_VECTOR_CHECK_ORDER 1
+    //#define ITER_TREE 1
 
 #ifdef ITER_VECTOR
 
@@ -624,81 +622,79 @@ int main(int argc, char **argv) {
     int n_loop_others   = 0;
 
     size_t max_level = 0;
-    for(auto node:lg->fast()) {
+    for (auto node : lg->fast()) {
       if (node.is_type_loop_breaker())
         continue;
 
-      size_t level = 0u;
-      bool all_input_breakers = true;
-      for(const auto &dpin:node.inp_drivers()) {
+      size_t level              = 0u;
+      bool   all_input_breakers = true;
+      for (const auto &dpin : node.inp_drivers()) {
         auto d_node = dpin.get_node();
 
         if (d_node.is_type_loop_breaker() || dpin.is_graph_input()) {
-
-          if (min_level[d_node.get_nid()]==0) {
+          if (min_level[d_node.get_nid()] == 0) {
             // FIXME: visit the node first
           }
-        }else{
+        } else {
           all_input_breakers = false;
-          level = std::max(min_level[d_node.get_nid()], level);
+          level              = std::max(min_level[d_node.get_nid()], level);
         }
       }
       if (!all_input_breakers) {
         ++level;
-        for(const auto &e:node.out_edges()) {
-          auto pos = e.sink.get_node_nid();
-          auto l = std::max(min_level[pos], level+1);
+        for (const auto &e : node.out_edges()) {
+          auto pos       = e.sink.get_node_nid();
+          auto l         = std::max(min_level[pos], level + 1);
           min_level[pos] = l;
-          max_level = std::max(max_level, l);
+          max_level      = std::max(max_level, l);
         }
       }
 
-      if (level==0) {
+      if (level == 0) {
         // FIXME: const or loop breaker. visit now
         ++n_loop_breakers;
-      }else{
+      } else {
         min_level[node.get_nid()] = level;
-        max_level = std::max(max_level, level);
+        max_level                 = std::max(max_level, level);
         ++n_loop_others;
       }
     }
     fmt::print("loop breakers:{} others:{} max:{}\n", n_loop_breakers, n_loop_others, max_level);
     std::vector<size_t> histogram;
-    for(auto v:min_level) {
-      if (v>=histogram.size())
-        histogram.resize(v+1);
+    for (auto v : min_level) {
+      if (v >= histogram.size())
+        histogram.resize(v + 1);
 
       histogram[v]++;
     }
-    for(auto i=0u;i<histogram.size();++i) {
+    for (auto i = 0u; i < histogram.size(); ++i) {
       fmt::print("  {} has {}\n", i, histogram[i]);
     }
 #endif
 
     std::vector<Node::Compact_class> fwd_order;
-    for(auto node:lg->forward()) {
+    for (auto node : lg->forward()) {
       fwd_order.emplace_back(node.get_compact_class());
-
     }
 #endif
 #ifdef ITER_REBUILD
-    auto *tlg = LGraph::create(argv[1], "topo_sorted", "-");
+    auto *                                                        tlg = Lgraph::create(argv[1], "topo_sorted", "-");
     absl::flat_hash_map<Node::Compact_class, Node::Compact_class> lg2tlg;
-    for(auto node:lg->forward()) {
+    for (auto node : lg->forward()) {
       auto tnode = tlg->create_node(node);
 
       lg2tlg.emplace(node.get_compact_class(), tnode.get_compact_class());
 
-      for(auto &e:node.inp_edges()) {
+      for (auto &e : node.inp_edges()) {
         auto it = lg2tlg.find(e.driver.get_node().get_compact_class());
-        if(it == lg2tlg.end())
+        if (it == lg2tlg.end())
           continue;
         auto tdpin = it->second.get_node(tlg).setup_driver_pin_raw(e.driver.get_pid());
         tnode.setup_sink_pin_raw(e.sink.get_pid()).connect_driver(tdpin);
       }
-      for(auto &e:node.out_edges()) {
+      for (auto &e : node.out_edges()) {
         auto it = lg2tlg.find(e.sink.get_node().get_compact_class());
-        if(it == lg2tlg.end())
+        if (it == lg2tlg.end())
           continue;
         auto tspin = it->second.get_node(tlg).setup_sink_pin_raw(e.sink.get_pid());
         tnode.setup_driver_pin_raw(e.driver.get_pid()).connect_sink(tspin);
@@ -707,112 +703,112 @@ int main(int argc, char **argv) {
 #endif
 #ifdef ITER_TREE
     mmap_lib::tree<Node::Compact_class> fwd_order;
-    Node invalid;
+    Node                                invalid;
     fwd_order.set_root(invalid.get_compact_class());
 
     const auto root = fwd_order.get_root();
-    for(auto node:lg->forward()) {
+    for (auto node : lg->forward()) {
       fwd_order.add_child(root, node.get_compact_class());
     }
 #endif
 #ifdef ITER_MMAP
     mmap_lib::map<Node::Compact_class, Node::Compact_class> fwd_order;
-    Node invalid;
-    Node::Compact_class first_cnode = invalid.get_compact_class();
-    Node::Compact_class last_cnode = invalid.get_compact_class();
-    for(auto node:lg->forward()) {
+    Node                                                    invalid;
+    Node::Compact_class                                     first_cnode = invalid.get_compact_class();
+    Node::Compact_class                                     last_cnode  = invalid.get_compact_class();
+    for (auto node : lg->forward()) {
       if (last_cnode.is_invalid()) {
         first_cnode = node.get_compact_class();
-        last_cnode = node.get_compact_class();
-      }else{
+        last_cnode  = node.get_compact_class();
+      } else {
         auto n = node.get_compact_class();
-        fwd_order.set(last_cnode,n);
+        fwd_order.set(last_cnode, n);
         last_cnode = n;
       }
     }
 #endif
-    for(int i=0;i<niters;++i) {
+    for (int i = 0; i < niters; ++i) {
 #ifdef ITER_DIRECT
-        for(auto node:lg->forward()) {
-          auto op = node.get_type_op();
-          if (Ntype::is_multi_driver(op))
-            total += 1;
-        }
+      for (auto node : lg->forward()) {
+        auto op = node.get_type_op();
+        if (Ntype::is_multi_driver(op))
+          total += 1;
+      }
 #endif
 #ifdef ITER_THREAD
-        Decouple_forward_iterator it;
-        it.restart(lg);
+      Decouple_forward_iterator it;
+      it.restart(lg);
 
-        while(true) {
-          auto nid = it.get_next();
-          if (nid==0)
-            break;
-          auto node = Node::Compact_class(nid).get_node(lg);
-          auto op = node.get_type_op();
-          if (Ntype::is_multi_driver(op))
-            total += 1;
-        }
+      while (true) {
+        auto nid = it.get_next();
+        if (nid == 0)
+          break;
+        auto node = Node::Compact_class(nid).get_node(lg);
+        auto op   = node.get_type_op();
+        if (Ntype::is_multi_driver(op))
+          total += 1;
+      }
 #endif
 #ifdef ITER_REBUILD
-        for(auto node:tlg->fast()) {
-          auto op = node.get_type_op();
-          if (Ntype::is_multi_driver(op))
-            total += 1;
-        }
+      for (auto node : tlg->fast()) {
+        auto op = node.get_type_op();
+        if (Ntype::is_multi_driver(op))
+          total += 1;
+      }
 #endif
 #ifdef ITER_TREE
-        for(const auto &it:fwd_order.depth_preorder(fwd_order.get_root())) {
-          auto node = fwd_order.get_data(it).get_node(lg);
-          auto op = node.get_type_op();
-          if (Ntype::is_multi_driver(op))
-            total += 1;
-        }
+      for (const auto &it : fwd_order.depth_preorder(fwd_order.get_root())) {
+        auto node = fwd_order.get_data(it).get_node(lg);
+        auto op   = node.get_type_op();
+        if (Ntype::is_multi_driver(op))
+          total += 1;
+      }
 #endif
 #ifdef ITER_MMAP
-        auto cnode = first_cnode;
-        while (!cnode.is_invalid()) {
-          auto node = cnode.get_node(lg);
-          auto op = node.get_type_op();
-          if (Ntype::is_multi_driver(op))
-            total += 1;
+      auto cnode = first_cnode;
+      while (!cnode.is_invalid()) {
+        auto node = cnode.get_node(lg);
+        auto op   = node.get_type_op();
+        if (Ntype::is_multi_driver(op))
+          total += 1;
 
-          const auto &it = fwd_order.find(cnode);
-          if (it == fwd_order.end())
-            break;
-          cnode = it->second;
-        }
+        const auto &it = fwd_order.find(cnode);
+        if (it == fwd_order.end())
+          break;
+        cnode = it->second;
+      }
 #endif
 #ifdef ITER_VECTOR
 #ifdef ITER_VECTOR_CHECK_ORDER
-        absl::flat_hash_set<Node::Compact_class> visited;
+      absl::flat_hash_set<Node::Compact_class> visited;
 #endif
 
-        for(const auto &cnode:fwd_order) {
-          auto node = cnode.get_node(lg);
-          if (node.is_invalid())
-            continue;
+      for (const auto &cnode : fwd_order) {
+        auto node = cnode.get_node(lg);
+        if (node.is_invalid())
+          continue;
 
 #ifdef ITER_VECTOR_CHECK_ORDER
-          visited.insert(cnode);
-          for(const auto &e:node.inp_edges()) {
-            if (visited.contains(e.driver.get_node().get_compact_class())) {
-              continue;
-            }
-            if (e.driver.is_graph_io())
-              continue;
-            if (!node.is_type_sub() && !e.driver.get_node().is_type_sub()) {
-              fmt::print("delayed\n");
-              node.dump();
-              e.driver.get_node().dump();
-              break;
-            }
+        visited.insert(cnode);
+        for (const auto &e : node.inp_edges()) {
+          if (visited.contains(e.driver.get_node().get_compact_class())) {
+            continue;
           }
+          if (e.driver.is_graph_io())
+            continue;
+          if (!node.is_type_sub() && !e.driver.get_node().is_type_sub()) {
+            fmt::print("delayed\n");
+            node.dump();
+            e.driver.get_node().dump();
+            break;
+          }
+        }
 #endif
 
-          auto op = node.get_type_op();
-          if (Ntype::is_multi_driver(op))
-            total += 1;
-        }
+        auto op = node.get_type_op();
+        if (Ntype::is_multi_driver(op))
+          total += 1;
+      }
 #endif
     }
 
@@ -824,7 +820,7 @@ int main(int argc, char **argv) {
 
   simple(1);
 
-  for(int i=0;i<40;i++) {
+  for (int i = 0; i < 40; i++) {
     simple(2);
     if (failed)
       return -3;
