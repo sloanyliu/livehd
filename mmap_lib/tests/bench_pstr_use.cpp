@@ -68,79 +68,238 @@ void mmap_pstr_ctor_tests() {
   test_ctor(mmap_lib::str(std::string_view("--this_var_will_bee_very_longbuzzball"))
                          , "--this_var_will_bee_very_longbuzzball");
 
+  std::cout << "================================== " << std::endl;
+  std::cout << "Constructor 3 (const char *) Tests: " << std::endl;
+  std::cout << "================================== " << std::endl;
+  
+  const char *hello = "hello";
+  const char *cat = "cat";
+  const char *abcd = "abcd";
+  const char *feedback = "feedback";
+  const char *n13 = "neutralizatio";
+  const char *n14 = "neutralization";
+  const char *andy = "01andy23456789";
+  const char *lvar = "--this_var_will_bee_very_longbuzzball";
+
+  test_ctor(mmap_lib::str(hello),          "hello"); 
+  test_ctor(mmap_lib::str(cat),            "cat"); 
+  test_ctor(mmap_lib::str(abcd),           "abcd"); 
+  test_ctor(mmap_lib::str(feedback),       "feedback"); 
+  test_ctor(mmap_lib::str(n13),  "neutralizatio"); 
+  test_ctor(mmap_lib::str(n14), "neutralization"); 
+  test_ctor(mmap_lib::str(andy), "01andy23456789"); 
+  test_ctor(mmap_lib::str(lvar) , "--this_var_will_bee_very_longbuzzball");
   /*
   std::cout << "> Test 17: str(\"lonng_andalsjdfkajsdkfljkalsjdfkljaskldjfklajdkslfjalsdjfllaskdfjklajskdlfjklasjdfljasdklfjklasjdflasjdflkajsdflkjakljdfkljaldjfkjakldsjfjaklsjdfjklajsdfjaklsfasjdklfjklajskdljfkljlaksjdklfjlkajsdklfjkla01words23456789\") " << std::endl;
   mmap_lib::str test17("lonng_andalsjdfkajsdkfljkalsjdfkljaskldjfklajdkslfjalsdjfllaskdfjklajskdlfjklasjdfljasdklfjklasjdflasjdflkajsdflkjakljdfkljaldjfkjakldsjfjaklsjdfjklajsdfjaklsfasjdklfjklajskdljfkljlaksjdklfjlkajsdklfjkla01words23456789");
   */
 }
 
+template<std::size_t N>
+bool test_eq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
+  return (ts == rs) == ans;
+}
 
 template<std::size_t N>
-void test_eq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
-  if ((ts == rs) == ans) { std::cout << "passed" << std::endl; }
-  else { std::cout << "failed" << std::endl; }
+bool test_neq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
+  return (ts != rs) == ans;
 }
 
-void mmap_pstr_eqeq_tests() {
-#if 0
-  test_eq(mmap_lib::str("hello"),              "hello",              true);
-  test_eq(mmap_lib::str("hello"),              "hi",                 false);
-  test_eq(mmap_lib::str("hi"),                 "hi",                 true);
-  test_eq(mmap_lib::str("hi"),                 "hello",              false);
-  test_eq(mmap_lib::str("hello_!_world"),      "hello_!_world",      true);
-  test_eq(mmap_lib::str("hello_!_world"),      "hi",                 false);
-  test_eq(mmap_lib::str("hello"),              "hello_!_word",       false);
-  test_eq(mmap_lib::str("micro-architecture"), "micro-architecture", true); // <--
-  test_eq(mmap_lib::str("$!%^!@%$!%@$@^!$%@"), "micro-architecture", false);
-  test_eq(mmap_lib::str("$!%^!@%$!%@$@^!$%@"), "$!%^!@%$!%@$@^!$%@", true); // <--
-  test_eq(mmap_lib::str("micro-architecture"), "micro-architecture", true); // <--
-  test_eq(mmap_lib::str("micro-architecture"), "hi",                 false);
-  test_eq(mmap_lib::str("hi"),                 "micro-architecture", false);
-#endif
-  test_eq(mmap_lib::str("micro-architecture"), "micro-architecture", true); // <--
-  test_eq(mmap_lib::str("$!%^!@%$!%@$@^!$%@"), "$!%^!@%$!%@$@^!$%@", true); // <--
-  test_eq(mmap_lib::str("micro-architecture"), "micro-architecture", true); // <--
-  /*
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  test_eq(mmap_lib::str("hello"), "hi", false);
-  */
+bool test_eq(mmap_lib::str ls, mmap_lib::str rs, bool ans) {
+  return (ls == rs) == ans;
 }
+
+bool test_neq(mmap_lib::str ls, mmap_lib::str rs, bool ans) {
+  return (ls != rs) == ans;
+}
+
+/*
+bool test_eq(mmap_lib::str ls, const char* rs, bool ans) {
+  return (ls == rs) == ans;
+}
+
+bool test_neq(mmap_lib::str ls, const char* rs, bool ans) {
+  return (ls != rs) == ans;
+}
+*/
+
+bool test_eq(mmap_lib::str ls, std::string_view rs, bool ans) {
+  return (ls == rs) == ans;
+}
+
+bool test_neq(mmap_lib::str ls, std::string_view rs, bool ans) {
+  return (ls != rs) == ans;
+}
+
+void pstrVchar_eqeq_tests() {
+  std::cout << "pstr vs. char Operator == Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str hi("hi");
+  mmap_lib::str hello_world("hello_!_world");
+  mmap_lib::str micro("micro-architecture");
+  mmap_lib::str foo("--foo1234567890!!!");
+  
+  uint8_t r = 0u, t = 0u;
+  r += test_eq(hello,       "hello",              true); ++t;
+  r += test_eq(hello,       "hi",                 false); ++t;
+  r += test_eq(hi,          "hi",                 true); ++t;
+  r += test_eq(hi,          "hello",              false); ++t;
+  r += test_eq(hello_world, "hello_!_world",      true); ++t;
+  r += test_eq(hello_world, "hi",                 false); ++t;
+  r += test_eq(hello,       "hello_!_word",       false); ++t;
+  r += test_eq(micro,       "micro-architecture", true); ++t;
+  r += test_eq(foo,         "micro-architecture", false); ++t;
+  r += test_eq(foo,         "--foo1234567890!!!", true); ++t;
+  r += test_eq(micro,       "micro-architecture", true); ++t;
+  r += test_eq(micro,       "hi",                 false); ++t;
+  r += test_eq(hi,          "micro-architecture", false); ++t;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
+
+void pstrVchar_noeq_tests() {
+  std::cout << "pstr vs. char Operator != Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str hi("hi");
+  mmap_lib::str hello_world("hello_!_world");
+  mmap_lib::str amethysts("amethysts_emeralds");
+  mmap_lib::str balloon("_balloon_223344!!!");
+  
+  uint8_t r = 0u, t = 0u;
+  r += test_neq(hello,       "hi",                 true); ++t;
+  r += test_neq(hello,       "hello",              false); ++t;
+  r += test_neq(hello_world, "hi",                 true); ++t;
+  r += test_neq(hello_world, "hello_!_world",      false); ++t;
+  r += test_neq(amethysts,   "_balloon_223344!!!", true); ++t;
+  r += test_neq(balloon,     "_balloon_223344!!!", false); ++t;
+  r += test_neq(hello,       "amethysts_emeralds", true); ++t;
+  r += test_neq(amethysts,   "hi",                 true); ++t;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
+
+
+void pstrVpstr_eqeq_tests() {
+  std::cout << "pstr vs. pstr Operator == Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str hi("hi");
+  mmap_lib::str hello_world("hello_!_world");
+  mmap_lib::str micro("micro-architecture");
+  mmap_lib::str foo("--foo1234567890!!!");
+
+  uint8_t r = 0u, t = 0u;
+  r += test_eq(hello,       hello,       true); ++t;
+  r += test_eq(hello,       hi,          false); ++t;
+  r += test_eq(hi,          hi,          true); ++t;
+  r += test_eq(hi,          hello,       false); ++t;
+  r += test_eq(hello_world, hello_world, true); ++t;
+  r += test_eq(hello_world, hi,          false); ++t;
+  r += test_eq(hello,       hello_world, false); ++t;
+  r += test_eq(micro,       micro,       true); ++t;
+  r += test_eq(foo,         micro,       false); ++t;
+  r += test_eq(foo,         foo,         true); ++t;
+  r += test_eq(micro,       micro,       true); ++t;
+  r += test_eq(micro,       hi,          false); ++t;
+  r += test_eq(hi,          micro,       false); ++t;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
+
+void pstrVpstr_noeq_tests() {
+  std::cout << "pstr vs. pstr Operator != Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str hi("hi");
+  mmap_lib::str hello_world("hello_!_world");
+  mmap_lib::str amethysts("amethysts_emeralds");
+  mmap_lib::str balloon("_balloon_223344!!!");
+  
+  uint8_t r = 0u, t = 0u;
+  r += test_neq(hello,       hi,          true); ++t;
+  r += test_neq(hello,       hello,       false); ++t;
+  r += test_neq(hello_world, hi,          true); ++t;
+  r += test_neq(hello_world, hello_world, false); ++t;
+  r += test_neq(amethysts,   balloon,     true); ++t;
+  r += test_neq(balloon,     balloon,     false); ++t;
+  r += test_neq(hello,       amethysts,   true); ++t;
+  r += test_neq(amethysts,   hi,          true); ++t;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
+
+
+void pstrVcstr_eqeq_tests() {
+  std::cout << "pstr vs. cstr Operator == Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str hi("hi");
+  mmap_lib::str hello_world("hello_!_world");
+  mmap_lib::str micro("micro-architecture");
+  mmap_lib::str foo("--foo1234567890!!!");
+  const char* chello = "hello";
+  const char* chi = "hi";
+  const char* chello_world = "hello_!_world";
+  const char* cmicro = "micro-architecture";
+  const char* cfoo = "--foo1234567890!!!";
+
+  uint8_t r = 0u, t = 0u;
+  r += test_eq(hello,       chello,       true); ++t;
+  r += test_eq(hello,       chi,          false); ++t;
+  r += test_eq(hi,          chi,          true); ++t;
+  r += test_eq(hi,          chello,       false); ++t;
+  r += test_eq(hello_world, chello_world, true); ++t;
+  r += test_eq(hello_world, chi,          false); ++t;
+  r += test_eq(hello,       chello_world, false); ++t;
+  r += test_eq(micro,       cmicro,       true); ++t;
+  r += test_eq(foo,         cmicro,       false); ++t;
+  r += test_eq(foo,         cfoo,         true); ++t;
+  r += test_eq(micro,       cmicro,       true); ++t;
+  r += test_eq(micro,       chi,          false); ++t;
+  r += test_eq(hi,          cmicro,       false); ++t;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
+
+void pstrVcstr_noeq_tests() {
+  std::cout << "pstr vs. cstr Operator != Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str hi("hi");
+  mmap_lib::str hello_world("hello_!_world");
+  mmap_lib::str amethysts("amethysts_emeralds");
+  mmap_lib::str balloon("_balloon_223344!!!");
+  const char* chello = "hello";
+  const char* chi = "hi";
+  const char* chello_world = "hello_!_world";
+  const char* camethysts = "amethysts_emeralds";
+  const char* cballoon = "_balloon_223344!!!";
+  
+  uint8_t r = 0u, t = 0u;
+  r += test_neq(hello,       chi,          true); ++t;
+  r += test_neq(hello,       chello,       false); ++t;
+  r += test_neq(hello_world, chi,          true); ++t;
+  r += test_neq(hello_world, chello_world, false); ++t;
+  r += test_neq(amethysts,   cballoon,     true); ++t;
+  r += test_neq(balloon,     cballoon,     false); ++t;
+  r += test_neq(hello,       camethysts,   true); ++t;
+  r += test_neq(amethysts,   chi,          true); ++t;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
+
 
 int main(int argc, char **argv) {
   //mmap_pstr_ctor_tests();
-  mmap_pstr_eqeq_tests();  
+  
+  std::cout << "==========================" << std::endl;
+  pstrVchar_eqeq_tests(); 
+  pstrVchar_noeq_tests(); 
+  pstrVpstr_eqeq_tests(); 
+  pstrVpstr_noeq_tests(); 
+  pstrVcstr_eqeq_tests(); 
+  pstrVcstr_noeq_tests(); 
+  std::cout << "==========================" << std::endl;
+  
+ /* 
+  mmap_lib::str ts("hello");
+  const char *t2 = "hello";
+  const char (&t3)[6] = "hello";
+  std::string t5 = "hello"; 
+  std::string_view t4("hello");
 
-  //mmap_lib::str tt1("hello");
-  //mmap_lib::str tt2("yo");
-  //mmap_lib::str tt3("hello_world");
-  //mmap_lib::str tt4("swag");
-  
-  //test_ctor(tt1, "hello");
- 
-  //std::cout << "i should = [24, 16, 8, 0]" << std::endl; 
-  //if (tt1 == "hello") { std::cout << "same" << std::endl; }  
-  //else { std::cout << "not\n"; }
- 
-#if 0  
-  //std::cout << "i should = [8, 0]" << std::endl; 
-  if (tt2 == "hello") { std::cout << "same" << std::endl; }  
-  else { std::cout << "not\n"; }
-  
-  //std::cout << "i should = [24, 16, 8, 0]" << std::endl; 
-  if (tt3 == "hello") { std::cout << "same" << std::endl; }  
-  else { std::cout << "not\n"; }
-  
-  //std::cout << "i should = [24, 16, 8, 0]" << std::endl; 
-  if (tt4 == "hello") { std::cout << "same" << std::endl; }  
-  else { std::cout << "not\n"; }
-  //tt1.print_StrMap();
-  //tt1.print_StrVec();
-#endif
+  if (test_eq(ts, t5.c_str(), true)) { printf("match\n"); }
+  else { printf("miss\n"); } 
+  */
   return 0;
 }
