@@ -261,31 +261,19 @@ public:
     #if 1
     auto rhs_size = N - 1;
     // if size doesnt match, false
-    //printf("_size is: %d, rhs_size is: %d\n", _size, rhs_size);
-    if (_size != rhs_size) { 
-      //printf("size not match\n"); 
-      return false;
-    } else { // If size matches, keep comparing
-      // if size is less than 14, only check e and p_o_s
-      //printf("size matches!\n");
-      if (_size < 14) {
+    if (_size != rhs_size) { return false; }
+    else { // If size matches, keep comparing
+      if (_size < 14) { // size less than 14, check e and p_o_s
         // checking p_o_s for first 4 chars
-        //FIXME
-        //=========================PROBLEM===========================
-        // Should not be returning false on line 272 but it is
-        // figure out why
         uint8_t idx = 0;
         for (auto i = _size<=4 ? ((_size-1) * 8) : 24; i >= 0; i -= 8) {
           // if any chars don't match here, return false
           if (((ptr_or_start >> i) & 0xff) != (rhs[idx++] & 0xff)) { 
-            printf("mismatch in ptr_or_start\n");
             return false; 
           }
         }
-        //
-        //==========================================================
-        //
-        // if _size is 4 or less than 4, then only needed to check p_o_s
+        
+        // if _size is 4 or less than 4, no need to check e
         if (_size == rhs_size && _size <= 4) { return true; }
         // checking e for rest of chars
         for (auto i = 4; i < _size; ++i) {
@@ -294,15 +282,32 @@ public:
         return true; 
       } else if (_size >= 14) {
         // e now holds first 2 and last 8
-        if (e[0] != rhs[0] || e[1] != rhs[1]) { return false; }
-        for (auto i = 0; i < 8; ++i) { 
-          if (e[9-i] != rhs[_size - i]) { return false; }
+        if (e[0] != rhs[0] || e[1] != rhs[1]) { 
+          std::cout << "mismatch e[0..1]" << std::endl;
+          return false; 
         }
+        
+        //FIXME:
+        // print out what is being got from rhs and e
+        #if 0
+        uint8_t idx = 8;
+        for (auto i = 2; i < 10; ++i) { 
+          if (e[i] != rhs[rhs_size - idx++]) { 
+            std::cout << "mismatch e[2..8]" << std::endl;
+            return false; 
+          } else {
+            std::cout << "match in e[2..8]" << std::endl;
+          }
+        }
+        #endif
         // Getting data from string_vector and comparing with rest of rhs 
         auto j = 2; // long_str starts at index (2) goes to index (_size - 8)
         // for loop goes from p_o_s to p_o_s + _size-10 
-        for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {
-          if (string_vector.at(i) != rhs[j]) { return false; }
+        for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {   
+          //printf("string_vector: %2d, rhs: %2d\n", string_vector.at(i), rhs[j]);
+          if (string_vector.at(i) != rhs[j]) { 
+            return false; 
+          }
           j = j < _size-8 ? j+1 : j;
         }
         return true;
