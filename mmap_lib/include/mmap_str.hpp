@@ -245,25 +245,39 @@ public:
 
   template <std::size_t N>
   constexpr bool operator==(const char (&rhs)[N]) const {       
+    
+    #if 0
+    int idx = 0;
+    for (auto i = _size<=4 ? ((_size-1) * 8) : 24; i >= 0; i -= 8) {
+      // if any chars don't match here, return false
+      if (((ptr_or_start >> i) & 0xff) != (rhs[idx++] & 0xff)) { 
+        printf("mismatch in ptr_or_start\n");
+        return false; 
+      }
+    }
+    #endif
+
+
     #if 1
     auto rhs_size = N - 1;
     // if size doesnt match, false
-    printf("_size is: %d, rhs_size is: %d\n", _size, rhs_size);
+    //printf("_size is: %d, rhs_size is: %d\n", _size, rhs_size);
     if (_size != rhs_size) { 
-      printf("size not match\n"); 
+      //printf("size not match\n"); 
       return false;
     } else { // If size matches, keep comparing
       // if size is less than 14, only check e and p_o_s
-      printf("size matches!\n");
+      //printf("size matches!\n");
       if (_size < 14) {
         // checking p_o_s for first 4 chars
         //FIXME
         //=========================PROBLEM===========================
         // Should not be returning false on line 272 but it is
         // figure out why
-        for (auto i = _size<=4 ? ((_size) * 8) : 24; i >= 0; i -= 8) {
+        uint8_t idx = 0;
+        for (auto i = _size<=4 ? ((_size-1) * 8) : 24; i >= 0; i -= 8) {
           // if any chars don't match here, return false
-          if (((ptr_or_start >> i) & 0xff) != (rhs[i++] & 0xff)) { 
+          if (((ptr_or_start >> i) & 0xff) != (rhs[idx++] & 0xff)) { 
             printf("mismatch in ptr_or_start\n");
             return false; 
           }

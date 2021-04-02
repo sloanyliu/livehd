@@ -75,20 +75,63 @@ void mmap_pstr_ctor_tests() {
 }
 
 
-#if 0
 template<std::size_t N>
 void test_eq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
-  return (ts == rs) == ans;
+  if ((ts == rs) == ans) { std::cout << "passed" << std::endl; }
+  else { std::cout << "failed" << std::endl; }
 }
-#endif
 
 int main(int argc, char **argv) {
   //mmap_pstr_ctor_tests();
-  mmap_lib::str tt1("hello");
-  test_ctor(tt1, "hello");
-  if (tt1 == "hello") { std::cout << "yolo" << std::endl; }  
-  else { std::cout << "oops\n"; }
-  tt1.print_StrMap();
-  tt1.print_StrVec();
+  test_eq(mmap_lib::str("hello"),              "hello",              true);
+  test_eq(mmap_lib::str("hello"),              "hi",                 false);
+  test_eq(mmap_lib::str("hi"),                 "hi",                 true);
+  test_eq(mmap_lib::str("hi"),                 "hello",              false);
+  test_eq(mmap_lib::str("hello_!_world"),      "hello_!_world",      true);
+  test_eq(mmap_lib::str("hello_!_world"),      "hi",                 false);
+  test_eq(mmap_lib::str("hello"),              "hello_!_word",       false);
+  test_eq(mmap_lib::str("micro-architecture"), "micro-architecture", true);
+  test_eq(mmap_lib::str("$!%^!@%$!%@$@^!$%@"), "micro-architecture", false); // <--
+  test_eq(mmap_lib::str("$!%^!@%$!%@$@^!$%@"), "$!%^!@%$!%@$@^!$%@", true); // <--
+  test_eq(mmap_lib::str("micro-architecture"), "micro-architecture", true); // <--
+  test_eq(mmap_lib::str("micro-architecture"), "hi",                 false);
+  test_eq(mmap_lib::str("hi"),                 "micro-architecture", false);
+  
+  /*
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  test_eq(mmap_lib::str("hello"), "hi", false);
+  */
+  //mmap_lib::str tt1("hello");
+  //mmap_lib::str tt2("yo");
+  //mmap_lib::str tt3("hello_world");
+  //mmap_lib::str tt4("swag");
+  
+  //test_ctor(tt1, "hello");
+ 
+  //std::cout << "i should = [24, 16, 8, 0]" << std::endl; 
+  //if (tt1 == "hello") { std::cout << "same" << std::endl; }  
+  //else { std::cout << "not\n"; }
+ 
+#if 0  
+  //std::cout << "i should = [8, 0]" << std::endl; 
+  if (tt2 == "hello") { std::cout << "same" << std::endl; }  
+  else { std::cout << "not\n"; }
+  
+  //std::cout << "i should = [24, 16, 8, 0]" << std::endl; 
+  if (tt3 == "hello") { std::cout << "same" << std::endl; }  
+  else { std::cout << "not\n"; }
+  
+  //std::cout << "i should = [24, 16, 8, 0]" << std::endl; 
+  if (tt4 == "hello") { std::cout << "same" << std::endl; }  
+  else { std::cout << "not\n"; }
+  //tt1.print_StrMap();
+  //tt1.print_StrVec();
+#endif
   return 0;
 }
