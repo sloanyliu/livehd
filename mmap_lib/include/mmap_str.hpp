@@ -244,7 +244,7 @@ public:
   [[nodiscard]] constexpr bool empty() const { return 0 == _size; }
 
   template <std::size_t N>
-  constexpr bool operator==(const char (&rhs)[N]) const { 
+  constexpr bool operator==(const char (&rhs)[N]) const {       
     #if 1
     auto rhs_size = N - 1;
     // if size doesnt match, false
