@@ -248,20 +248,8 @@ public:
   constexpr bool operator==(const char (&rhs)[N]) const {       
     auto rhs_size = N - 1;
     if (_size != rhs_size) { return false; } // if size doesnt match, false
-    if (_size < 14) { // actual chars in e & ptr_or_start
-      uint8_t idx = 0u;
-      // for loop shifts ptr_or_start to get the first 4 chars of pstr
-      for (auto i = _size<=4 ? ((_size-1) * 8) : 24; i >= 0; i -= 8) {
-        if (((ptr_or_start >> i) & 0xff) != (rhs[idx++] & 0xff)) { 
-          return false; // ptr_or_start & rhs mismatch -> false
-        }
-      }
-      if (_size <= 4) { return true; } // _size <= 4, don't need to check e
-      for (auto i = 4; i < _size; ++i) { // checking e for rest of chars
-        if (e[i-4] != rhs[i]) { return false; } // e & rhs mismatch -> false
-      }
-      return true; 
-    } else if (_size >= 14) { // string_vector ptr in ptr_or_start, chars in e
+    if (_size < 14) { return str(rhs) == *this; }
+    else if (_size >= 14) { // string_vector ptr in ptr_or_start, chars in e
       if (e[0] != rhs[0] || e[1] != rhs[1]) { return false; } // check first two
       uint8_t idx = 8;
       for (auto i = 2; i < 10; ++i) { 
@@ -287,20 +275,8 @@ public:
   constexpr bool operator==(std::string_view rhs) const {       
     auto rhs_size = rhs.size();
     if (_size != rhs_size) { return false; } // if size doesnt match, false
-    if (_size < 14) { // actual chars in e & ptr_or_start
-      uint8_t idx = 0u;
-      // for loop shifts ptr_or_start to get the first 4 chars of pstr
-      for (auto i = _size<=4 ? ((_size-1) * 8) : 24; i >= 0; i -= 8) {
-        if (((ptr_or_start >> i) & 0xff) != (rhs.at(idx++) & 0xff)) { 
-          return false; // ptr_or_start & rhs mismatch -> false
-        }
-      }
-      if (_size <= 4) { return true; } // _size <= 4, don't need to check e
-      for (auto i = 4; i < _size; ++i) { // checking e for rest of chars
-        if (e[i-4] != rhs.at(i)) { return false; } // e & rhs mismatch -> false
-      }
-      return true; 
-    } else if (_size >= 14) { // string_vector ptr in ptr_or_start, chars in e
+    if (_size < 14) { return str(rhs) == *this; }
+    else if (_size >= 14) { // string_vector ptr in ptr_or_start, chars in e
       if (e[0] != rhs.at(0) || e[1] != rhs.at(1)) { return false; } // check first two
       uint8_t idx = 8;
       for (auto i = 2; i < 10; ++i) { 
@@ -359,14 +335,50 @@ public:
   }
 
   // SLOAN
-  bool starts_with(const str &v) const;
-  bool starts_with(std::string_view sv) const;
-  bool starts_with(std::string s) const;
+  // checks if *this pstr starts with st
+  bool starts_with(const str &st) const { 
+    if (st._size > _size) { return false; }
+    else if (st._size == _size) { return *this == st; }
+    else if (st._size < _size) {
+      // Actual compare logic
+      return false;
+    }
+  }
+  bool starts_with(std::string_view st) const { 
+    if (st.size() > _size) { return false; }
+    else if (st.size() == _size) { return *this == st; }
+    else if (st.size() < _size) {
+      // Actual compare logic
+      return false;
+    }
+  }
+  // will use the string_view function
+  bool starts_with(std::string st) const { 
+    return *this.starts_with(st.c_str()); 
+  }
 
-  //SLOAN
-  bool ends_with(const str &v) const;
-  bool ends_with(std::string_view sv) const;
-  bool ends_with(std::string s) const;
+  // SLOAN
+  // checks if *this pstr ends with en
+  bool ends_with(const str &en) const {
+    if (en._size > _size) { return false; }
+    else if (en._size == _size) { return *this == en; }
+    else if (en._size < _size) {
+      // Actual compare logic
+      return false;
+    }
+  }
+  bool ends_with(std::string_view en) const {
+    if (en.size() > _size) { return false; }
+    else if (en.size() == _size) { return *this == en; }
+    else if (en.size() < _size) {
+      // Actual compare logic
+      return false;
+    }
+  }
+  // will use the string_view function
+  bool ends_with(std::string en) const {
+    return *this.ends_with(en.c_str()); 
+  }
 
   //OLY
   std::size_t find(const str &v, std::size_t pos = 0) const;
