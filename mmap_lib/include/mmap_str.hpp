@@ -84,6 +84,7 @@ public:
       return std::make_pair(0,0);
     } else {
       return std::make_pair(string_map2.get(it), size); //found it, return
+      // pair is (ptr_or_start, size of string)
     }
 
 #if 0
@@ -125,7 +126,7 @@ public:
     std::pair<int, int> pair = str_exists(long_str, _size - 10);
 
     // if string exists in vector, get the ptr to it in string_map2
-    // pair is (position in string_map2, size of string)
+    // pair is (ptr_or_start, size of string)
     if (pair.second) {
       ptr_or_start = pair.first;
     } else { // if string is not in vector, put it in vector
@@ -255,6 +256,7 @@ public:
       for (auto i = 2; i < 10; ++i) { 
         if (e[i] != rhs[rhs_size - idx--]) { return false; } // check last eight
       }
+      
       // Getting data from string_vector and comparing with rest of rhs 
       auto j = 2; // rhs[2 .. _size - 8] --> the long part
       // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10) 
@@ -265,10 +267,6 @@ public:
       return true;
     }
     return false;
-
-    #if 0
-    return str(rhs) == *this;//saves rhs into vec and map if rhs.size >= 14
-    #endif
   }
 
   
@@ -282,6 +280,13 @@ public:
       for (auto i = 2; i < 10; ++i) { 
         if (e[i] != rhs.at(rhs_size - idx--)) { return false; } // check last eight
       }
+      
+      //FIXME: Test this one liner out
+      #if 0
+      return !(string_map2.find(rhs.substr(2, rhs_size-10)) == string_map2.end());
+      #endif
+
+      #if 1
       // Getting data from string_vector and comparing with rest of rhs 
       auto j = 2; // rhs[2 .. _size - 8] --> the long part
       // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10) 
@@ -290,12 +295,11 @@ public:
         j = j < _size-8 ? j+1 : j;
       }
       return true;
+      #endif
+
     }
     return false;
 
-    #if 0
-    return str(rhs) == *this;//saves rhs into vec and map if rhs.size >= 14
-    #endif
   }
 
   constexpr bool operator==(const str &rhs) const {
@@ -337,13 +341,22 @@ public:
   // SLOAN
   // checks if *this pstr starts with st
   bool starts_with(const str &st) const { 
+    // if st is larger than *this, false
     if (st._size > _size) { return false; }
+    // if st same size as *this, return if they are equal 
     else if (st._size == _size) { return *this == st; }
+    // if st smaller than *this, compare 
     else if (st._size < _size) {
-      // Actual compare logic
+      // Actual compare logic:
+      if (_size < 14) {
+        // compare the actual chars in p_o_s, then e
+      } else if (_size >= 14) {
+        // depending on size of st, decide whether we need to access the vector
+      }
       return false;
     }
   }
+
   bool starts_with(std::string_view st) const { 
     if (st.size() > _size) { return false; }
     else if (st.size() == _size) { return *this == st; }
@@ -352,9 +365,10 @@ public:
       return false;
     }
   }
+
   // will use the string_view function
   bool starts_with(std::string st) const { 
-    return *this.starts_with(st.c_str()); 
+    return starts_with(std::string_view(st.c_str())); 
   }
 
   // SLOAN
@@ -367,6 +381,7 @@ public:
       return false;
     }
   }
+
   bool ends_with(std::string_view en) const {
     if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
@@ -375,9 +390,10 @@ public:
       return false;
     }
   }
+
   // will use the string_view function
   bool ends_with(std::string en) const {
-    return *this.ends_with(en.c_str()); 
+    return ends_with(std::string_view(en.c_str())); 
   }
 
   //OLY
