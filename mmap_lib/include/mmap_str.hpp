@@ -54,7 +54,7 @@ public:
   // this holds all the raw data, (int kinda weird?)
   inline static std::vector<int> string_vector; // ptr_or_start points here! 
   
-  //===========constructor 1=========
+  //===========constructor 1============
   template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
     // if _size is less than 4, then whole thing will be in ptr_or_start
@@ -175,6 +175,8 @@ public:
   	}
   }
 
+
+  //=========Printing==============
   void print_PoS () { 
     std::cout << "ptr_or_start is";
     if (_size >= 14) {
@@ -213,7 +215,7 @@ public:
     }
     std::cout << "}" << std::endl;
   }
-
+  //=================================
 
 #if 0
   fixme_const_iterator begin()  const {
@@ -240,7 +242,6 @@ public:
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
   [[nodiscard]] constexpr std::size_t max_size() const { return 65535; }
-  
   [[nodiscard]] constexpr bool empty() const { return 0 == _size; }
 
   template <std::size_t N>
@@ -270,9 +271,7 @@ public:
       auto j = 2; // rhs[2 .. _size - 8] --> the long part
       // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10) 
       for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {   
-        if (string_vector.at(i) != rhs[j]) { 
-          return false; 
-        }
+        if (string_vector.at(i) != rhs[j]) { return false; }
         j = j < _size-8 ? j+1 : j;
       }
       return true;
@@ -284,6 +283,7 @@ public:
     #endif
   }
 
+  
   constexpr bool operator==(std::string_view rhs) const {       
     auto rhs_size = rhs.size();
     if (_size != rhs_size) { return false; } // if size doesnt match, false
@@ -310,9 +310,7 @@ public:
       auto j = 2; // rhs[2 .. _size - 8] --> the long part
       // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10) 
       for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {   
-        if (string_vector.at(i) != rhs.at(j)) { 
-          return false; 
-        }
+        if (string_vector.at(i) != rhs.at(j)) { return false; }
         j = j < _size-8 ? j+1 : j;
       }
       return true;
@@ -323,8 +321,6 @@ public:
     return str(rhs) == *this;//saves rhs into vec and map if rhs.size >= 14
     #endif
   }
-
-  //constexpr bool operator==(const char* rhs) const { return *this == rhs; }    
 
   constexpr bool operator==(const str &rhs) const {
     //1) compare size
@@ -337,16 +333,16 @@ public:
     return (ptr_or_start == rhs.ptr_or_start);
   }
 
-
   constexpr bool operator!=(const str &rhs) const { return !(*this == rhs); }
 
   template <std::size_t N>
   constexpr bool operator!=(const char (&rhs)[N]) const { return !(*this == rhs); }
-
-  //constexpr bool operator!=(const char* rhs) const { return !(*this == rhs); }
-  
+ 
   constexpr bool operator!=(std::string_view rhs) const { return !(*this == rhs); }
   
+  // mmap-lib::str foo("oly");
+  // foo[0] <-- 'o'
+  // OLY
   constexpr char operator[](std::size_t pos) const {
 #ifndef NDEBUG
     if (pos >= _size)
@@ -362,14 +358,17 @@ public:
     return 0;
   }
 
+  // SLOAN
   bool starts_with(const str &v) const;
   bool starts_with(std::string_view sv) const;
   bool starts_with(std::string s) const;
 
+  //SLOAN
   bool ends_with(const str &v) const;
   bool ends_with(std::string_view sv) const;
   bool ends_with(std::string s) const;
 
+  //OLY
   std::size_t find(const str &v, std::size_t pos = 0) const;
   std::size_t find(char c, std::size_t pos = 0) const;
   template <std::size_t N>
@@ -377,22 +376,25 @@ public:
     return find(str(s), pos);
   }
 
+  //OLY
   std::size_t rfind(const str &v, std::size_t pos = 0) const;
   std::size_t rfind(char c, std::size_t pos = 0) const;
   std::size_t rfind(const char *s, std::size_t pos, std::size_t n) const;
   std::size_t rfind(const char *s, std::size_t pos = 0) const;
 
   // returns a pstr from two objects (pstr)
+  //SLOAN
   static str concat(const str &a, const str &b);
   static str concat(std::string_view a, const str &b);
   static str concat(const str &a, std::string_view b);
   static str concat(const str &a, int v);  // just puts two things together concat(x, b); -> x.append(b)
                                            //                               concat(b, x); -> b.append(x)
-
+  //SLOAN
   str append(const str &b) const;
   str append(std::string_view b) const;
   str append(int b) const;
 
+  // ?
   std::vector<str> split(const char chr);  // used as a tokenizing func, return vector of pstr's
 
   /*
@@ -449,16 +451,20 @@ public:
 
   } // convert to integer
 */
+
+  //OLY
   bool        is_i() const;  // starts with digit -> is integer
   int64_t     to_i() const;  // convert to integer
   std::string to_s() const;  // convert to string
 
+  //?
   str get_str_after_last(const char chr) const;
   str get_str_after_first(const char chr) const;
 
   str get_str_before_last(const char chr) const;
   str get_str_before_first(const char chr) const;
 
+  //?
   str substr(size_t start) const;
   str substr(size_t start, size_t end) const;
 };
