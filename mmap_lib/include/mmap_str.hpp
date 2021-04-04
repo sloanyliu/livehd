@@ -75,7 +75,7 @@ public:
   }
 
   //=====helper function to check if a string exists in string_vector=====
-  std::pair<int, int> str_exists(const char *string_to_check, uint32_t size) { 
+  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) { 
     std::string_view sv(string_to_check);   // string to sv
     auto it = string_map2.find(sv);         // find the sv in the string_map2
     if (it == string_map2.end()) {          // if we can't find the sv
@@ -123,7 +123,7 @@ public:
     // filling long_str with long part of string
     for (int i = 0; i < (_size - 10); ++i) { long_str[i] = s[i + 2]; } 
     // checking if long part of string already exists in vector
-    std::pair<int, int> pair = str_exists(long_str, _size - 10);
+    std::pair<int, int> pair = insertfind(long_str, _size - 10);
 
     // if string exists in vector, get the ptr to it in string_map2
     // pair is (ptr_or_start, size of string)
@@ -164,7 +164,7 @@ public:
 	    for (int i = 0; i < _size - 10; i++) {
 	      long_str[i] = sv.at(i + 2);
 	    }
-	    std::pair<int, int> pair = str_exists(long_str, _size - 10);
+	    std::pair<int, int> pair = insertfind(long_str, _size - 10);
 	    if (pair.second) {
 	      ptr_or_start = pair.first;
 	    } else {
@@ -175,6 +175,9 @@ public:
 	    }
   	}
   }
+
+  //============constructor 4=============
+  // ====> make compatible for std::string
 
 
   //=========Printing==============
@@ -221,12 +224,9 @@ public:
 #if 0
   fixme_const_iterator begin()  const {
     for(const auto &ch:data.b) {
-      if (ch!=0)
-        return &ch;
+      if (ch!=0) { return &ch; }
     }
-    if (size<16)
-      return &e[0];
-
+    if (size<16) { return &e[0]; }
     return ptr;
   }
   fixme_const_iterator end()    const {
