@@ -77,10 +77,11 @@ public:
   //=====helper function to check if a string exists in string_vector=====
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) { 
     std::string_view sv(string_to_check);   // string to sv
-    auto it = string_map2.find(sv);         // find the sv in the string_map2
+    auto it = string_map2.find(sv.substr(0, size));         // find the sv in the string_map2
     if (it == string_map2.end()) {          // if we can't find the sv
       //<std::string_view, uint32_t(position in vec)> string_map2
-      string_map2.set(sv, string_vector.size());  // we insert a new one
+      // using substr here to take out all the weird things that come with sview
+      string_map2.set(sv.substr(0, size), string_vector.size());  // we insert a new one
       return std::make_pair(0,0);
     } else {
       return std::make_pair(string_map2.get(it), size); //found it, return
@@ -138,10 +139,12 @@ public:
   }
   
   //============constructor 3=============
-  // const char * will go through this one too
+  // const char * will go through this one
   // implicit conversion from const char* --> string_view
+  //
+  // std::string will also go through this one
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
-  	if (_size < 14 ){ // constructor 1 logic
+    if (_size < 14 ){ // constructor 1 logic
 		  auto stop = _size<4?_size:4;
 	    for(auto i=0;i<stop;++i) {
 	      ptr_or_start <<= 8;
@@ -176,12 +179,9 @@ public:
   	}
   }
 
-  //============constructor 4=============
-  // ====> make compatible for std::string
-
 
   //=========Printing==============
-  void print_PoS () { 
+  void print_PoS () const { 
     std::cout << "ptr_or_start is";
     if (_size >= 14) {
       std::cout << "(ptr): " << ptr_or_start << std::endl;
@@ -195,13 +195,13 @@ public:
     } 
   }
 
-  void print_e () {
+  void print_e () const {
     std::cout << "e is: [ ";
     for (int i = 0; i < e.size(); ++i) { std::cout << e[i] << " "; }
     std::cout << "]" << std::endl;
   }
 
-  void print_StrVec () {
+  void print_StrVec () const {
     std::cout << "StrVec{ ";
     for (std::vector<int>::const_iterator i = string_vector.begin(); i != string_vector.end(); ++i) 
     {
@@ -210,7 +210,7 @@ public:
     std::cout << "}" << std::endl;
   }
 
-  void print_StrMap () {
+  void print_StrMap () const {
     std::cout << "StrMap{ ";
     for (auto it = string_map2.begin(), end = string_map2.end(); it != end; ++it) {
       std::string key = std::string(string_map2.get_key(it));
@@ -270,36 +270,24 @@ public:
   }
 
   
+  // const char * will go through this one
+  // implicit conversion from const char* --> string_view
+  //
+  // std::string will also go through this one
   constexpr bool operator==(std::string_view rhs) const {       
     auto rhs_size = rhs.size();
     if (_size != rhs_size) { return false; } // if size doesnt match, false
     if (_size < 14) { return str(rhs) == *this; }
     else if (_size >= 14) { // string_vector ptr in ptr_or_start, chars in e
-      if (e[0] != rhs.at(0) || e[1] != rhs.at(1)) { return false; } // check first two
+      if (e[0] != rhs.at(0) || e[1] != rhs.at(1)) { return false; } // chk first two
       uint8_t idx = 8;
       for (auto i = 2; i < 10; ++i) { 
-        if (e[i] != rhs.at(rhs_size - idx--)) { return false; } // check last eight
+        if (e[i] != rhs.at(rhs_size - idx--)) { return false; } // chk last eight
       }
-      
-      //FIXME: Test this one liner out
-      #if 0
+      // return if rhs w/out first two and last eight is in string_map2  
       return !(string_map2.find(rhs.substr(2, rhs_size-10)) == string_map2.end());
-      #endif
-
-      #if 1
-      // Getting data from string_vector and comparing with rest of rhs 
-      auto j = 2; // rhs[2 .. _size - 8] --> the long part
-      // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10) 
-      for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {   
-        if (string_vector.at(i) != rhs.at(j)) { return false; }
-        j = j < _size-8 ? j+1 : j;
-      }
-      return true;
-      #endif
-
     }
     return false;
-
   }
 
   constexpr bool operator==(const str &rhs) const {

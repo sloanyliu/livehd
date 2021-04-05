@@ -8,6 +8,9 @@
 #include "mmap_str.hpp"
 #include "mmap_map.hpp"
 
+#define CTOR_TESTS 0
+#define NEEQ_TESTS 1
+
 #if 0
 //implicitly changes ts to string_view
 void test_sview(const char * ts) {
@@ -280,8 +283,11 @@ void pstrVcstr_noeq_tests() {
 
 
 int main(int argc, char **argv) {
-  //mmap_pstr_ctor_tests();
-  
+  #if CTOR_TESTS
+  mmap_pstr_ctor_tests();
+  #endif
+
+  #if NEEQ_TESTS  
   std::cout << "==========================" << std::endl;
   pstrVchar_eqeq_tests(); 
   pstrVchar_noeq_tests(); 
@@ -290,7 +296,19 @@ int main(int argc, char **argv) {
   pstrVcstr_eqeq_tests(); 
   pstrVcstr_noeq_tests(); 
   std::cout << "==========================" << std::endl;
-  
+  #endif
+
+  /*  
+  mmap_lib::str test1("01sloanliu23456789");
+  mmap_lib::str test2("01sloanliu23456789");
+  mmap_lib::str test3("01this_var_is_test23456789");
+  mmap_lib::str test4("01this_var_is_test23456789");
+  mmap_lib::str test5("01sloan23456789");
+  mmap_lib::str test6("01sloan23456789");
+  test6.print_StrVec();
+  test6.print_StrMap();
+  */
+
  /* 
   mmap_lib::str ts("hello");
   const char *t2 = "hello";
