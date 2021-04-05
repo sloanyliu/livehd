@@ -77,11 +77,11 @@ public:
   //=====helper function to check if a string exists in string_vector=====
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) { 
     std::string_view sv(string_to_check);   // string to sv
+    // using substr here to take out all the weird things that come with sview
     auto it = string_map2.find(sv.substr(0, size)); // find the sv in the string_map2
     if (it == string_map2.end()) {          // if we can't find the sv
       //<std::string_view, uint32_t(position in vec)> string_map2
-      // using substr here to take out all the weird things that come with sview
-      string_map2.set(sv.substr(0, size), string_vector.size());  // we insert a new one
+      string_map2.set(sv.substr(0, size), string_vector.size());  // insert it
       return std::make_pair(0,0);
     } else {
       return std::make_pair(string_map2.get(it), size); //found it, return
@@ -269,7 +269,6 @@ public:
     return false;
   }
 
-  
   // const char * will go through this one
   // implicit conversion from const char* --> string_view
   //
