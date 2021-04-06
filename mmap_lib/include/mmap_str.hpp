@@ -332,22 +332,59 @@ public:
     else if (st._size == _size) { return *this == st; }
     else {// if st smaller than *this, compare
       auto fndsize = 0;
+      #if 1
       if (_size < 14) {
-        // compare the actual chars in p_o_s, then e
+        /*
+         * Thought: what if we loop with st._size, and pulled appropriate
+         * elements of pstr as we go??
+         *
+         */
+        // compare chars in p_o_s
         mx = _size<4 ? _size-1 : 3;
         for (uint8_t i = mx; i >= 0; --i) {
           if ((ptr_or_start >> (i*8)) == st[fndsize++]) {
             if (fndsize == st._size) { return true; }
-          } else { return false; }
+          } else { 
+            return false;// any mismatch returns false
+          }
         }
+        // comparing chars in e
         for (uint8_t i = 0; i < e.size(); ++i) {
           if (e[i] == st[fndsize++]) {
             if (fndsize == st._size) { return true; }
-          } else { return false; }
+          } else { 
+            return false; 
+          }
         }
       } else if (_size >= 14) {
-        // depending on size of st, decide whether we need to access the vector
+        // compare first two of e
+        for (uint8_t i = 0; i < 2; ++i) {
+          if (e[i] == st[fndsize++]) {
+            if (fndsize == st._size) { return true; }
+          } else {
+            return false;
+          }
+        }
+        // move into vector
+        for (uint8_t i = 0; i < _size-10; ++i) {
+          if (string_vector.at(ptr_or_start+i) == st[fndsize++]) {
+            if (fndsize == st._size) { return true; }
+          } else {
+            return false;
+          }
+
+        }
+        // move into last eight of e
+        for (uint8_t i = 2; i < 10; ++i) {
+          if (e[i] == st[fndsize++]) {
+            if (fndsize == st._size) { return true; }
+          } else {
+            return false;
+          }
+        }
+        // *** at any point we can break and return false (most likely)
       }
+      #endif
       return false;
     }
   }
