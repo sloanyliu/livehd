@@ -76,7 +76,7 @@ public:
 
   //=====helper function to check if a string exists in string_vector=====
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) { 
-    std::string_view sv(string_to_check);   // string to sv
+    std::string_view sv(string_to_check); // string to sv
     // using substr here to take out all the weird things that come with sview
     auto it = string_map2.find(sv.substr(0, size)); // find the sv in the string_map2
     if (it == string_map2.end()) {          // if we can't find the sv
@@ -328,15 +328,23 @@ public:
   // SLOAN
   // checks if *this pstr starts with st
   bool starts_with(const str &st) const { 
-    // if st is larger than *this, false
-    if (st._size > _size) { return false; }
-    // if st same size as *this, return if they are equal 
+    if (st._size > _size) { return false; }// st.size > *this.size, false
     else if (st._size == _size) { return *this == st; }
-    // if st smaller than *this, compare 
-    else if (st._size < _size) {
-      // Actual compare logic:
+    else {// if st smaller than *this, compare
+      auto fndsize = 0;
       if (_size < 14) {
         // compare the actual chars in p_o_s, then e
+        mx = _size<4 ? _size-1 : 3;
+        for (uint8_t i = mx; i >= 0; --i) {
+          if ((ptr_or_start >> (i*8)) == st[fndsize++]) {
+            if (fndsize == st._size) { return true; }
+          } else { return false; }
+        }
+        for (uint8_t i = 0; i < e.size(); ++i) {
+          if (e[i] == st[fndsize++]) {
+            if (fndsize == st._size) { return true; }
+          } else { return false; }
+        }
       } else if (_size >= 14) {
         // depending on size of st, decide whether we need to access the vector
       }
@@ -344,6 +352,7 @@ public:
     }
   }
 
+  // const char * and std::string will come thru here?
   bool starts_with(std::string_view st) const { 
     if (st.size() > _size) { return false; }
     else if (st.size() == _size) { return *this == st; }
@@ -353,10 +362,6 @@ public:
     }
   }
 
-  // will use the string_view function
-  bool starts_with(std::string st) const { 
-    return starts_with(std::string_view(st.c_str())); 
-  }
 
   // SLOAN
   // checks if *this pstr ends with en
