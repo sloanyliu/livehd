@@ -1,7 +1,4 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
-
-#include "graph_core.hpp"
-
 #include <string>
 #include <vector>
 
@@ -10,6 +7,14 @@
 #include "gtest/gtest.h"
 #include "lbench.hpp"
 #include "lrand.hpp"
+
+#include "graph_core.hpp"
+#include "graph_core_compress.hpp"
+
+#include <time.h>
+#include <unordered_map>
+
+using namespace std;
 
 using testing::HasSubstr;
 
@@ -53,9 +58,38 @@ TEST_F(Setup_graph_core, shallow_tree) {
 
   Graph_core c1("lgdb_gc", "shallow_tree");
 
-  // test functions create master root
-  // do set s and gets
-  // TEST now
+   /* Use for loop to generate 200 master root
+    * give each master root a type between 1 and 200
+    * store the random number type in a map
+    */
 
-  // create_master_root
+   unordered_map<int, int> testingMap;
+   // uint8_t receiveRootType;
+
+   // Port_ID testPID = 103;
+   // Port_ID receiveMasterPID;
+
+   for(int i = 0; i < 20; i++){
+     auto instruction_type = rand() % 200 + 1;
+     auto root_ID = c1.create_master_root(instruction_type);
+     testingMap[root_ID] = instruction_type;
+     EXPECT_EQ(testingMap[root_ID], root_ID);
+   }// check if returning repeat master_root ID
+   //receiveRootType = c1.get_type(masterRootID);
+
+
+
+   //EXPECT_EQUAL
+   // use testing map find to verify whether
+   //if( testingMap.find(masterRootID) == c1.get_type(masterRootID)){
+     //they are equal
+   //}else{
+     //there is a problem
+   //}
+
+
+   // masterID = c1.create_master(masterRootID,testPID);
+   // receiveMasterPID = c1.getPID(masterRootID);
+
+   // EXPECT_EQ to verify corectness
 }
