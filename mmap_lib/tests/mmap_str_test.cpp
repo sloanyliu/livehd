@@ -7,14 +7,12 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-int main() {return 0;};
-
 class Mmap_str_test : public ::testing::Test {
   std::vector<std::vector<std::string>> ast_sorted_verification;
 
 public:
   void SetUp() override {
-    std::cout << "setup\n";
+    std::cout << "setup running here\n";
   } // rand gen here
 };
 
@@ -72,4 +70,8 @@ TEST_F(Mmap_str_test, const_expr_trival_cmp) {
   //static_assert(a!="hell");     // compile time check
   //static_assert(a!="hellox");   // compile time check
 }
-#endif
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+};

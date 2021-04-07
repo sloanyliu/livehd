@@ -348,7 +348,7 @@ public:
          *
          */
         // compare chars in p_o_s
-        mx = _size<4 ? _size-1 : 3;
+        uint8_t mx = _size<4 ? _size-1 : 3;
         for (uint8_t i = mx; i >= 0; --i) {
           if ((ptr_or_start >> (i*8)) == st[fndsize++]) {
             if (fndsize == st._size) { return true; }
