@@ -8,14 +8,9 @@
 #include "mmap_str.hpp"
 #include "mmap_map.hpp"
 
-<<<<<<< HEAD
-#define CTOR_TESTS 0
-#define NEEQ_TESTS 1
-=======
 #define CTOR_TESTS 1
 #define NEEQ_TESTS 0
 
->>>>>>> upstream/master
 
 #if 0
 //implicitly changes ts to string_view
@@ -351,20 +346,6 @@ int main(int argc, char **argv) {
   std::cout << "==========================" << std::endl;
   #endif
 
-<<<<<<< HEAD
-  /*  
-  mmap_lib::str test1("01sloanliu23456789");
-  mmap_lib::str test2("01sloanliu23456789");
-  mmap_lib::str test3("01this_var_is_test23456789");
-  mmap_lib::str test4("01this_var_is_test23456789");
-  mmap_lib::str test5("01sloan23456789");
-  mmap_lib::str test6("01sloan23456789");
-  test6.print_StrVec();
-  test6.print_StrMap();
-  */
-
-=======
->>>>>>> upstream/master
  /* 
   mmap_lib::str ts("hello");
   const char *t2 = "hello";

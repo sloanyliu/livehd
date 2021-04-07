@@ -13,10 +13,11 @@ class Mmap_str_test : public ::testing::Test {
   std::vector<std::vector<std::string>> ast_sorted_verification;
 
 public:
-  void SetUp() override {} // rand gen here
+  void SetUp() override {
+    std::cout << "setup\n";
+  } // rand gen here
 };
 
-#if 1
 // TEST_F are different types of tests
 TEST_F(Mmap_str_test, small_strings) {
 
