@@ -33,9 +33,9 @@ if [ $# -eq 0 ]; then
   # FIRRTL_LEVEL='lo'
   FIRRTL_LEVEL='hi'
 
-  # pts='Flop'
-  pts='Register'
-  pts='VecShiftRegister'
+  pts='Flop'
+  # pts='Register'
+  # pts='VecShiftRegister'
 
 else
   file=$(basename $1)
@@ -122,7 +122,8 @@ firrtl_test() {
     echo "LGraph -> Verilog"
     echo "----------------------------------------------------"
 
-    ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
+    ${LGSHELL} "lgraph.open name:${pt} |> inou.cgen.verilog"
+    # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
     ret_val=$?
     # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg"
     if [ $ret_val -eq 0 ] && [ -f ${pt}.v ]; then

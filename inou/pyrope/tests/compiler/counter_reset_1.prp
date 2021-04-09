@@ -1,7 +1,8 @@
 $en.__ubits = 1
 
 cnt = cnt.__create_flop
-cnt.__reset = 0  // no reset
+cnt.__reset = $reset  // no reset
+cnt.__initial := -1
 cnt_q = cnt
 
 cnt.__ubits = 4
