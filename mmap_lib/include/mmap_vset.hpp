@@ -359,6 +359,8 @@ public:
       } else if (iData > owner.max) {
         return *this;
       } else if (iData < owner.max) {
+        //FIXME
+        // Concerned with the while under here
         while (owner.efind(iData+1) == false) { 
           ++iData;
         }
@@ -380,6 +382,8 @@ public:
         if (_iData == 0) {
           break;
         } else {
+          //FIXME
+          // There is a while here to
           if (owner.efind(_iData - 1)) {
             _iData = _iData - 1;
             iData  = _iData;
