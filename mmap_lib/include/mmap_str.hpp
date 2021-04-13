@@ -609,7 +609,7 @@ public:
     if (_size < 14) {
       char first = ((ptr_or_start >> (8 * (_size -1))) & 0xFF);
       if (first !='-' and( first <'0' or first > '9')) {
-        std::cout << "Non-number char detected in ptr_or_start[0]\n";
+        //std::cout << "Non-number char detected in ptr_or_start[0]\n";
         return false;
       }
       for (int i= 1; i<(_size>4?4:_size);i++){
@@ -627,7 +627,7 @@ public:
           case '0'...'9':
             break;
           default:
-            std::cout << "Non-number char detected in e\n";
+            //std::cout << "Non-number char detected in e\n";
             return false;
             break;
         }
@@ -635,7 +635,7 @@ public:
     } else {
       char first = e[0];
       if (first !='-' and( first <'0' or first > '9')) {
-        std::cout << "Non-number char detected in ptr_or_start[0]\n";
+        //std::cout << "Non-number char detected in ptr_or_start[0]\n";
         return false;
       }
       for (int i = 1;i<10 ; i++){
@@ -643,7 +643,7 @@ public:
           case '0'...'9':
             break;
           default:
-            std::cout << "Non-number char detected in e\n";
+            //std::cout << "Non-number char detected in e\n";
             return false;
             break;
         } 
@@ -653,7 +653,7 @@ public:
           case '0'...'9':
             break;
           default:
-            std::cout << "Non-number char detected in e\n";
+            //std::cout << "Non-number char detected in e\n";
             return false;
             break;
         }
