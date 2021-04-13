@@ -10,8 +10,8 @@
 #include "gtest/gtest.h"
 
 #define RNDN 10 // number of rand strings
-#define MaxLen 32 // max len + 1 for rand strings
-#define MinLen 0  // min len for rand strings
+#define MXLN 32 // max len + 1 for rand strings
+#define MNLN 0  // min len for rand strings
 
 class Mmap_str_test : public ::testing::Test {
   //std::vector<std::vector<std::string>> ast_sorted_verification;
@@ -27,7 +27,7 @@ public:
     for (uint8_t i = 0; i < RNDN; ++i) { // # of strings in vectors
       std::string ele, num;
 
-      t_len = MinLen + (rand() % MaxLen); // deciding string length (0-31)
+      t_len = MNLN + (rand() % MXLN); // deciding string length (0-31)
       isNeg = (rand() % 2) ? true : false;
       isFloat = (rand() % 2) ? true : false;
                         
@@ -36,26 +36,24 @@ public:
       str_bank.push_back(ele); // add string to vector
 
       //construct string with ASCII (48-57 with - and .) -> 10 chars
-      int idx = 0;
-      if (isNeg) { num += '-'; idx = 1;}
+      if (isNeg) { num += '-'; --t_len;}
       if (isFloat) { 
         decPos = 1 + (rand() % (t_len - 2));
-        for (; idx < decPos; ++idx) { num += ('0' + (rand() % 10)); } 
-        num += '.'; ++idx; 
-        for (; idx < t_len; ++idx) { num += ('0' + (rand() % 10)); }
+        for (auto i = 0; i < decPos; ++i) { num += ('0' + (rand() % 10)); } 
+        num += '.';
+        for (auto j = decPos + 1; j < t_len; ++j) { num += ('0' + (rand() % 10)); }
       } else {
         for (auto k = 0; k < t_len; ++k) { num += ('0' + (rand() % 10)); }
       }
       num_bank.push_back(num);
 
     }   
-    //for (auto i = str_bank.begin(); i != str_bank.end(); ++i) {std::cout << *i << "\n";}
-    for (auto i = num_bank.begin(); i != num_bank.end(); ++i) {std::cout << *i << "\n";}
+    // for (auto i = str_bank.begin(); i != str_bank.end(); ++i) {std::cout << *i << "\n";}
+    // for (auto i = num_bank.begin(); i != num_bank.end(); ++i) {std::cout << *i << "\n";}
   }
 
   // wrapper for vector.at() since str_bank is private
   std::string get(int i) { return str_bank.at(i); }
-  std::string nget(int i) { return num_bank.at(i); }
 };
 
 // TEST_F are different types of tests
@@ -142,28 +140,25 @@ TEST_F(Mmap_str_test, random_at_operator) {
   }  
 }
 
-bool isi(std::string st) {
-  int idx = 0; // index start at 0
-  if ((st[0] != '-') && ((st[0] - '0' < 0) || (st[0] - '0' > 9))) {
-    return false; // first char not - or num, not integer
-  } else if (st[0] == '-') {
-    idx = 1; // first char is 
-  }
-  for (; idx < st.size(); ++idx) {
-    if ((st[idx] - '0' < 0) || (st[idx] - '0' > 9)) {
-      return false;
-    } 
-  }
+TEST(Mmap_str_test, isI_operator) {
+  std::cout << "pstr_isI Tests: ";
+  mmap_lib::str hello("hello");
+  mmap_lib::str eight("888888");
+  mmap_lib::str neg_one("-111111");
+  mmap_lib::str not_i("123g5");
+  mmap_lib::str not_int("-1234f");
+  mmap_lib::str zero("-1234f");
+  mmap_lib::str num_float("12.34");
+  uint8_t p = 0u ,f = 0u;
+  (hello.is_i() == false) ? p++ : f++;
+  (eight.is_i() == true) ? p++ : f++;
+  (neg_one.is_i() == true) ? p++ : f++;
+  (not_i.is_i() == false) ? p++ : f++;
+  (not_int.is_i() == false) ? p++ : f++;
+  (zero.is_i() == false) ? p++ : f++;
+  (num_float.is_i() == false) ? p++ : f++;
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", p, p+f, f, p+f);
 }
-
-TEST_F(Mmap_str_test, isI_operator) {
-  for (auto i = 0; i < RNDN; ++i) {
-    std::string hold = nget(i);
-    mmap_lib::str temp(hold); 
-    EXPECT_EQ(temp.is_i(), isi(hold));
-  }
-}
-
 
 
 #if 0
