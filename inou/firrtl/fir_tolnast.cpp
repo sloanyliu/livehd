@@ -207,8 +207,11 @@ void Inou_firrtl::init_wire_dots(Lnast& lnast, const firrtl::FirrtlPB_Type& type
       create_bitwidth_dot_node(lnast, wire_bits, parent_node, id, true);
       break;
     }
+    case firrtl::FirrtlPB_Type::kClockType: {
+      break;
+    }
     default: {
-      // UInt Clock Analog Reset Types 
+      // UInt Analog Reset Types 
       auto wire_bits = get_bit_count(type);
       create_bitwidth_dot_node(lnast, wire_bits, parent_node, id, false);
     }
@@ -252,14 +255,16 @@ void Inou_firrtl::init_reg_dots(Lnast& lnast, const firrtl::FirrtlPB_Type& type,
       break;
     }
     case firrtl::FirrtlPB_Type::kSintType: {
-      /* UInt SInt Clock Analog Reset Types*/
       auto reg_bits = get_bit_count(type);
       init_reg_ref_dots(lnast, id, clocke, resete, inite, reg_bits, parent_node, true);
       break;
     }
+    case firrtl::FirrtlPB_Type::kClockType: {
+      break;
+    }
 
     default: {
-      /* UInt Clock Analog Reset Types*/
+      /* UInt Analog Reset Types*/
       auto reg_bits = get_bit_count(type);
       init_reg_ref_dots(lnast, id, clocke, resete, inite, reg_bits, parent_node, false);
     }
@@ -324,14 +329,10 @@ void Inou_firrtl::init_reg_ref_dots(Lnast& lnast, const std::string& _id, const 
     auto acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__reset"));
     auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
     lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-    std::string_view ref_str = inite.reference().id();
-    auto it = reg2qpin.find(ref_str);
-    if (it == reg2qpin.end())
-      lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
-    else 
-      lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(reg2qpin[ref_str])));
+    //std::string_view ref_str = resete.reference().id();
+    auto ref_str = get_full_name(resete.reference().id(), true);
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
   }
-
 
 
   auto inite_case = inite.expression_case();
@@ -350,16 +351,10 @@ void Inou_firrtl::init_reg_ref_dots(Lnast& lnast, const std::string& _id, const 
     acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__initial"));
     auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
     lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-    std::string_view ref_str = inite.reference().id();
-    auto it = reg2qpin.find(ref_str);
-    if (it == reg2qpin.end())
-      lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
-    else 
-      lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(reg2qpin[ref_str])));
-
+    // std::string_view ref_str = inite.reference().id();
+    auto ref_str = get_full_name(resete.reference().id(), true);
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
   }
-
-
 
   // // Specify __reset_async
   // if (resete.has_reference() || resete.has_sub_field() || resete.has_sub_index() || resete.has_sub_access() || resete.has_prim_op()) {
@@ -1319,7 +1314,8 @@ void Inou_firrtl::create_io_list(const firrtl::FirrtlPB_Type& type, uint8_t dir,
       break;
     }
     case firrtl::FirrtlPB_Type::kClockType: {  // Clock type
-      vec.emplace_back(port_id, dir, 1, false);
+      // vec.emplace_back(port_id, dir, 1, false);
+      vec.emplace_back(port_id, dir, 0, false); // intentionally put 0 bits, LiveHD compiler will handle clock bits later
       break;
     }
     case firrtl::FirrtlPB_Type::kBundleType: {  // Bundle type
@@ -1577,6 +1573,7 @@ void Inou_firrtl::InitialExprAdd(Lnast& lnast, const firrtl::FirrtlPB_Expression
         idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
       } else {
         idx_asg = lnast.add_child(parent_node, Lnast_node::create_dp_assign());
+        // idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
       }
 
       lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(lhs_str)));
@@ -1770,7 +1767,7 @@ void Inou_firrtl::setup_register_q_pin(Lnast &lnast, Lnast_nid &parent_node, con
   lnast.add_child(idx_asg, Lnast_node::create_ref(tmp_var_str));
 
 
-  auto flop_qpin_var = lnast.add_string(absl::StrCat("___", stmt.register_().id(), "_q"));
+  auto flop_qpin_var = lnast.add_string(absl::StrCat("_._", stmt.register_().id(), "_q"));
   auto idx_asg2 = lnast.add_child(parent_node, Lnast_node::create_assign());
   lnast.add_child(idx_asg2,    Lnast_node::create_ref(flop_qpin_var));
   lnast.add_child(idx_asg2, Lnast_node::create_ref(lnast.add_string(full_register_name)));

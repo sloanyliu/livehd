@@ -12,6 +12,7 @@
 #define RNDN 10 // number of rand strings
 #define MaxLen 32 // max len + 1 for rand strings
 #define MinLen 0  // min len for rand strings
+#define RUN 1
 
 class Mmap_str_test : public ::testing::Test {
   //std::vector<std::vector<std::string>> ast_sorted_verification;
@@ -178,8 +179,9 @@ TEST_F(Mmap_str_test, const_expr_trival_cmp) {
 }
 #endif
 
-
+#if RUN
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
-};
+}
+#endif
