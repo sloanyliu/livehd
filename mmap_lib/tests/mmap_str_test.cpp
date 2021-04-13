@@ -9,8 +9,9 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 10
-
+#define RNDN 10 // number of rand strings
+#define MXLN 32 // max len + 1 for rand strings
+#define MNLN 0  // min len for rand strings
 
 class Mmap_str_test : public ::testing::Test {
   //std::vector<std::vector<std::string>> ast_sorted_verification;
@@ -18,14 +19,13 @@ class Mmap_str_test : public ::testing::Test {
 
 public:
   void SetUp() override {
-    std::cout << "Setting Up ... \n";
     srand(time(0));
     uint8_t t_len = 0u;
 
     // random string generation
     for (uint8_t i = 0; i < RNDN; ++i) { // # of strings in vectors
       std::string ele;
-      t_len = rand() % 32; // deciding string length (0-31)
+      t_len = MNLN + (rand() % MXLN); // deciding string length (0-31)
       // construct string with ASCII (32-126)
       for(uint8_t j = 0; j < t_len; ++j) { ele += (' ' + (rand() % 95)); }
       str_bank.push_back(ele); // add string to vector
@@ -83,16 +83,17 @@ TEST_F(Mmap_str_test, random_ctor) {
 
 TEST_F(Mmap_str_test, random_comparisons) {
   for (auto i = 0; i < RNDN; ++i) {
-    std::string c_st = get(i % RNDN);
-    std::string_view c_sv = c_st;
-    mmap_lib::str c_s1(c_st);
-    mmap_lib::str c_s2(c_st);
+    std::string c_st = get(i % RNDN), n_st = get((i+1) % RNDN);
+    std::string_view c_sv = c_st, n_sv = n_st;
+    mmap_lib::str c_s1(c_st), n_s1(n_st), c_s2(c_sv), n_s2(c_sv);
     
+    /*
     std::string n_st = get((i+1) % RNDN);
     std::string_view n_sv = n_st;
     mmap_lib::str n_s1(n_st);
-    mmap_lib::str n_s2(n_st);
-    
+    mmap_lib::str n_s2(n_sv);
+    */
+
     EXPECT_TRUE(c_s1 == c_s2);
     EXPECT_TRUE(c_s1 == c_st);
     EXPECT_TRUE(c_s1 == c_sv);
@@ -158,9 +159,6 @@ TEST_F(Mmap_str_test, const_expr_trival_cmp) {
 }
 #endif
 
-TEST_F(Mmap_str_test, temporary_tests) {
-  fmt::print("hello google {}\n", 12);
-}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
