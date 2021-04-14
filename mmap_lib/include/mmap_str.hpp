@@ -338,9 +338,50 @@ public:
   bool starts_with(const str &st) const { 
     if (st._size > _size) { return false; }// st.size > *this.size, false
     else if (st._size == _size) { return *this == st; }
-    else {// if st smaller than *this, compare
+    else { // if (st._size < *this._size), compare
+
+      // if *this.size() <= 13, then so is st.size()
+      // which means both pstr's are contained in p_o_s and e
+      uint8_t mx_st = st._size < 4 ? (st._size - 1) : 3;
+      uint8_t mx = _size < 4 ? (_size - 1) : 3;
+      if (_size <= 13) { // only need to touch ptr_or_start and e
+        for (auto i = 0; i < st._size; ++i) {
+          if (i < 4) { // check ptr_or_start
+            if ((st.ptr_or_start >> (mx_st*8)) != (ptr_or_start >> (mx*8))) {
+              return false;
+            } else {
+              --mx_st; --mx;
+            }
+          } else { // check e
+            if (e[i-4] != st.e[i-4]) {
+              return false;
+            }
+          }
+        }
+        return true;
+      // if *this._size > 13, then st can be any size
+      // need to handle both cases (st._size <= 13 and st._size > 13)
+      // TODO: Finish up the compares here
+      } else if (_size > 13) {
+        if (st._size <= 13) { // st will be in p_o_s and e
+          for (auto i = 0; i < st._size; ++i) {
+            if (i < 2) {
+              return false;
+              // check first two of e
+              // then use p_o_s to get at string_vectore
+              // check last 8 of e
+            } else {
+              return false;
+            }
+          }
+          
+        } else { // st will be in e and vec
+
+        }
+      }
+
+      #if 0
       auto fndsize = 0;
-      #if 1
       if (_size < 14) {
         /*
          * Thought: what if we loop with st._size, and pulled appropriate
