@@ -335,48 +335,146 @@ public:
 
   // SLOAN
   // checks if *this pstr starts with st
+  /*
+   * ps: [f o o b a r b u z z b a l l s]
+   *      e e v v v v v e e e e e e e e
+   * st: [f o o b a r]
+   *      p p p p e e
+   */
   bool starts_with(const str &st) const { 
     if (st._size > _size) { return false; }// st.size > *this.size, false
     else if (st._size == _size) { return *this == st; }
-    else { // if (st._size < *this._size), compare
-
-      // if *this.size() <= 13, then so is st.size()
-      // which means both pstr's are contained in p_o_s and e
+    else { // if (st._size < *this._size), compare   
+      // shift helpers used for ptr_or_start
       uint8_t mx_st = st._size < 4 ? (st._size - 1) : 3;
       uint8_t mx = _size < 4 ? (_size - 1) : 3;
+
+      // ========= case 1 ===========
+      // if *this.size() <= 13, then so is st.size()
+      // which means both pstr's are contained in p_o_s and e
       if (_size <= 13) { // only need to touch ptr_or_start and e
+        // ** i refers to st
         for (auto i = 0; i < st._size; ++i) {
+          // for *this and st, first 4 will be in p_o_s
           if (i < 4) { // check ptr_or_start
             if ((st.ptr_or_start >> (mx_st*8)) != (ptr_or_start >> (mx*8))) {
               return false;
             } else {
               --mx_st; --mx;
             }
+          // for *this and st, rest of string will be in e
           } else { // check e
-            if (e[i-4] != st.e[i-4]) {
-              return false;
+            if (e[i-4] != st.e[i-4]) { 
+              return false; 
             }
           }
         }
-        return true;
+        return true; 
+      // ========= case 2 ===========
       // if *this._size > 13, then st can be any size
       // need to handle both cases (st._size <= 13 and st._size > 13)
       // TODO: Finish up the compares here
       } else if (_size > 13) {
+        auto vec_ptr = ptr_or_start;
+        auto e_ptr = 0;
+        // ======== case 2a ========
+        // st is in p_o_s and e
+        // *this is in e and vec
         if (st._size <= 13) { // st will be in p_o_s and e
+          // ** Using st as master size keeper -> i refers to st index
           for (auto i = 0; i < st._size; ++i) {
+            // i = 0, 1
+            // for *this, data will be in e -> index with i
+            // for st   , data will be in p_o_s -> shift
             if (i < 2) {
-              return false;
-              // check first two of e
-              // then use p_o_s to get at string_vectore
-              // check last 8 of e
+              if (e[e_ptr] != (st.ptr_or_start >> (mx_st*8))) { 
+                return false; 
+              } else {
+                --mx_st; ++e_ptr;
+              } 
+            // i = 2, 3
+            // for *this, data will be in vec only -> index with vec_ptr
+            // for st   , data will be in p_o_s -> shift
+            } else if ((i >= 2) && (i < 4)) {
+              if (string_vector.at(vec_ptr) != (st.ptr_or_start >> (mx_st*8))) {
+                return false;
+              } else {
+                --mx_st; ++vec_ptr;
+              }
+            // i = 4 ... 12 (max)
+            // for *this, data will be in vec/e depend on length
+            // for st   , data will be in e -> index with i-4
             } else {
-              return false;
+              // if we are done pulling from string_vector
+              // we need to pull the last elements of e of *this
+              if ((vec_ptr - ptr_or_start) >= (_size - 10)) {
+                // [f o o b a r b u z z b a l l]
+                //  e e v v v v e e e e e e e e
+                //  0 1 2 3 4 5 6 7 8 9 A B C D
+                //      0 1 2 3
+                //  0 1         2 3 4 5 6 7 8 9
+                // [f o o b a r b u z z b a l]
+                //  p p p p e e e e e e e e e
+                //  PULL FROM e of *this
+                if (e[e_ptr] != st.e[i - 4]) {
+                  return false;
+                } else {
+                  ++e_ptr;
+                }
+              } else {
+                if (string_vector.at(vec_ptr) != (st.e[i - 4])) {
+                  return false;
+                } else {
+                  ++vec_ptr;
+                }
+              }
+            }
+          } 
+        // ======== case 2b ========
+        // both are in e and vec
+        } else if (st._size > 13) {
+          auto e_ptr = 2, st_e_ptr = 2;
+          auto vec_ptr = ptr_or_start;
+          auto st_vec_ptr = st.ptr_or_start;
+          // start with first of e for both
+          // then move on to vector
+          // mis-match will happen when *this is still in vec, and st goes to e
+          // ** Using st as master size keeper -> i refers to st index
+          for (auto i = 0; i < st._size; ++i) {
+            // i = 0, 1
+            // for both, in e
+            if (i < 2) {
+              if (e[i] != st.e[i]) {
+                return false;
+              }
+            // i = 2 .. start of last 8
+            // for both, in vec
+            // BUT, st will ALWAYS reach e before *this
+            } else if ((i >= 2) && (i < (_size - 8)) {
+              if (string_vector.at(vec_ptr) != string_vector.at(st_vec_ptr)) {
+                return false;
+              } else {
+                ++vec_ptr; ++st_vec_ptr;
+              }
+            // i = last 8 of st
+            } else {
+              // *this has reached last 8 now, which means we use e for *this
+              if ((vec_ptr - ptr_or_start) >= (_size - 10)) {
+                if (e[e_ptr] != st.e[st_e_ptr]) {
+                  return false;
+                } else {
+                  ++e_ptr; ++st_e_ptr;
+                }
+              } else { // vec for *this, e for st
+                if (st.e[st_e_ptr] != string_vector.at(vec_ptr)) {
+                  return false;
+                } else {
+                  ++st_e_ptr; ++vec_ptr;
+                }
+              }
             }
           }
-          
-        } else { // st will be in e and vec
-
+          return true;
         }
       }
 
@@ -434,6 +532,7 @@ public:
         // *** at any point we can break and return false (most likely)
       }
       #endif
+      std::out << "should not be here\n";
       return false;
     }
   }
