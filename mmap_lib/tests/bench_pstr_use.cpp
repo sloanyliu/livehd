@@ -8,9 +8,9 @@
 #include "mmap_str.hpp"
 #include "mmap_map.hpp"
 
-#define CTOR_TESTS 1
+#define CTOR_TESTS 0
 #define NEEQ_TESTS 0
-
+#define STARTS_WITH_TESTS 1
 
 #if 0
 //implicitly changes ts to string_view
@@ -133,6 +133,10 @@ bool test_eq(mmap_lib::str ls, std::string_view rs, bool ans) {
 
 bool test_neq(mmap_lib::str ls, std::string_view rs, bool ans) {
   return (ls != rs) == ans;
+}
+
+bool test_starts_with(mmap_lib::str ls, mmap_lib::str rs, bool ans) {
+  return ls.starts_with(rs) == ans;
 }
 
 void pstrVchar_eqeq_tests() {
@@ -327,6 +331,74 @@ void pstr_isI(){
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", p, p+f, f, p+f);
 }
 
+void pstr_starts_with() {
+  uint8_t t = 0u, r = 0u;
+#if 0 
+  mmap_lib::str whole("foobar");
+  mmap_lib::str front1("foo");
+  mmap_lib::str front2("bar");
+  mmap_lib::str same("foobar");
+  mmap_lib::str one("f");
+  mmap_lib::str two("g");
+
+  r += test_starts_with(whole, front1, true); ++t;
+  r += test_starts_with(whole, front2, false); ++t;
+  r += test_starts_with(whole, same, true); ++t;
+  r += test_starts_with(whole, one, true); ++t;
+  r += test_starts_with(whole, two, false); ++t;
+
+  mmap_lib::str whole2("hello_!_world");
+  mmap_lib::str front3("hello_!_worl");
+  mmap_lib::str almost("hello_!_worl!");
+  mmap_lib::str front4("johnny");
+  mmap_lib::str same2("hello_!_world");
+  mmap_lib::str three("h");
+  mmap_lib::str four("he");
+  mmap_lib::str empty("");
+  
+  r += test_starts_with(whole2, front3, true); ++t;
+  r += test_starts_with(whole2, front4, false); ++t;
+  r += test_starts_with(whole2, almost, false); ++t;
+  r += test_starts_with(whole2, same2, true); ++t;
+  r += test_starts_with(whole2, three, true); ++t;
+  r += test_starts_with(whole2, four, true); ++t;
+  r += test_starts_with(whole2, empty, true); ++t;
+#endif
+
+  mmap_lib::str whole3("--this_var_will_be_very_long_for_testing_12345");
+  mmap_lib::str front5("--this_var");
+  mmap_lib::str front6("--this_var_wi");
+  mmap_lib::str front7("--this_var_wil");
+  mmap_lib::str front8("--this_var_will_be_very_");
+  mmap_lib::str same3("--this_var_will_be_very_long_for_testing_12345");
+  mmap_lib::str almost2("--this_var_will_be_very_long_for_testing_12346");
+  mmap_lib::str five("-");
+  mmap_lib::str six("balalalalalalalalala");
+  
+  // long vs short
+  r += test_starts_with(whole3, front5, true); ++t; //flagged
+
+  // long vs short(13)
+  r += test_starts_with(whole3, front6, true); ++t; //flagged
+
+  // long vs long(14)
+  r += test_starts_with(whole3, front7, true); ++t; //flagged
+
+  // long vs long
+  r += test_starts_with(whole3, front8, true); ++t; //flagged
+
+  // long vs long (same length)
+  //r += test_starts_with(whole3, same3, true); ++t;
+
+  // long vs long (same length)
+  //r += test_starts_with(whole3, almost2, false); ++t;i
+
+
+  r += test_starts_with(whole3, five, true); ++t; //flagged, triggered "should not be here"
+  //r += test_starts_with(whole3, six, false); ++t;
+
+  printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
+}
 
 int main(int argc, char **argv) {
   #if CTOR_TESTS
@@ -344,6 +416,10 @@ int main(int argc, char **argv) {
   pstr_at_operator();
   pstr_isI(); 
   std::cout << "==========================" << std::endl;
+  #endif
+
+  #if STARTS_WITH_TESTS
+  pstr_starts_with();
   #endif
 
  /* 

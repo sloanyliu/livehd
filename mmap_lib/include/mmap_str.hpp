@@ -371,9 +371,9 @@ public:
         }
         return true; 
       // ========= case 2 ===========
+      // FIXME
       // if *this._size > 13, then st can be any size
       // need to handle both cases (st._size <= 13 and st._size > 13)
-      // TODO: Finish up the compares here
       } else if (_size > 13) {
         auto vec_ptr = ptr_or_start;
         auto e_ptr = 0;
@@ -386,8 +386,15 @@ public:
             // i = 0, 1
             // for *this, data will be in e -> index with i
             // for st   , data will be in p_o_s -> shift
+            printf("i = 0, 1\n");
             if (i < 2) {
+              //printf("e[e_ptr] is e[%d] = %c\n", e_ptr, e[e_ptr]);
+              //printf("st.ptr_or_start >> (mx_st*8)) is %c\n", st.ptr_or_start >> (mx_st*8));
+
               if (e[e_ptr] != (st.ptr_or_start >> (mx_st*8))) { 
+                
+                std::cout << "1" << std::endl;
+                
                 return false; 
               } else {
                 --mx_st; ++e_ptr;
@@ -397,6 +404,9 @@ public:
             // for st   , data will be in p_o_s -> shift
             } else if ((i >= 2) && (i < 4)) {
               if (string_vector.at(vec_ptr) != (st.ptr_or_start >> (mx_st*8))) {
+                
+                std::cout << "2" << std::endl;
+                
                 return false;
               } else {
                 --mx_st; ++vec_ptr;
@@ -417,12 +427,18 @@ public:
                 //  p p p p e e e e e e e e e
                 //  PULL FROM e of *this
                 if (e[e_ptr] != st.e[i - 4]) {
+                
+                  std::cout << "3" << std::endl;
+                  
                   return false;
                 } else {
                   ++e_ptr;
                 }
               } else {
                 if (string_vector.at(vec_ptr) != (st.e[i - 4])) {
+                
+                  std::cout << "4" << std::endl;
+                  
                   return false;
                 } else {
                   ++vec_ptr;
@@ -445,13 +461,19 @@ public:
             // for both, in e
             if (i < 2) {
               if (e[i] != st.e[i]) {
+                
+                std::cout << "5" << std::endl;
+                
                 return false;
               }
             // i = 2 .. start of last 8
             // for both, in vec
             // BUT, st will ALWAYS reach e before *this
-            } else if ((i >= 2) && (i < (_size - 8)) {
+            } else if ((i >= 2) && (i < (_size - 8))) {
               if (string_vector.at(vec_ptr) != string_vector.at(st_vec_ptr)) {
+                
+                std::cout << "6" << std::endl;
+                
                 return false;
               } else {
                 ++vec_ptr; ++st_vec_ptr;
@@ -461,12 +483,18 @@ public:
               // *this has reached last 8 now, which means we use e for *this
               if ((vec_ptr - ptr_or_start) >= (_size - 10)) {
                 if (e[e_ptr] != st.e[st_e_ptr]) {
+                
+                  std::cout << "7" << std::endl;
+                  
                   return false;
                 } else {
                   ++e_ptr; ++st_e_ptr;
                 }
               } else { // vec for *this, e for st
                 if (st.e[st_e_ptr] != string_vector.at(vec_ptr)) {
+                  
+                  std::cout << "8" << std::endl;
+                  
                   return false;
                 } else {
                   ++st_e_ptr; ++vec_ptr;
@@ -532,7 +560,7 @@ public:
         // *** at any point we can break and return false (most likely)
       }
       #endif
-      std::out << "should not be here\n";
+      std::cout << "should not be here\n";
       return false;
     }
   }
