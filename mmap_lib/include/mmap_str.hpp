@@ -335,232 +335,95 @@ public:
 
   // SLOAN
   // checks if *this pstr starts with st
-  /*
-   * ps: [f o o b a r b u z z b a l l s]
-   *      e e v v v v v e e e e e e e e
-   * st: [f o o b a r]
-   *      p p p p e e
-   */
   bool starts_with(const str &st) const { 
     if (st._size > _size) { return false; }// st.size > *this.size, false
     else if (st._size == _size) { return *this == st; }
     else { // if (st._size < *this._size), compare   
-      // shift helpers used for ptr_or_start
-      uint8_t mx_st = st._size < 4 ? (st._size - 1) : 3;
-      uint8_t mx = _size < 4 ? (_size - 1) : 3;
-
-      // ========= case 1 ===========
-      // if *this.size() <= 13, then so is st.size()
-      // which means both pstr's are contained in p_o_s and e
-      if (_size <= 13) { // only need to touch ptr_or_start and e
-        // ** i refers to st
-        for (auto i = 0; i < st._size; ++i) {
-          // for *this and st, first 4 will be in p_o_s
-          if (i < 4) { // check ptr_or_start
-            if ((st.ptr_or_start >> (mx_st*8)) != (ptr_or_start >> (mx*8))) {
+      uint8_t mx_st = st._size < 4 ? (st._size-1) : 3;
+      uint8_t mx = _size < 4 ? (_size-1) : 3;
+      if (_size <= 13) { //==== case 1: if *this is SHORT, st is SHORT
+        for (auto i = 0; i < st._size; ++i) { // iterate based on st
+          if (i < 4) { // for *this and st, first 4 will be in p_o_s
+            if (((st.ptr_or_start >> (mx_st*8)) & 0xff) != ((ptr_or_start >> (mx*8)) & 0xff)) {
               return false;
-            } else {
-              --mx_st; --mx;
-            }
-          // for *this and st, rest of string will be in e
-          } else { // check e
-            if (e[i-4] != st.e[i-4]) { 
-              return false; 
-            }
+            } else { --mx_st; --mx; }
+          } else { // rest of string will be in e
+            if (e[i-4] != st.e[i-4]) { return false; }
           }
         }
         return true; 
-      // ========= case 2 ===========
-      // FIXME
-      // if *this._size > 13, then st can be any size
-      // need to handle both cases (st._size <= 13 and st._size > 13)
-      } else if (_size > 13) {
-        auto vec_ptr = ptr_or_start;
-        auto e_ptr = 0;
-        // ======== case 2a ========
-        // st is in p_o_s and e
-        // *this is in e and vec
-        if (st._size <= 13) { // st will be in p_o_s and e
-          // ** Using st as master size keeper -> i refers to st index
-          for (auto i = 0; i < st._size; ++i) {
+      } else if (_size > 13) { //==== case 2: if *this is LONG, st can be LONG or SHORT
+        uint32_t v_ptr = ptr_or_start;
+        uint8_t e_ptr = 0;
+        if (st._size <= 13) { //==== case 2a: *this is LONG, st is SHORT
+          for (auto i = 0; i < st._size; ++i) { //i refers to st index
             // i = 0, 1
             // for *this, data will be in e -> index with i
-            // for st   , data will be in p_o_s -> shift
-            printf("i = 0, 1\n");
-            if (i < 2) {
-              //printf("e[e_ptr] is e[%d] = %c\n", e_ptr, e[e_ptr]);
-              //printf("st.ptr_or_start >> (mx_st*8)) is %c\n", st.ptr_or_start >> (mx_st*8));
-
-              if (e[e_ptr] != (st.ptr_or_start >> (mx_st*8))) { 
-                
-                std::cout << "1" << std::endl;
-                
+            // for st   , data will be in p_o_s -> shift 
+            if (i < 2) { // i = 0, 1 : *this.e is used, st.ptr_or_start is used
+              if (e[e_ptr] != ((st.ptr_or_start >> (mx_st*8)) & 0xff)) { 
                 return false; 
-              } else {
-                --mx_st; ++e_ptr;
-              } 
+              } else { --mx_st; ++e_ptr; }
             // i = 2, 3
-            // for *this, data will be in vec only -> index with vec_ptr
+            // for *this, data will be in vec only -> index with v_ptr
             // for st   , data will be in p_o_s -> shift
             } else if ((i >= 2) && (i < 4)) {
-              if (string_vector.at(vec_ptr) != (st.ptr_or_start >> (mx_st*8))) {
-                
-                std::cout << "2" << std::endl;
-                
+              if (string_vector.at(v_ptr) != ((st.ptr_or_start >> (mx_st*8)) & 0xff)) {
                 return false;
-              } else {
-                --mx_st; ++vec_ptr;
-              }
+              } else { --mx_st; ++v_ptr; }
             // i = 4 ... 12 (max)
             // for *this, data will be in vec/e depend on length
             // for st   , data will be in e -> index with i-4
-            } else {
-              // if we are done pulling from string_vector
-              // we need to pull the last elements of e of *this
-              if ((vec_ptr - ptr_or_start) >= (_size - 10)) {
-                // [f o o b a r b u z z b a l l]
-                //  e e v v v v e e e e e e e e
-                //  0 1 2 3 4 5 6 7 8 9 A B C D
-                //      0 1 2 3
-                //  0 1         2 3 4 5 6 7 8 9
-                // [f o o b a r b u z z b a l]
-                //  p p p p e e e e e e e e e
-                //  PULL FROM e of *this
-                if (e[e_ptr] != st.e[i - 4]) {
-                
-                  std::cout << "3" << std::endl;
-                  
-                  return false;
-                } else {
-                  ++e_ptr;
-                }
-              } else {
-                if (string_vector.at(vec_ptr) != (st.e[i - 4])) {
-                
-                  std::cout << "4" << std::endl;
-                  
-                  return false;
-                } else {
-                  ++vec_ptr;
-                }
+            } else {// if we're done using string_vector, we use last 8 of e of *this
+              if ((v_ptr - ptr_or_start) >= (_size - 10)) {
+                if (e[e_ptr] != st.e[i - 4]) { return false; } 
+                else { ++e_ptr; }
+              } else { // use e for st and use vector for *this
+                if (string_vector.at(v_ptr) != (st.e[i - 4])) { return false; } 
+                else { ++v_ptr; }
               }
             }
-          } 
-        // ======== case 2b ========
-        // both are in e and vec
+          }
+          return true; // made it out of the for loop means no mismatch 
+        // ======== case 2b: *this is LONG, st is LONG
         } else if (st._size > 13) {
-          auto e_ptr = 2, st_e_ptr = 2;
-          auto vec_ptr = ptr_or_start;
-          auto st_vec_ptr = st.ptr_or_start;
-          // start with first of e for both
-          // then move on to vector
-          // mis-match will happen when *this is still in vec, and st goes to e
-          // ** Using st as master size keeper -> i refers to st index
-          for (auto i = 0; i < st._size; ++i) {
+          uint8_t e_ptr = 2, ste_ptr = 2; // used to iterate through last 8 of e
+          uint32_t v_ptr = ptr_or_start, stv_ptr = st.ptr_or_start;
+          // start with first two of e for both, then move to vector, then last 8 of e
+          // NOTE: be careful when *this is still in vec, and st runs out of vec
+          for (auto i = 0; i < st._size; ++i) { // using st._size to iterate 
             // i = 0, 1
             // for both, in e
             if (i < 2) {
-              if (e[i] != st.e[i]) {
-                
-                std::cout << "5" << std::endl;
-                
-                return false;
-              }
+              if (e[i] != st.e[i]) { return false; }
             // i = 2 .. start of last 8
-            // for both, in vec
-            // BUT, st will ALWAYS reach e before *this
+            // for both, in vec, BUT, st will ALWAYS reach e before *this
             } else if ((i >= 2) && (i < (_size - 8))) {
-              if (string_vector.at(vec_ptr) != string_vector.at(st_vec_ptr)) {
-                
-                std::cout << "6" << std::endl;
-                
-                return false;
-              } else {
-                ++vec_ptr; ++st_vec_ptr;
+              // when st runs out of vector, need to use last 8 of e
+              if ((stv_ptr - st.ptr_or_start) >= (st._size - 10)) {
+                if (string_vector.at(v_ptr) != st.e[ste_ptr]) { return false; } 
+                else { ++v_ptr; ++ste_ptr; }
+              } else { // use vec for both
+                if (string_vector.at(v_ptr) != string_vector.at(stv_ptr)) {
+                  return false;
+                } else { ++v_ptr; ++stv_ptr; }
               }
             // i = last 8 of st
+            // *this can still be in vec, st always n e here
             } else {
-              // *this has reached last 8 now, which means we use e for *this
-              if ((vec_ptr - ptr_or_start) >= (_size - 10)) {
-                if (e[e_ptr] != st.e[st_e_ptr]) {
-                
-                  std::cout << "7" << std::endl;
-                  
-                  return false;
-                } else {
-                  ++e_ptr; ++st_e_ptr;
-                }
-              } else { // vec for *this, e for st
-                if (st.e[st_e_ptr] != string_vector.at(vec_ptr)) {
-                  
-                  std::cout << "8" << std::endl;
-                  
-                  return false;
-                } else {
-                  ++st_e_ptr; ++vec_ptr;
-                }
+              // if *this has reached last 8, we use e for *this
+              if ((v_ptr - ptr_or_start) >= (_size - 10)) {
+                if (e[e_ptr] != st.e[ste_ptr]) { return false; } 
+                else { ++e_ptr; ++ste_ptr; }
+              } else { // use vec for *this, e for st
+                if (st.e[ste_ptr] != string_vector.at(v_ptr)) { return false; } 
+                else { ++ste_ptr; ++v_ptr; }
               }
             }
           }
           return true;
         }
       }
-
-      #if 0
-      auto fndsize = 0;
-      if (_size < 14) {
-        /*
-         * Thought: what if we loop with st._size, and pulled appropriate
-         * elements of pstr as we go??
-         *
-         */
-        // compare chars in p_o_s
-        uint8_t mx = _size<4 ? _size-1 : 3;
-        for (uint8_t i = mx; i >= 0; --i) {
-          if ((ptr_or_start >> (i*8)) == st[fndsize++]) {
-            if (fndsize == st._size) { return true; }
-          } else { 
-            return false;// any mismatch returns false
-          }
-        }
-        // comparing chars in e
-        for (uint8_t i = 0; i < e.size(); ++i) {
-          if (e[i] == st[fndsize++]) {
-            if (fndsize == st._size) { return true; }
-          } else { 
-            return false; 
-          }
-        }
-      } else if (_size >= 14) {
-        // compare first two of e
-        for (uint8_t i = 0; i < 2; ++i) {
-          if (e[i] == st[fndsize++]) {
-            if (fndsize == st._size) { return true; }
-          } else {
-            return false;
-          }
-        }
-        // move into vector
-        for (uint8_t i = 0; i < _size-10; ++i) {
-          if (string_vector.at(ptr_or_start+i) == st[fndsize++]) {
-            if (fndsize == st._size) { return true; }
-          } else {
-            return false;
-          }
-
-        }
-        // move into last eight of e
-        for (uint8_t i = 2; i < 10; ++i) {
-          if (e[i] == st[fndsize++]) {
-            if (fndsize == st._size) { return true; }
-          } else {
-            return false;
-          }
-        }
-        // *** at any point we can break and return false (most likely)
-      }
-      #endif
-      std::cout << "should not be here\n";
       return false;
     }
   }

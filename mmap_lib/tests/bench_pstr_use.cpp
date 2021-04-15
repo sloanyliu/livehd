@@ -333,7 +333,7 @@ void pstr_isI(){
 
 void pstr_starts_with() {
   uint8_t t = 0u, r = 0u;
-#if 0 
+#if 1
   mmap_lib::str whole("foobar");
   mmap_lib::str front1("foo");
   mmap_lib::str front2("bar");
@@ -376,26 +376,24 @@ void pstr_starts_with() {
   mmap_lib::str six("balalalalalalalalala");
   
   // long vs short
-  r += test_starts_with(whole3, front5, true); ++t; //flagged
+  r += test_starts_with(whole3, front5, true); ++t; //fixed
 
   // long vs short(13)
-  r += test_starts_with(whole3, front6, true); ++t; //flagged
+  r += test_starts_with(whole3, front6, true); ++t; //fixed
 
   // long vs long(14)
-  r += test_starts_with(whole3, front7, true); ++t; //flagged
+  r += test_starts_with(whole3, front7, true); ++t; //fixed
 
   // long vs long
-  r += test_starts_with(whole3, front8, true); ++t; //flagged
+  r += test_starts_with(whole3, front8, true); ++t; //fixed
 
   // long vs long (same length)
-  //r += test_starts_with(whole3, same3, true); ++t;
+  r += test_starts_with(whole3, same3, true); ++t;
 
   // long vs long (same length)
-  //r += test_starts_with(whole3, almost2, false); ++t;i
-
-
+  r += test_starts_with(whole3, almost2, false); ++t;
   r += test_starts_with(whole3, five, true); ++t; //flagged, triggered "should not be here"
-  //r += test_starts_with(whole3, six, false); ++t;
+  r += test_starts_with(whole3, six, false); ++t;
 
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
 }
