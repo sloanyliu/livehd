@@ -10,6 +10,8 @@
 
 #include "mmap_map.hpp"
 
+#define posShifter(s) s<4 ? (s-1):3
+#define posStopper(s) s<4 ? s:4
 namespace mmap_lib {
 
 class str {
@@ -58,7 +60,7 @@ public:
   template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
     // if _size is less than 4, then whole thing will be in ptr_or_start
-    auto stop = _size < 4 ? _size : 4;
+    auto stop = posStopper(_size);
     // ptr_or_start will hold first 4 chars
     // | first | second | third | forth |
     // 31      23       15      7       0 
@@ -145,7 +147,7 @@ public:
   // std::string will also go through this one
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
     if (_size < 14 ){ // constructor 1 logic
-		  auto stop = _size<4?_size:4;
+		  auto stop = posStopper(_size);
 	    for(auto i=0;i<stop;++i) {
 	      ptr_or_start <<= 8;
 	      ptr_or_start |= sv.at(i);
@@ -333,14 +335,19 @@ public:
     }
   }
 
-  // SLOAN
   // checks if *this pstr starts with st
+  // Thought...
+  // Can use substr function of sview in cases where both st and *this are LONG,
+  //    and just compare sviews
   bool starts_with(const str &st) const { 
     if (st._size > _size) { return false; }// st.size > *this.size, false
     else if (st._size == _size) { return *this == st; }
     else { // if (st._size < *this._size), compare   
-      uint8_t mx_st = st._size < 4 ? (st._size-1) : 3;
-      uint8_t mx = _size < 4 ? (_size-1) : 3;
+      //uint8_t mx_st = st._size < 4 ? (st._size-1) : 3;
+      //uint8_t mx = _size < 4 ? (_size-1) : 3;
+       uint8_t mx = posShifter(_size);
+       uint8_t mx_st = posShifter(st._size);
+      
       if (_size <= 13) { //==== case 1: if *this is SHORT, st is SHORT
         for (auto i = 0; i < st._size; ++i) { // iterate based on st
           if (i < 4) { // for *this and st, first 4 will be in p_o_s
@@ -374,7 +381,8 @@ public:
             // i = 4 ... 12 (max)
             // for *this, data will be in vec/e depend on length
             // for st   , data will be in e -> index with i-4
-            } else {// if we're done using string_vector, we use last 8 of e of *this
+            } else {
+              // if we're done using string_vector, we use last 8 of e of *this
               if ((v_ptr - ptr_or_start) >= (_size - 10)) {
                 if (e[e_ptr] != st.e[i - 4]) { return false; } 
                 else { ++e_ptr; }
@@ -385,8 +393,10 @@ public:
             }
           }
           return true; // made it out of the for loop means no mismatch 
-        // ======== case 2b: *this is LONG, st is LONG
-        } else if (st._size > 13) {
+        } else if (st._size > 13) { // ===== case 2b: *this is LONG, st is LONG
+          //FIXME: if the long part st is less than or equal to *this's long, 
+          //       just use sview's substr and compare sviews
+          //       THEN, compare the last 8 of st with either *this's vec, e, or both
           uint8_t e_ptr = 2, ste_ptr = 2; // used to iterate through last 8 of e
           uint32_t v_ptr = ptr_or_start, stv_ptr = st.ptr_or_start;
           // start with first two of e for both, then move to vector, then last 8 of e
@@ -434,6 +444,13 @@ public:
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() < _size) {
       // Actual compare logic
+      if (_size <= 13) {
+        // iterate through ptr_or_start to compare
+        // iterate through e to compare
+      } else {
+        // compare first two of e
+        // use string_map to get substr of 
+      }
       return false;
     }
   }
@@ -619,7 +636,6 @@ public:
           case '0'...'9':
             break;
           default:
-            std::cout << "Non-number char detected in ptr_or_start[1:3]\n";
             return false;
             break;
         }
