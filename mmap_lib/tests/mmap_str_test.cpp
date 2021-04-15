@@ -139,6 +139,18 @@ TEST_F(Mmap_str_test, isI_operator) {
   }
 }
 
+TEST_F(Mmap_str_test, starts_with) {
+  // 1) pull a string from the random str_bank
+  // 2) take a sub-string of the string 
+  //    -> randomly generate start and end indx of sub-string
+  // 3) turn string and sub-string into mmap_lib::str
+  // 4) run string.starts_with(sub-string)
+  // 5) if the randomly generated start indx is 0, 
+  //    -> then starts_with should return true
+  //    -> else it is false
+  std::cout << "test\n";
+}
+
 
 
 #if 0
