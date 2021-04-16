@@ -330,7 +330,6 @@ public:
         return e[10 -( _size - pos)];
       } else{
         return string_vector.at(ptr_or_start+pos-2);
-
       }
     }
   }
@@ -439,6 +438,11 @@ public:
           }    
           return true;
           #endif
+
+
+          //const std::string_view check_st = string_map2.get_key(st.ptr_or_start); 
+          //std::string_view check2   = (string_map2.get_key(ptr_or_start)).substr(0, st._size-10);
+          
 
           #if 1 
           uint8_t e_ptr = 2, ste_ptr = 2; // used to iterate through last 8 of e
