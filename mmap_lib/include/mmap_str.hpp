@@ -442,6 +442,7 @@ public:
 
           //const std::string_view check_st = string_map2.get_key(st.ptr_or_start); 
           //std::string_view check2   = (string_map2.get_key(ptr_or_start)).substr(0, st._size-10);
+          //std::string_view check_st = string_map2.get(st.ptr_or_start); 
           
 
           #if 1 
@@ -488,12 +489,31 @@ public:
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() < _size) {
       // Actual compare logic
+      auto fndsize = 0;
       if (_size <= 13) {
-        // iterate through ptr_or_start to compare
-        // iterate through e to compare
+        uint8_t mx = posShifter(_size);
+        for (uint8_t i = mx; i >= 0, fndsize == st.size(); --i) {
+          if (((ptr_or_start >> (i*8)) & 0xff) != st[fndsize++] ) { 
+            return false; 
+          }
+          //if (fndsize == st.size()) { return true; }
+        }
+        for (uint8_t j = 0; j < e.size(), fndsize == st.size(); ++j) {
+          if (e[j] != st[fndsize++]) {
+            return false;
+          }
+          //if (fndsize == st.size()) { return true; }
+        }
       } else {
         // compare first two of e
         // use string_map to get substr of 
+        if ((e[1] != st[1]) || (e[0] != st[0])) { return false; }
+        if ((_size - st.size()) >= 8) {  
+          // need to figure out how to get key from val using mmap
+          // ask jose maybe?
+          // TODO: finish 
+          // std::string_view hold = string_map2.get(ptr_or_start);
+        }
       }
       return false;
     }
