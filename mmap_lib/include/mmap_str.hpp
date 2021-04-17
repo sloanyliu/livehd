@@ -495,15 +495,32 @@ public:
     }
   }
 
-  // SLOAN
   // checks if *this pstr ends with en
   bool ends_with(const str &en) const {
-    if (en._size > _size) { return false; }
-    else if (en._size == _size) { return *this == en; }
-    else if (en._size < _size) {
+#if 0
+    if (en.size() > _size) { return false; }
+    else if (en.size() == _size) { return *this == en; }
+    else if (en.size() < _size) {
       // Actual compare logic
-      return false;
+      
+      if (_size <= 13) {// if *this is SHORT
+        // -> en MUST be SHORT
+        // start from the end and count forward
+        // i is used for en, j is used for *this
+        for (auto i = 0, j = (_size - en.size()); i < en.size(), j < _size; ++i, ++j) {
+          // -> *this and en are in ptr_or_start
+        
+        }
+      } else if (_size > 13) { // if *this is LONG
+        if (en.size() > 13) { // -> en can be LONG
+        
+        } else if (en.size() <= 13) { // -> en can be SHORT
+
+        }
+      }
+
     }
+#endif
   }
 
   bool ends_with(std::string_view en) const {
@@ -521,132 +538,50 @@ public:
   }
 
   //OLY
-  #if 0
   std::size_t find(const str &v, std::size_t pos = 0) const{
-
     if (v._size >_size) return -1;
     //if size ==vsize and == is true return 0 else return -1
-    if (_size<14){
-      char first = ((v.ptr_or_start >> (8 * (v._size-1))) & 0xFF);//different ways
-      size_t retval = 0;
-      bool found_flag = false;
-      int i,j,k;
-      int e_pos_self =0;
-      int e_pos_thier =0;
-      for ( i =0; i <4 ; i++){
-        retval = 0;
-        found_flag = false;
-        e_pos_self =0;
-        e_pos_thier =0;
-        if ((first == ((ptr_or_start >> (8 * (3 - i))) & 0xFF)) and  ( pos >= i)) {
-          retval = i;
-          found_flag = true;
-          for ( j = i,  k =1; j< 4; j++,k++){
-            
-            if (((v.ptr_or_start >> (8 * (3 - k))) & 0xFF) != ((ptr_or_start >> (8 * (3 - j))) & 0xFF)){
-              found_flag = false;
-              break;
-            }
-          }
-          while(k < v._size){
-            if (k < 4){
-              if(((v.ptr_or_start >> (8 * (3 - k))) & 0xFF)  != e[e_pos_self]) {
-
-                found_flag = false;
-                break;
-              }
-            } else {
-              if (v.e[e_pos_thier ] != e[e_pos_self]){
-                found_flag = false;
-                e_pos_thier++;
-                break;
-              }
-            }
-            e_pos_self++;
-            k++;
-          }
-
-        }
-        if (found_flag == true) return retval;
-      }
-      //if you havent found the string at this point and this string is < 4 chaars then find returns -1
-      //if((_size < 4 ) and (found_flag == false)) return -1;
-      return -1;
+    if (_size<=14){
+    	return -1;// find_small_size(this, v, pos);
     } else {
-      std::string my_string = this->to_s();
-      std::string their_string = v.to_s ();
-      return my_string.find(their_string);
+    	std::string my_string = this->to_s();
+    	std::string their_string = v.to_s ();
+    	return my_string.find(their_string);
     }
   }
-  
-  std::size_t find(char c, std::size_t pos = 0) const;
-  template <std::size_t N>
-  constexpr std::size_t find(const char (&s)[N], std::size_t pos = 0) {
-    return find(str(s), pos);
+ 
+  std::size_t find(char c, std::size_t pos = 0) const{
+  	int count =0;
+  	if (_size <=14){
+  		for (int i = 0 ; i < ((_size>4) ? 4: _size);i++){
+  			char first = ((ptr_or_start >> (8 * (_size -1))) & 0xFF);
+  			if ((first == c) and (count >= pos )) return count;
+  			count ++;
+  		}
+  		if (_size >4 ){
+  			for (int i =0; i < (_size -4); i++){
+  				if ((e[i]) and (count >= pos)) return count ;
+  			}
+  		}
+  		return -1;
+  	} else {
+  		for (int i = 0 ; i <  2;i++){
+  			if ((e[i] == c) and (count >= pos) ) return count ;
+  			count ++;
+  		}
+  		for (int i = 0 ; i< (_size-10); i++){
+  			if ((string_vector.at(i)) and (count >= pos )) return count ;
+  			count ++;
+  		}
+  		for (int i = 2 ; i <  10;i++){
+  			if ((e[i] == c) and (count >= pos) ) return count ;
+  			count ++;
+  		}
+  		return -1;
+
+  	}
   }
-  #endif
 
-  //OLY
-  std::size_t find(const str &v, std::size_t pos = 0) const{
-
-    if (v._size >_size) return -1;
-    //if size ==vsize and == is true return 0 else return -1
-    if (_size<14){
-      char first = ((v.ptr_or_start >> (8 * (v._size-1))) & 0xFF);//different ways
-      size_t retval = 0;
-      bool found_flag = false;
-      int i,j,k;
-      int e_pos_self =0;
-      int e_pos_thier =0;
-      for ( i =0; i <4 ; i++){
-        retval = 0;
-        found_flag = false;
-        e_pos_self =0;
-        e_pos_thier =0;
-        if ((first == ((ptr_or_start >> (8 * (3 - i))) & 0xFF)) and  ( pos >= i)) {
-          retval = i;
-          found_flag = true;
-          for ( j = i,  k =1; j< 4; j++,k++){
-            
-            if (((v.ptr_or_start >> (8 * (3 - k))) & 0xFF) != ((ptr_or_start >> (8 * (3 - j))) & 0xFF)){
-              found_flag = false;
-              break;
-            }
-          }
-          while(k < v._size){
-            if (k < 4){
-              if(((v.ptr_or_start >> (8 * (3 - k))) & 0xFF)  != e[e_pos_self]) {
-
-                found_flag = false;
-                break;
-              }
-            } else {
-              if (v.e[e_pos_thier ] != e[e_pos_self]){
-                found_flag = false;
-                e_pos_thier++;
-                break;
-              }
-            }
-            e_pos_self++;
-            k++;
-          }
-
-        }
-        if (found_flag == true) return retval;
-      }
-      //if you havent found the string at this point and this string is < 4 chaars then find returns -1
-      //if((_size < 4 ) and (found_flag == false)) return -1;
-      return -1;
-    } else {
-      std::string my_string = this->to_s();
-      std::string their_string = v.to_s ();
-      return my_string.find(their_string);
-    }
-
-
-  }
-  
-  std::size_t find(char c, std::size_t pos = 0) const;
   template <std::size_t N>
   constexpr std::size_t find(const char (&s)[N], std::size_t pos = 0) {
     return find(str(s), pos);
@@ -672,12 +607,14 @@ public:
 
   bool is_i() const{ 
     if (_size < 14) {
-      char first = ((ptr_or_start >> (8 * (_size -1))) & 0xFF);
+      int temp = (_size >= 4) ? 3 : (_size-1);
+      char first = (ptr_or_start >> (8 * (temp))) & 0xFF;
+      //char first = ((ptr_or_start >> (8 * (_size -1))) & 0xFF);
       if (first !='-' and( first <'0' or first > '9')) {
         return false;
       }
       for (int i= 1; i<(_size>4?4:_size);i++){
-        switch ((ptr_or_start >> (8 * (3 - i))) & 0xFF){
+        switch ((ptr_or_start >> (8 * (temp - i))) & 0xFF){
           case '0'...'9':
             break;
           default:
@@ -719,17 +656,27 @@ public:
       }
     }
     return true;
-  } 
+  }
 
- int64_t     to_i() const;  // convert to integer
- std::string to_s() const{  // convert to string
+
+  int64_t to_i() const{  // convert to integer
+    if(this->is_i()){
+      //std::cout << "The input is an integer " << std::endl;
+      std::string temp = this->to_s();
+      //std::cout << "The string is  " << _size << std::endl;
+      return stoi(temp);
+    }
+    std::cout << "The input is not an integer " << std::endl;
+  } 
   
+  std::string to_s() const{  // convert to string
     std::string out;
-    
     if (_size <= 14 ){
       //adding charactors from ptr_or_start based on the size of the string
       for (int i =0; i<((_size>4) ? 4: _size); i++){
-        out += (ptr_or_start >> (8 * (3-i))) & 0xFF;
+        int temp = (_size >= 4) ? 3 : (_size-1); 
+        out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
+        //std::cout << "The out is  " << out << std::endl;
       }
       //if there are any characotrs in e, we add them as well
       if(_size>4){
@@ -750,10 +697,8 @@ public:
       for (int i = 2; i<10; i++){
         out += e[i];
       }
-
     }
-    return out;
-  
+    return out; 
   }
 
   str get_str_after_last(const char chr) const;
@@ -764,7 +709,10 @@ public:
 
   str substr(size_t start) const;
   str substr(size_t start, size_t end) const;
+
+  void test_cpp() const;
 };
+
 
 // For static string_map
 mmap_lib::map<std::string_view, uint32_t> str::string_map2;

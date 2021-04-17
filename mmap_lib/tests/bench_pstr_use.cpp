@@ -10,7 +10,7 @@
 
 #define CTOR_TESTS 0
 #define NEEQ_TESTS 0
-#define STARTS_WITH_TESTS 1
+#define STARTS_WITH_TESTS 0
 
 #if 0
 //implicitly changes ts to string_view
