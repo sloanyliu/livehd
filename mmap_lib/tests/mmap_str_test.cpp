@@ -186,8 +186,9 @@ TEST_F(Mmap_str_test, starts_with) {
     if (temp.size() == 0) { end = 0; } // gen end
     else { end = rand() % temp.size() + 1; }
     
-    std::string_view sv_check = orig.substr(start, end);
-    mmap_lib::str check(orig.substr(start, end));
+    std::string stable = orig.substr(start, end);
+    std::string_view sv_check = stable;
+    mmap_lib::str check(stable);
     
     if (start == 0) {
       EXPECT_TRUE(temp.starts_with(check));
