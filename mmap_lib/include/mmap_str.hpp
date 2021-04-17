@@ -221,6 +221,28 @@ public:
     }
     std::cout << "}" << std::endl;
   }
+
+  void print_string() {
+    if (_size <= 13) {
+      uint8_t mx = posShifter(_size);
+      for (uint8_t i = mx; i >= 0, i <= 3; --i) {
+        std::cout << static_cast<char>((ptr_or_start >> (i*8)) & 0xff);
+      }
+      if (_size > 4) {
+        for (uint8_t j = 0; j < e.size(); ++j) {
+          std::cout << static_cast<char>(e[j]);
+        }
+      }
+    } else {
+      std::cout << char(e[0]) << char(e[1]);
+      for (auto i = 0; i < _size - 10; ++i) {
+        std::cout << static_cast<char>(string_vector.at(i + ptr_or_start));
+      }
+      for (uint8_t k = 2; k < 10; ++k) {
+        std::cout << static_cast<char>(e[k]);
+      }
+    }
+  }
   //=================================
 
 #if 0
@@ -339,7 +361,7 @@ public:
   // Can use substr function of sview in cases where both st and *this are LONG,
   //    and just compare sviews
   bool starts_with(str &st) const { 
-    if (st.size() > _size) { std::cout << "1 \n"; return false; }// st.size > *this.size, false
+    if (st.size() > _size) { return false; }// st.size > *this.size, false
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() == 0) { return true; }
     else { // if (st._size < *this._size), compare   
@@ -349,10 +371,10 @@ public:
         for (auto i = 0; i < st.size(); ++i) { // iterate based on st
           if (i < 4) { // for *this and st, first 4 will be in p_o_s
             if (((st.ptr_or_start >> (mx_st*8)) & 0xff) != ((ptr_or_start >> (mx*8)) & 0xff)) {
-              std::cout << "2 \n"; return false;
+              return false;
             } else { --mx_st; --mx; }
           } else { // rest of string will be in e
-            if (e[i-4] != st.e[i-4]) { std::cout << "3\n"; return false; }
+            if (e[i-4] != st.e[i-4]) { return false; }
           }
         }
         return true; 
@@ -366,16 +388,14 @@ public:
             // for st   , data will be in p_o_s -> shift 
             if (i < 2) { // i = 0, 1 : *this.e is used, st.ptr_or_start is used
               if (e[e_ptr] != ((st.ptr_or_start >> (mx_st*8)) & 0xff)) { 
-                //std::cout << "PLACE 1\n";
-                std::cout << "4\n"; return false; 
+                return false; 
               } else { --mx_st; ++e_ptr; }
             // i = 2, 3
             // for *this, data will be in vec only -> index with v_ptr
             // for st   , data will be in p_o_s -> shift
             } else if ((i >= 2) && (i < 4)) {
               if (string_vector.at(v_ptr) != ((st.ptr_or_start >> (mx_st*8)) & 0xff)) {
-                //std::cout << "PLACE 2\n";
-                std::cout << "5\n"; return false;
+                return false;
               } else { --mx_st; ++v_ptr; }
             // i = 4 ... 12 (max)
             // for *this, data will be in vec/e depend on length
@@ -383,78 +403,16 @@ public:
             } else {
               // if we're done using string_vector, we use last 8 of e of *this
               if ((v_ptr - ptr_or_start) >= (_size - 10)) {
-                if (e[e_ptr] != st.e[i - 4]) { 
-                  //std::cout << "PLACE 3\n";
-                  std::cout << "6\n"; return false; 
-                } 
+                if (e[e_ptr] != st.e[i - 4]) { return false; } 
                 else { ++e_ptr; }
               } else { // use e for st and use vector for *this
-                if (string_vector.at(v_ptr) != (st.e[i - 4])) { 
-                  //std::cout << "PLACE 4\n";
-                  std::cout << "7\n"; return false; 
-                } 
+                if (string_vector.at(v_ptr) != (st.e[i - 4])) { return false; } 
                 else { ++v_ptr; }
               }
             }
           }
           return true; // made it out of the for loop means no mismatch 
         } else if (st.size() > 13) { //===== case 2b: *this is LONG, st is LONG
-          //FIXME: if the long part st is less than or equal to *this's long, 
-          //       just use sview's substr and compare sviews
-          //       THEN, compare the last 8 of st with either *this's vec, e, or both
-          
-         // uint32_t key   = string_map.get_key(i);
-         // uint16_t value = string_map.get(i);
-         //
-         // 1) compare the first two of e
-         // 2) now onto vec
-         //    ** the only way for the size of long in both strings to be the same, is
-         //       if the two strings are already the same length
-         //   Therefore: size of *this's long will always be larger than size of st's long
-         // 3) get *this's long.substr(0,_st._size-10)
-         // 4) compare st's long with *this/s long.substr()
-         //    -> equal? move on
-         //    -> not equal? return false
-         // 5) Here we have reached the end of st's long
-         //    -> need to use e for st, 
-         //    -> must detect when *this runs out vec and needs to use e
-          
-          
-          //FIXME: get_key is being weird here, something with const is weird
-          //       If this takes too long to figure out then move on to other starts_with()
-          #if 0
-          uint8_t e_ptr = 2, ste_ptr = 2; // used to iterate through last 8 of e
-          uint32_t v_ptr = ptr_or_start;
-          std::string_view check_st = string_map2.get_key(st.ptr_or_start); 
-          std::string_view check2   = (string_map2.get_key(ptr_or_start)).substr(0, st._size-10);
-          // start with first two of e for both, then move to vector, then last 8 of e
-          // NOTE: be careful when *this is still in vec, and st runs out of vec
-          for (auto i = 0; i < st._size; ++i) { // using st._size to iterate 
-            if (i < 2) {
-              if (e[i] != st.e[i]) { return false; }
-            } else if ((i >= 2) && (i < st._size-8)) {
-              if (check_st != check2) { return false; } 
-              else { v_ptr = st._size-10; i = st._size-9; }
-            } else {
-              if ((v_ptr - ptr_or_start) >= (_size - 10)) {
-                if (e[e_ptr] != st.e[ste_ptr]) { return false; } 
-                else { ++e_ptr; ++ste_ptr; }
-              } else { // use vec for *this, e for st
-                if (st.e[ste_ptr] != string_vector.at(v_ptr)) { return false; } 
-                else { ++ste_ptr; ++v_ptr; }
-              }
-            }
-          }    
-          return true;
-          #endif
-
-
-          //const std::string_view check_st = string_map2.get_key(st.ptr_or_start); 
-          //std::string_view check2   = (string_map2.get_key(ptr_or_start)).substr(0, st._size-10);
-          //std::string_view check_st = string_map2.get(st.ptr_or_start); 
-          
-
-          #if 1 
           uint8_t e_ptr = 2, ste_ptr = 2; // used to iterate through last 8 of e
           uint32_t v_ptr = ptr_or_start, stv_ptr = st.ptr_or_start;
           // start with first two of e for both, then move to vector, then last 8 of e
@@ -463,32 +421,29 @@ public:
             // i = 0, 1
             // for both, in e
             if (i < 2) {
-              if (e[i] != st.e[i]) { std::cout << "8\n"; return false; }
+              if (e[i] != st.e[i]) { return false; }
             // i = 2 .. start of last 8
             // for both, in vec, BUT, st will ALWAYS reach e before *this
             } else if ((i >= 2) && (i < (st.size() - 8))) {
               if (string_vector.at(v_ptr) != string_vector.at(stv_ptr)) {
-                std::cout << "9\n"; return false;
+                return false;
               } else { ++v_ptr; ++stv_ptr; }
             // i = last 8 of st
             // *this can still be in vec, st always n e here
             } else {
               // if *this has reached last 8, we use e for *this
               if ((v_ptr - ptr_or_start) >= (_size - 10)) {
-                if (e[e_ptr] != st.e[ste_ptr]) { std::cout << "10\n"; return false; } 
+                if (e[e_ptr] != st.e[ste_ptr]) { return false; } 
                 else { ++e_ptr; ++ste_ptr; }
               } else { // use vec for *this, e for st
-                if (st.e[ste_ptr] != string_vector.at(v_ptr)) { std::cout << "11\n"; return false; } 
+                if (st.e[ste_ptr] != string_vector.at(v_ptr)) { return false; } 
                 else { ++ste_ptr; ++v_ptr; }
               }
             }
           }
           return true;
-          #endif
-
         }
       }
-      std::cout << "12\n";
       return false;
     }
   }
@@ -535,14 +490,6 @@ public:
           }
           if (fndsize == st.size()) { return true; }
         }
-        #if 0
-        if ((_size - st.size()) >= 8) {  
-          // need to figure out how to get key from val using mmap
-          // ask jose maybe?
-          // TODO: finish 
-          // std::string_view hold = string_map2.get(ptr_or_start);
-        }
-        #endif
       }
       std::cout << "4" << std::endl; 
       return false;

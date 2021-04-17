@@ -35,7 +35,7 @@ public:
       t_len = MinLen + (rand() % MaxLen); // deciding string length (0-31)
                         
       // construct string with ASCII (32-126) -> 95 chars
-      for(uint8_t j = 0; j < t_len; ++j) { ele += (' ' + (rand() % 95)); }
+      for(uint8_t j = 0; j < t_len; ++j) { ele += ('!' + (rand() % 94)); }
       str_bank.push_back(ele); // add string to vector
     }
 
@@ -150,19 +150,30 @@ TEST_F(Mmap_str_test, starts_with) {
   //    -> else it is false
   uint32_t start = 0, end = 0; 
   for (auto i = 0; i < RNDN; ++i) {
-    std::string_view orig = s_get(i);
+    std::string orig = s_get(i);
     mmap_lib::str temp(orig);
-    end = rand() % temp.size() + 1;
-    mmap_lib::str check(orig.substr(start, end));
+    if (temp.size() == 0) { end = 0; }
+    else { end = rand() % temp.size() + 1; }
+    mmap_lib::str check(orig.substr(0, end));
+    EXPECT_TRUE(temp.starts_with(check));
     
-    std::cout << "temp is: " << orig << std::endl;
-    std::cout << "check is: " << orig.substr(start, end) << std::endl;
-    if (temp.starts_with(check)) {
-      std::cout << "pass\n";
+  }
+
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string orig = s_get(i);
+    mmap_lib::str temp(orig);
+    if (temp.size() == 0) { start = 0; }
+    else { start = rand() % temp.size(); }
+    if (temp.size() == 0) { end = 0; }
+    else { end = rand() % temp.size() + 1; }
+    mmap_lib::str check(orig.substr(start, end));
+    if (start == 0) {
+      EXPECT_TRUE(temp.starts_with(check));
     } else {
-      std::cout << "fail\n";
+      EXPECT_FALSE(temp.starts_with(check));
     }
   }
+
 }
 
 
