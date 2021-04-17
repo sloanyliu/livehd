@@ -139,6 +139,10 @@ bool test_starts_with(mmap_lib::str ls, mmap_lib::str rs, bool ans) {
   return ls.starts_with(rs) == ans;
 }
 
+bool test_starts_with(mmap_lib::str ls, std::string_view rs, bool ans) {
+  return ls.starts_with(rs) == ans;
+}
+
 void pstrVchar_eqeq_tests() {
   std::cout << "pstr vs. char Operator == Tests: ";
   mmap_lib::str hello("hello");
@@ -333,7 +337,7 @@ void pstr_isI(){
 
 void pstr_starts_with() {
   uint8_t t = 0u, r = 0u;
-#if 1
+#if 0
   mmap_lib::str whole("foobar");
   mmap_lib::str front1("foo");
   mmap_lib::str front2("bar");
@@ -363,7 +367,6 @@ void pstr_starts_with() {
   r += test_starts_with(whole2, three, true); ++t;
   r += test_starts_with(whole2, four, true); ++t;
   r += test_starts_with(whole2, empty, true); ++t;
-#endif
 
   mmap_lib::str whole3("--this_var_will_be_very_long_for_testing_12345");
   mmap_lib::str front5("--this_var");
@@ -390,6 +393,65 @@ void pstr_starts_with() {
   // long vs long (same length)
   r += test_starts_with(whole3, same3, true); ++t;
 
+  // long vs long (same length)
+  r += test_starts_with(whole3, almost2, false); ++t;
+  r += test_starts_with(whole3, five, true); ++t; //flagged, triggered "should not be here"
+  r += test_starts_with(whole3, six, false); ++t;
+#endif
+ 
+
+#if 1  
+  mmap_lib::str whole("foobar");
+  std::string_view front1("foo");
+  std::string_view front2("bar");
+  std::string_view same("foobar");
+  std::string_view one("f");
+  std::string_view two("g");
+  
+  r += test_starts_with(whole, front1, true); ++t;
+  r += test_starts_with(whole, front2, false); ++t;
+  r += test_starts_with(whole, same, true); ++t;
+  r += test_starts_with(whole, one, true); ++t;
+  r += test_starts_with(whole, two, false); ++t;
+
+  mmap_lib::str whole2("hello_!_world");
+  std::string_view front3("hello_!_worl");
+  std::string_view almost("hello_!_worl!");
+  std::string_view front4("johnny");
+  std::string_view same2("hello_!_world");
+  std::string_view three("h");
+  std::string_view four("he");
+  std::string_view empty("");
+
+  r += test_starts_with(whole2, front3, true); ++t;
+  r += test_starts_with(whole2, front4, false); ++t;
+  r += test_starts_with(whole2, almost, false); ++t;
+  r += test_starts_with(whole2, same2, true); ++t;
+  r += test_starts_with(whole2, three, true); ++t;
+  r += test_starts_with(whole2, four, true); ++t;
+  r += test_starts_with(whole2, empty, true); ++t;
+#endif
+  
+  mmap_lib::str whole3("--this_var_will_be_very_long_for_testing_12345");
+  std::string_view front5("--this_var");
+  std::string_view front6("--this_var_wi");
+  std::string_view front7("--this_var_wil");
+  std::string_view front8("--this_var_will_be_very_");
+  std::string_view same3("--this_var_will_be_very_long_for_testing_12345");
+  std::string_view almost2("--this_var_will_be_very_long_for_testing_12346");
+  std::string_view five("-");
+  std::string_view six("balalalalalalalalala");
+  
+  // long vs short
+  r += test_starts_with(whole3, front5, true); ++t; //fixed
+  // long vs short(13)
+  r += test_starts_with(whole3, front6, true); ++t; //fixed
+  // long vs long(14)
+  r += test_starts_with(whole3, front7, true); ++t; //fixed
+  // long vs long
+  r += test_starts_with(whole3, front8, true); ++t; //fixed
+  // long vs long (same length)
+  r += test_starts_with(whole3, same3, true); ++t;
   // long vs long (same length)
   r += test_starts_with(whole3, almost2, false); ++t;
   r += test_starts_with(whole3, five, true); ++t; //flagged, triggered "should not be here"
