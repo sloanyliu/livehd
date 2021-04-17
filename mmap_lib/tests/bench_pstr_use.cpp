@@ -337,7 +337,7 @@ void pstr_isI(){
 
 void pstr_starts_with() {
   uint8_t t = 0u, r = 0u;
-#if 0
+#if 1
   mmap_lib::str whole("foobar");
   mmap_lib::str front1("foo");
   mmap_lib::str front2("bar");
@@ -367,9 +367,13 @@ void pstr_starts_with() {
   r += test_starts_with(whole2, three, true); ++t;
   r += test_starts_with(whole2, four, true); ++t;
   r += test_starts_with(whole2, empty, true); ++t;
-
+#endif
   mmap_lib::str whole3("--this_var_will_be_very_long_for_testing_12345");
   mmap_lib::str front5("--this_var");
+  mmap_lib::str spec1("-");
+  mmap_lib::str spec2("--");
+  mmap_lib::str spec3("--t");
+  mmap_lib::str spec4("--th");
   mmap_lib::str front6("--this_var_wi");
   mmap_lib::str front7("--this_var_wil");
   mmap_lib::str front8("--this_var_will_be_very_");
@@ -377,7 +381,7 @@ void pstr_starts_with() {
   mmap_lib::str almost2("--this_var_will_be_very_long_for_testing_12346");
   mmap_lib::str five("-");
   mmap_lib::str six("balalalalalalalalala");
-  
+ 
   // long vs short
   r += test_starts_with(whole3, front5, true); ++t; //fixed
 
@@ -397,10 +401,15 @@ void pstr_starts_with() {
   r += test_starts_with(whole3, almost2, false); ++t;
   r += test_starts_with(whole3, five, true); ++t; //flagged, triggered "should not be here"
   r += test_starts_with(whole3, six, false); ++t;
-#endif
+
+  r += test_starts_with(whole3, spec1, true); ++t; //fixed
+  r += test_starts_with(whole3, spec2, true); ++t; //fixed
+  r += test_starts_with(whole3, spec3, true); ++t; //fixed
+  r += test_starts_with(whole3, spec4, true); ++t; //fixed
+
  
 
-#if 1  
+#if 0  
   mmap_lib::str whole("foobar");
   std::string_view front1("foo");
   std::string_view front2("bar");
@@ -430,7 +439,6 @@ void pstr_starts_with() {
   r += test_starts_with(whole2, three, true); ++t;
   r += test_starts_with(whole2, four, true); ++t;
   r += test_starts_with(whole2, empty, true); ++t;
-#endif
   
   mmap_lib::str whole3("--this_var_will_be_very_long_for_testing_12345");
   std::string_view front5("--this_var");
@@ -456,7 +464,7 @@ void pstr_starts_with() {
   r += test_starts_with(whole3, almost2, false); ++t;
   r += test_starts_with(whole3, five, true); ++t; //flagged, triggered "should not be here"
   r += test_starts_with(whole3, six, false); ++t;
-
+#endif
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
 }
 

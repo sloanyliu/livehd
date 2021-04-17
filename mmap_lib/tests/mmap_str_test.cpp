@@ -148,9 +148,20 @@ TEST_F(Mmap_str_test, starts_with) {
   // 5) if the randomly generated start indx is 0, 
   //    -> then starts_with should return true
   //    -> else it is false
+  uint32_t start = 0, end = 0; 
   for (auto i = 0; i < RNDN; ++i) {
-    mmap_lib::str temp(s_get(i));
+    std::string_view orig = s_get(i);
+    mmap_lib::str temp(orig);
+    end = rand() % temp.size() + 1;
+    mmap_lib::str check(orig.substr(start, end));
     
+    std::cout << "temp is: " << orig << std::endl;
+    std::cout << "check is: " << orig.substr(start, end) << std::endl;
+    if (temp.starts_with(check)) {
+      std::cout << "pass\n";
+    } else {
+      std::cout << "fail\n";
+    }
   }
 }
 
