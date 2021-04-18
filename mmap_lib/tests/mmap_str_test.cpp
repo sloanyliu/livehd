@@ -9,7 +9,7 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 15 // number of rand strings
+#define RNDN 40 // number of rand strings
 #define MaxLen 51 // max len + 1 for rand strings
 #define MinLen 0  // min len for rand strings
 #define RUN 1
@@ -159,7 +159,7 @@ TEST_F(Mmap_str_test, isI_operator) {
 //    -> else it is false
 TEST_F(Mmap_str_test, starts_with) {
   uint32_t start = 0, end = 0; 
-  
+
   // ALWAYS TRUE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i); // std::string creation
@@ -200,6 +200,7 @@ TEST_F(Mmap_str_test, starts_with) {
   }
 }
 
+/*
 TEST_F(Mmap_str_test, ends_with) {
   uint32_t start = 0, end = 0; 
   
@@ -214,11 +215,17 @@ TEST_F(Mmap_str_test, ends_with) {
     std::string stable = orig.substr(start);
     std::string_view sv_check = stable; //sv
     mmap_lib::str check(stable); // str
-     
+ 
+    std::cout << "pstr temp: ";
+    temp.print_string();
+    std::cout << "\npstr check: ";
+    check.print_string();
+    std::cout << std::endl;
+
     EXPECT_TRUE(temp.ends_with(check));
     //EXPECT_TRUE(temp.ends_with(sv_check));
   }
-/*
+
   // TRUE AND FALSE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i);
@@ -241,9 +248,9 @@ TEST_F(Mmap_str_test, ends_with) {
       EXPECT_FALSE(temp.starts_with(sv_check));
     }
   }
-  */
+  
 }
-
+*/
 
 #if 0
 TEST_F(Mmap_str_test, const_expr_trival_cmp) {

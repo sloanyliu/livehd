@@ -498,7 +498,7 @@ public:
 
   // checks if *this pstr ends with en
   bool ends_with(const str &en) const {
-    if (en.size() > _size) { return false; }
+    if (en.size() > _size) { printf("1\n"); return false; }
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
@@ -512,16 +512,16 @@ public:
           if ((i <= 3) && (mx_st <= 3) && (mx_st >= 0)) { // en needs to shift
             if (mx <= 3 && mx >= 0) { // *this needs to shift
               if (isol8(ptr_or_start, mx--) != isol8(en.ptr_or_start, mx_st--)) {
-                return false;
+                printf("2\n"); return false;
               }
             } else { // *this does not need to shift anymore
               if (e[j-4] != isol8(en.ptr_or_start, mx_st--)) {
-                return false;
+                printf("3\n"); return false;
               }
             }
           } else { // en goes to e
             if (e[j-4] != en.e[i-4]) {
-              return false;
+              printf("4\n"); return false;
             }
           } 
         }
@@ -532,23 +532,23 @@ public:
             if (i < 2) { // en in e[0,1]
               if (j < 2) { // *this is in e[]
                 if (e[j] != en.e[i]) {
-                  return false;
+                  printf("5\n"); return false;
                 }
               } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vector now
                 if (string_vector.at(ptr_or_start + (j-2)) != en.e[i]) {
-                  return false;
+                  printf("6\n"); return false;
                 }
               } 
             } else if ((i >= 2) && (i < (en.size() - 8))) { // en in vec
               if ((j >= 2) && (j < (_size - 8))) { // *this is in vector
                 if (string_vector.at(ptr_or_start + (j-2)) != string_vector.at(en.ptr_or_start + (i-2))) {
-                  return false;
+                  printf("7\n"); return false;
                 }
               }
             } else { // last 8 for both
               if ((j-(_size-10)) <= 9 && (i-(en.size()-10)) <= 9 && (j-(_size-10)) == (i-(en.size()-10))) {
                 if (e[j] != en.e[i]) {
-                  return false;
+                  printf("8\n"); return false;
                 }
               }
             }
@@ -560,15 +560,15 @@ public:
             if (i < 4) { //en needs to shift
               if (j < 2) { // *this in e[0,1]
                 if (e[j] != isol8(en.ptr_or_start, mx_st--)) {
-                  return false;
+                  printf("9\n"); return false;
                 }
               } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vec
                 if (string_vector.at(ptr_or_start + (j-2)) != isol8(en.ptr_or_start, mx_st--)) {
-                  return false;
+                  printf("10\n"); return false;
                 }
               } else { // *this is in last 8
                 if (e[j-(_size-10)] != isol8(en.ptr_or_start, mx_st--)) {
-                  return false;
+                  printf("11\n"); return false;
                 }
               }
             }
@@ -576,7 +576,7 @@ public:
           return true;
         }
       }
-      return false;
+      printf("12\n"); return false;
     }
   }
 
@@ -607,7 +607,7 @@ public:
     }
   }
  
-  std::size_t find(char c, std::size_t pos = 0) const{
+  std::size_t find(char c, std::size_t pos = 0) const {
   	int count =0;
   	if (_size <=14){
   		for (int i = 0 ; i < ((_size>4) ? 4: _size);i++){
