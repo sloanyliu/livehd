@@ -9,7 +9,7 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 30 // number of rand strings
+#define RNDN 15 // number of rand strings
 #define MaxLen 51 // max len + 1 for rand strings
 #define MinLen 0  // min len for rand strings
 #define RUN 1
@@ -200,6 +200,49 @@ TEST_F(Mmap_str_test, starts_with) {
   }
 }
 
+TEST_F(Mmap_str_test, ends_with) {
+  uint32_t start = 0, end = 0; 
+  
+  // ALWAYS TRUE
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string orig = s_get(i); // std::string creation
+    mmap_lib::str temp(orig);    // mmap_lib::str creation
+
+    if (temp.size() == 0) { start = 0; } // generating start indx
+    else { start = rand() % temp.size(); }
+
+    std::string stable = orig.substr(start);
+    std::string_view sv_check = stable; //sv
+    mmap_lib::str check(stable); // str
+     
+    EXPECT_TRUE(temp.ends_with(check));
+    //EXPECT_TRUE(temp.ends_with(sv_check));
+  }
+/*
+  // TRUE AND FALSE
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string orig = s_get(i);
+    mmap_lib::str temp(orig);
+    
+    if (temp.size() == 0) { start = 0; } // gen start
+    else { start = rand() % temp.size(); }
+    if (temp.size() == 0) { end = 0; } // gen end
+    else { end = rand() % temp.size() + 1; }
+    
+    std::string stable = orig.substr(start, end);
+    std::string_view sv_check = stable;
+    mmap_lib::str check(stable);
+    
+    if (start == 0) {
+      EXPECT_TRUE(temp.starts_with(check));
+      EXPECT_TRUE(temp.starts_with(sv_check));
+    } else {
+      EXPECT_FALSE(temp.starts_with(check));
+      EXPECT_FALSE(temp.starts_with(sv_check));
+    }
+  }
+  */
+}
 
 
 #if 0
