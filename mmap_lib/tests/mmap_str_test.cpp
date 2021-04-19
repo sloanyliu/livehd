@@ -200,7 +200,6 @@ TEST_F(Mmap_str_test, starts_with) {
   }
 }
 
-/*
 TEST_F(Mmap_str_test, ends_with) {
   uint32_t start = 0, end = 0; 
   
@@ -226,6 +225,7 @@ TEST_F(Mmap_str_test, ends_with) {
     //EXPECT_TRUE(temp.ends_with(sv_check));
   }
 
+  /*
   // TRUE AND FALSE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i);
@@ -248,9 +248,10 @@ TEST_F(Mmap_str_test, ends_with) {
       EXPECT_FALSE(temp.starts_with(sv_check));
     }
   }
+  */
   
 }
-*/
+
 
 #if 0
 TEST_F(Mmap_str_test, const_expr_trival_cmp) {
