@@ -25,6 +25,10 @@ protected:
   using Key_map_type = std::vector<std::pair<std::string, Node_pin>>;
 
   const std::string      name;
+
+  // correct mark as mutable to do not allow tup updates, just to mark the
+  // tuple as incorrect (not allow to mark correct once it is incorrect)
+  mutable bool correct;
   static inline Node_pin invalid_dpin;
 
   mutable Key_map_type key_map;
@@ -45,7 +49,7 @@ protected:
   static void reconnect_flop_if_needed(Node &flop, const std::string &flop_name, Node_pin &dpin);
 
 public:
-  Lgtuple(std::string_view _name) : name(_name) {}
+  Lgtuple(std::string_view _name) : name(_name), correct(true) {}
 
   static std::string_view get_last_level(std::string_view key);
   static std::string_view get_all_but_last_level(std::string_view key);
@@ -57,16 +61,28 @@ public:
                                            const std::vector<std::shared_ptr<Lgtuple const>> &tup_list);
   std::shared_ptr<Lgtuple>        make_flop(Node &flop) const;
 
+  bool is_correct() const { return correct; }
+  void set_issue() const {
+    correct = false;
+  }
+
   bool has_dpin(std::string_view key) const;
   bool has_dpin() const { return has_dpin(""); }
 
   static int              get_first_level_pos(std::string_view key);
-  static std::string_view get_first_level_name(std::string_view key);
+  static std::string_view get_canonical_name(std::string_view key);
   static int              get_last_level_pos(std::string_view key) { return get_first_level_pos(get_last_level(key)); }
 
   static bool is_single_level(std::string_view key) { return key.find('.') == std::string::npos; }
 
-  static bool is_root_attribute(std::string_view key) { return (key.substr(0, 2) == "__" && key[3] != '_'); }
+  static bool is_root_attribute(std::string_view key) {
+    if (key.substr(0, 2) == "__" && key[3] != '_')
+      return true;
+    if (key.substr(0, 4) == "0.__" && key[5] != '_')
+      return true;
+
+    return false;
+  }
 
   static bool is_attribute(std::string_view key) {
     if (is_root_attribute(key))
@@ -110,16 +126,21 @@ public:
 
   bool concat(const std::shared_ptr<Lgtuple const> tup2);
   bool concat(const Node_pin &dpin);
+  Node_pin flatten() const;
 
   /// Get all the attributes (__bits) in the same tuple level
   std::vector<std::pair<std::string, Node_pin>> get_level_attributes(std::string_view key) const;
 
   const Key_map_type &get_map() const { return key_map; }
 
+  std::string get_scalar_name() const; // empty if not scalar
+
   bool is_empty() const { return (key_map.empty()); }
 
   bool is_scalar() const;
+  bool is_ordered() const;
   bool is_trivial_scalar() const;
+  bool has_just_attributes() const;
 
   void dump() const;
 };

@@ -70,7 +70,7 @@ std::string Graphviz::graphviz_legalize_name(std::string_view name) {
     } else if (c == 36) {
       legal += "_dollar_";
     } else if (c == 58) {
-      legal += ":";
+      legal += "_colon_";
     } else if (c == 95) {
       legal += "_";
     } else {
@@ -242,7 +242,7 @@ void Graphviz::populate_lg_data(Lgraph *g, std::string_view dot_postfix) {
 void Graphviz::do_from_lnast(std::shared_ptr<Lnast> lnast, std::string_view dot_postfix) {
   std::string data = "digraph {\n";
 
-  for (const auto &itr : lnast->depth_preorder(lnast->get_root())) {
+  for (const auto &itr : lnast->depth_preorder()) {
     auto node_data = lnast->get_data(itr);
 
     auto subs = node_data.subs;

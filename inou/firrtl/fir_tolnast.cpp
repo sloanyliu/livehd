@@ -221,26 +221,20 @@ void Inou_firrtl::init_wire_dots(Lnast& lnast, const firrtl::FirrtlPB_Type& type
 // When creating a register, we have to set the register's
 // clock, reset, and init values using "dot" nodes in the LNAST.
 // These functions create all of those when a reg is first declared. 
-void Inou_firrtl::init_reg_dots(Lnast& lnast, const firrtl::FirrtlPB_Type& type, const std::string& id,
-                                const firrtl::FirrtlPB_Expression& clocke, const firrtl::FirrtlPB_Expression& resete,
-                                const firrtl::FirrtlPB_Expression& inite, Lnast_nid& parent_node) {
+void Inou_firrtl::setup_register_bits(Lnast& lnast, const firrtl::FirrtlPB_Type& type, const std::string& id, Lnast_nid& parent_node) {
   switch (type.type_case()) {
     case firrtl::FirrtlPB_Type::kBundleType: {  // Bundle Type
       for (int i = 0; i < type.bundle_type().field_size(); i++) {
-        init_reg_dots(lnast,
+        setup_register_bits(lnast,
                       type.bundle_type().field(i).type(),
                       absl::StrCat(id, ".", type.bundle_type().field(i).id()),
-                      clocke,
-                      resete,
-                      inite,
                       parent_node);
       }
       break;
     }
     case firrtl::FirrtlPB_Type::kVectorType: {  // Vector Type
       for (uint32_t i = 0; i < type.vector_type().size(); i++) {
-        /* init_reg_dots(lnast, type.vector_type().type(), absl::StrCat(id, "[", i, "]"), clocke, resete, inite, parent_node); */
-        init_reg_dots(lnast, type.vector_type().type(), absl::StrCat(id, ".", i), clocke, resete, inite, parent_node);
+        setup_register_bits(lnast, type.vector_type().type(), absl::StrCat(id, ".", i), parent_node);
       }
       break;
     }
@@ -250,13 +244,13 @@ void Inou_firrtl::init_reg_dots(Lnast& lnast, const firrtl::FirrtlPB_Type& type,
     }
     case firrtl::FirrtlPB_Type::kAsyncResetType: {  // AsyncReset
       auto reg_bits = get_bit_count(type);
-      init_reg_ref_dots(lnast, id, clocke, resete, inite, reg_bits, parent_node, false);
+      setup_register_bist_scalar(lnast, id, reg_bits, parent_node, false);
       async_rst_names.insert(id.substr(1));
       break;
     }
     case firrtl::FirrtlPB_Type::kSintType: {
       auto reg_bits = get_bit_count(type);
-      init_reg_ref_dots(lnast, id, clocke, resete, inite, reg_bits, parent_node, true);
+      setup_register_bist_scalar(lnast, id, reg_bits, parent_node, true);
       break;
     }
     case firrtl::FirrtlPB_Type::kClockType: {
@@ -266,25 +260,15 @@ void Inou_firrtl::init_reg_dots(Lnast& lnast, const firrtl::FirrtlPB_Type& type,
     default: {
       /* UInt Analog Reset Types*/
       auto reg_bits = get_bit_count(type);
-      init_reg_ref_dots(lnast, id, clocke, resete, inite, reg_bits, parent_node, false);
+      setup_register_bist_scalar(lnast, id, reg_bits, parent_node, false);
     }
   }
 }
 
-// FIXME: Eventually add in other "dot" nodes when supported.
-void Inou_firrtl::init_reg_ref_dots(Lnast& lnast, const std::string& _id, const firrtl::FirrtlPB_Expression& clocke,
-                                    const firrtl::FirrtlPB_Expression& resete, const firrtl::FirrtlPB_Expression& inite,
-                                    uint32_t bitwidth, Lnast_nid& parent_node, bool is_signed) {
-  std::string id{_id};
-
-  lnast.add_string(ReturnExprString(lnast, clocke, parent_node, true));
-  lnast.add_string(ReturnExprString(lnast, resete, parent_node, true));
-
-  // register_names.insert(id.substr(1, id.length() - 1));  // Use substr to remove "#"
-  // fmt::print("DEBUG1 register name:{}\n", id.substr(1, id.length() - 1));
-
+void Inou_firrtl::setup_register_bist_scalar(Lnast& lnast, const std::string& _id, uint32_t bitwidth, Lnast_nid& parent_node, bool is_signed) {
   // Specify __bits, if bitwidth is explicit
   if (bitwidth > 0) {
+    std::string id{_id};
     std::string_view acc_name_bw;
     if (is_signed) {
       acc_name_bw = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__sbits"));
@@ -296,86 +280,6 @@ void Inou_firrtl::init_reg_ref_dots(Lnast& lnast, const std::string& _id, const 
     lnast.add_child(idx_asg, Lnast_node::create_ref(acc_name_bw));
     lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(std::to_string(bitwidth))));
   } 
-
-  // else {
-  //   // if from chirrtl, the register bw is not explicit, create a dummy lhs(#x) = rhs(#x.__q_pin) for SSA to continue
-  //   std::string_view acc_name;
-  //   acc_name     = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__q_pin"));
-  //   auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
-  //   lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(id)));
-  //   lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-  // }
-
-  // handle the most common reset initialization (only hiFIRRTL has a meaningful flop reset description)
-  // if (resete.expression_case() == firrtl::FirrtlPB_Expression::kReference) {
-  //   reg_name2rst_init_expr.insert_or_assign(id, std::make_pair(resete, inite));
-  // }
-
-
-  // __reset/__init per expanded hier-tuple
-  bool tied0_reset = false;
-  auto resete_case = resete.expression_case();
-  if (resete_case == firrtl::FirrtlPB_Expression::kUintLiteral ||
-      resete_case == firrtl::FirrtlPB_Expression::kSintLiteral
-      ) {
-    auto acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__reset"));
-    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
-    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-    auto str_val = resete.uint_literal().value().value();
-    lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(str_val)));
-    if (str_val == "0")
-      tied0_reset = true;
-  } else if (resete_case == firrtl::FirrtlPB_Expression::kReference) {
-    auto acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__reset"));
-    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
-    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-    //std::string_view ref_str = resete.reference().id();
-    auto ref_str = get_full_name(resete.reference().id(), true);
-    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
-  }
-
-
-  auto inite_case = inite.expression_case();
-  if (tied0_reset) {
-    return;
-  } else if (inite_case == firrtl::FirrtlPB_Expression::kUintLiteral ||
-             inite_case == firrtl::FirrtlPB_Expression::kSintLiteral ) {
-    std::string_view acc_name;
-    acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__initial"));
-    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
-    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-    auto str_val = inite.uint_literal().value().value();
-    lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(str_val)));
-  } else if (inite_case == firrtl::FirrtlPB_Expression::kReference) {
-    std::string_view acc_name;
-    acc_name = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__initial"));
-    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
-    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name)));
-    // std::string_view ref_str = inite.reference().id();
-    auto ref_str = get_full_name(resete.reference().id(), true);
-    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
-  }
-
-  // // Specify __reset_async
-  // if (resete.has_reference() || resete.has_sub_field() || resete.has_sub_index() || resete.has_sub_access() || resete.has_prim_op()) {
-  //   bool is_reset_async = false;
-  //   if (resete.has_prim_op()) {
-  //     auto op = resete.prim_op().op();
-  //     if (op == firrtl::FirrtlPB_Expression_PrimOp_Op_OP_AS_ASYNC_RESET) {
-  //       is_reset_async = true;
-  //     }
-  //   } else if (async_rst_names.contains(FlattenExpression(lnast, parent_node, resete))) {
-  //     is_reset_async = true;
-  //   }
-
-  //   if (is_reset_async) {
-  //     auto acc_name_sy = CreateSelectsFromStr(lnast, parent_node, absl::StrCat(id, ".__reset_async"));
-
-  //     auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
-  //     lnast.add_child(idx_asg, Lnast_node::create_ref(acc_name_sy));
-  //     lnast.add_child(idx_asg, Lnast_node::create_const("true"));
-  //   }
-  // }
 }
 
 // Set up any of the parameters related to a Memory block.
@@ -1315,7 +1219,7 @@ void Inou_firrtl::create_io_list(const firrtl::FirrtlPB_Type& type, uint8_t dir,
     }
     case firrtl::FirrtlPB_Type::kClockType: {  // Clock type
       // vec.emplace_back(port_id, dir, 1, false);
-      vec.emplace_back(port_id, dir, 0, false); // intentionally put 0 bits, LiveHD compiler will handle clock bits later
+      vec.emplace_back(port_id, dir, 1, true); // intentionally put 1 signed bits, LiveHD compiler will handle clock bits later
       break;
     }
     case firrtl::FirrtlPB_Type::kBundleType: {  // Bundle type
@@ -1413,7 +1317,7 @@ void Inou_firrtl::ListPortInfo(Lnast& lnast, const firrtl::FirrtlPB_Port& port, 
       auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
       lnast.add_child(idx_asg, Lnast_node::create_ref(bit_acc_name));
       lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(std::to_string(port_bits))));
-    }
+    }  
   }
 }
 
@@ -1751,7 +1655,7 @@ void Inou_firrtl::AttachExprStrToNode(Lnast& lnast, const std::string_view acces
 //------------Statements----------------------
 // TODO: Attach
  
-void Inou_firrtl::setup_register_q_pin(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement &stmt) {
+void Inou_firrtl::declare_register(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement &stmt) {
   auto idx_attget = lnast.add_child(parent_node, Lnast_node::create_attr_get());
   auto full_register_name = lnast.add_string(absl::StrCat("#", stmt.register_().id()));
   auto tmp_var_str = create_tmp_var(lnast);
@@ -1767,24 +1671,66 @@ void Inou_firrtl::setup_register_q_pin(Lnast &lnast, Lnast_nid &parent_node, con
   lnast.add_child(idx_asg, Lnast_node::create_ref(tmp_var_str));
 
 
-  auto flop_qpin_var = lnast.add_string(absl::StrCat("_._", stmt.register_().id(), "_q"));
-  auto idx_asg2 = lnast.add_child(parent_node, Lnast_node::create_assign());
-  lnast.add_child(idx_asg2,    Lnast_node::create_ref(flop_qpin_var));
-  lnast.add_child(idx_asg2, Lnast_node::create_ref(lnast.add_string(full_register_name)));
+  // auto flop_qpin_var = lnast.add_string(absl::StrCat("_._", stmt.register_().id(), "_q"));
+  // auto idx_asg2 = lnast.add_child(parent_node, Lnast_node::create_assign());
+  // lnast.add_child(idx_asg2, Lnast_node::create_ref(flop_qpin_var));
+  // lnast.add_child(idx_asg2, Lnast_node::create_ref(lnast.add_string(full_register_name)));
 
-  reg2qpin.insert_or_assign(stmt.register_().id(), flop_qpin_var);
-
-
-  // auto flop_qpin_var = lnast.add_string(absl::StrCat("___", stmt.register_().id(), "_q"));
-  // auto idx_attget = lnast.add_child(parent_node, Lnast_node::create_attr_get());
-  // lnast.add_child(idx_attget, Lnast_node::create_ref(flop_qpin_var));
-  // lnast.add_child(idx_attget, Lnast_node::create_ref(lnast.add_string(absl::StrCat("#", stmt.register_().id()))));
-  
-  // std::string tmp_str = "__create_flop";
-  // lnast.add_child(idx_attget, Lnast_node::create_const(lnast.add_string(tmp_str)));
   // reg2qpin.insert_or_assign(stmt.register_().id(), flop_qpin_var);
 }
 
+
+void Inou_firrtl::setup_register_q_pin(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement &stmt) {
+  auto flop_qpin_var = lnast.add_string(absl::StrCat("_._", stmt.register_().id(), "_q"));
+  auto idx_asg2 = lnast.add_child(parent_node, Lnast_node::create_assign());
+  lnast.add_child(idx_asg2, Lnast_node::create_ref(flop_qpin_var));
+  lnast.add_child(idx_asg2, Lnast_node::create_ref(lnast.add_string(absl::StrCat("#", stmt.register_().id()))));
+
+  reg2qpin.insert_or_assign(stmt.register_().id(), flop_qpin_var);
+}
+
+void Inou_firrtl::setup_register_reset_init(Lnast &lnast, Lnast_nid &parent_node, const std::string &reg_raw_name, const firrtl::FirrtlPB_Expression &resete, const firrtl::FirrtlPB_Expression &inite) {
+  // __reset/__init on the tuple_register root
+  auto acc_name_reset = CreateSelectsFromStr(lnast, parent_node, absl::StrCat("#", reg_raw_name, ".__reset"));
+  bool tied0_reset = false;
+  auto resete_case = resete.expression_case();
+  if (resete_case == firrtl::FirrtlPB_Expression::kUintLiteral ||
+      resete_case == firrtl::FirrtlPB_Expression::kSintLiteral
+      ) {
+    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name_reset)));
+    auto str_val = resete.uint_literal().value().value();
+    lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(str_val)));
+    if (str_val == "0")
+      tied0_reset = true;
+  } else if (resete_case == firrtl::FirrtlPB_Expression::kReference) {
+    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name_reset)));
+    //std::string_view ref_str = resete.reference().id();
+    auto ref_str = get_full_name(resete.reference().id(), true);
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
+  }
+
+
+  auto inite_case = inite.expression_case();
+  if (tied0_reset) {
+    return;
+  } else if (inite_case == firrtl::FirrtlPB_Expression::kUintLiteral ||
+             inite_case == firrtl::FirrtlPB_Expression::kSintLiteral ) {
+    auto acc_name_init = CreateSelectsFromStr(lnast, parent_node, absl::StrCat("#", reg_raw_name, ".__initial"));
+    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name_init)));
+    auto str_val = inite.uint_literal().value().value();
+    lnast.add_child(idx_asg, Lnast_node::create_const(lnast.add_string(str_val)));
+  } else if (inite_case == firrtl::FirrtlPB_Expression::kReference) {
+    auto acc_name_init = CreateSelectsFromStr(lnast, parent_node, absl::StrCat("#", reg_raw_name, ".__initial"));
+    auto idx_asg = lnast.add_child(parent_node, Lnast_node::create_assign());
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(acc_name_init)));
+    // std::string_view ref_str = inite.reference().id();
+    auto ref_str = get_full_name(resete.reference().id(), true);
+    lnast.add_child(idx_asg, Lnast_node::create_ref(lnast.add_string(ref_str)));
+  }
+}
 
 void Inou_firrtl::ListStatementInfo(Lnast& lnast, const firrtl::FirrtlPB_Statement& stmt, Lnast_nid& parent_node) {
   switch (stmt.statement_case()) {
@@ -1798,15 +1744,17 @@ void Inou_firrtl::ListStatementInfo(Lnast& lnast, const firrtl::FirrtlPB_Stateme
       // register_names.insert(stmt.register_().id());
       // no matter it's scalar or tuple register, we only create for the top hierarchical variable,
       // the flop expansion is handled at lgraph
-      setup_register_q_pin(lnast, parent_node, stmt);
+      declare_register(lnast, parent_node, stmt);
+      setup_register_bits      (lnast,
+                                stmt.register_().type(),
+                                absl::StrCat("#", stmt.register_().id()),
+                                parent_node);
 
-      init_reg_dots(lnast,
-                    stmt.register_().type(),
-                    absl::StrCat("#", stmt.register_().id()),
-                    stmt.register_().clock(),
-                    stmt.register_().reset(),
-                    stmt.register_().init(),
-                    parent_node);
+      setup_register_reset_init(lnast, parent_node, 
+                                stmt.register_().id(), 
+                                stmt.register_().reset(), 
+                                stmt.register_().init());
+      setup_register_q_pin(lnast, parent_node, stmt);
       break;
     }
     case firrtl::FirrtlPB_Statement::kMemory: {  // Memory
@@ -2028,7 +1976,7 @@ void Inou_firrtl::ListUserModuleInfo(Eprp_var& var, const firrtl::FirrtlPB_Modul
   const firrtl::FirrtlPB_Module_UserModule& user_module = module.user_module();
 
   lnast->set_root(Lnast_node::create_top());
-  auto idx_stmts = lnast->add_child(lnast->get_root(), Lnast_node::create_stmts());
+  auto idx_stmts = lnast->add_child(mmap_lib::Tree_index::root(), Lnast_node::create_stmts());
 
   // Iterate over I/O of the module.
   for (int i = 0; i < user_module.port_size(); i++) {

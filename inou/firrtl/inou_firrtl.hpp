@@ -35,6 +35,8 @@ protected:
   std::string_view get_new_seq_name(Lnast &lnast);
   // std::string      get_full_name(Lnast &lnast, Lnast_nid &parent_node, const std::string &term, const bool is_rhs);
   std::string      get_full_name(const std::string &term, const bool is_rhs);
+  void             declare_register (Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement &stmt);
+  void             setup_register_reset_init(Lnast &lnast, Lnast_nid &parent_node, const std::string &reg_raw_name, const firrtl::FirrtlPB_Expression &resete, const firrtl::FirrtlPB_Expression &inite);
   void             setup_register_q_pin(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement &stmt);
 
   // Helper Functions (for handling specific cases)
@@ -42,12 +44,8 @@ protected:
   uint32_t get_bit_count(const firrtl::FirrtlPB_Type type);
   void     init_wire_dots(Lnast &lnast, const firrtl::FirrtlPB_Type &type, const std::string &id,
                           Lnast_nid &parent_node);  // const firrtl::FirrtlPB_Statement_Wire& expr, Lnast_nid& parent_node);
-  void     init_reg_dots(Lnast &lnast, const firrtl::FirrtlPB_Type &type, const std::string &id,
-                         const firrtl::FirrtlPB_Expression &clock, const firrtl::FirrtlPB_Expression &reset,
-                         const firrtl::FirrtlPB_Expression &init, Lnast_nid &parent_node);
-  void     init_reg_ref_dots(Lnast &lnast, const std::string &id, const firrtl::FirrtlPB_Expression &clock,
-                             const firrtl::FirrtlPB_Expression &reset, const firrtl::FirrtlPB_Expression &init, uint32_t bitwidth,
-                             Lnast_nid &parent_node, bool sign);
+  void setup_register_bits(Lnast &lnast, const firrtl::FirrtlPB_Type &type, const std::string &id, Lnast_nid &parent_node);
+  void setup_register_bist_scalar(Lnast &lnast, const std::string &id, uint32_t bitwidth, Lnast_nid &parent_node, bool sign);
   void PreCheckForMem(Lnast &lnast, Lnast_nid &stmt_node, const firrtl::FirrtlPB_Statement &stmt);
   void InitMemory(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_Memory &mem);
   void InitCMemory(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_CMemory &cmem);
