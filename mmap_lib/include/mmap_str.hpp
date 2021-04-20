@@ -321,6 +321,7 @@ public:
     //1) compare size
     //1) compare e
     //2) compare ptr_or_start
+    if (_size == 0 && rhs._size == 0) { return true; }
     if (_size != rhs._size) { return false; }
     for (auto i = 0; i < e.size(); ++i) {
       if (e[i] != rhs.e[i]) { return false; }
@@ -503,21 +504,26 @@ public:
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
-      auto diff = _size - en.size();
       if (_size <= 13) {// if *this is SHORT
-        uint8_t mx = posShifter(_size) - (diff);
-        uint8_t mx_st = posShifter(en.size());
 
-        for (long unsigned int i = 0, j = diff; i < en.size(); ++i, ++j) {
+        uint8_t mx = posShifter(_size);
+        mx = mx - (_size - en.size());
+        uint8_t mx_st = posShifter(en.size());
+        printf("posShift(%d) = %d for *this.\n", _size, posShifter(_size));        
+        printf("posShift(%d) = %d for en.\n", en.size(), posShifter(en.size()));        
+        printf("diff is: %d, mx is: %d, mx_st is: %d\n", _size-en.size(), mx, mx_st);
+        for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
           // -> *this and en are in ptr_or_start 
           // FIXME: things are weird here with the shifting,
           // print and check
           if ((i <= 3) && (mx_st <= 3) && (mx_st >= 0)) { // en needs to shift
             if (mx <= 3 && mx >= 0) { // *this needs to shift
-              if (isol8(ptr_or_start, mx) != isol8(en.ptr_or_start, mx_st)) {
+              uint8_t one = isol8(ptr_or_start, mx);
+              uint8_t two = isol8(en.ptr_or_start, mx_st);
+              if (one != two) {
                 printf("2\n"); 
-                printf("*this: %c\n", isol8(ptr_or_start, mx)); 
-                printf("en: %c\n", isol8(en.ptr_or_start, mx_st)); 
+                printf("*this: %d\n", isol8(ptr_or_start, mx)); 
+                printf("en: %d\n", isol8(en.ptr_or_start, mx_st)); 
                 return false;
               } else {
                 --mx_st; --mx;
@@ -538,7 +544,7 @@ public:
         return true;
       } else if (_size > 13) { // if *this is LONG
         if (en.size() > 13) { // -> en is LONG
-          for (long unsigned int i = 0, j = diff; i < en.size(); ++i, ++j) {
+          for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
             if (i < 2) { // en in e[0,1]
               if (j < 2) { // *this is in e[]
                 if (e[j] != en.e[i]) {
@@ -566,7 +572,7 @@ public:
           return true;
         } else if (en.size() <= 13) { // -> en is SHORT
           uint8_t mx_st = posShifter(en.size());
-          for (long unsigned int i = 0, j = diff; i < en.size(); ++i, ++j) {
+          for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
             if (i < 4) { //en needs to shift
               if (j < 2) { // *this in e[0,1]
                 if (e[j] != isol8(en.ptr_or_start, mx_st--)) {

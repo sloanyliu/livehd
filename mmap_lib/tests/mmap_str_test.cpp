@@ -9,8 +9,8 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 40 // number of rand strings
-#define MaxLen 51 // max len + 1 for rand strings
+#define RNDN 100 // number of rand strings
+#define MaxLen 5 // max len + 1 for rand strings
 #define MinLen 0  // min len for rand strings
 #define RUN 1
 
@@ -100,7 +100,15 @@ TEST_F(Mmap_str_test, random_comparisons) {
     std::string c_st = s_get(i % RNDN), n_st = s_get((i+1) % RNDN);
     std::string_view c_sv = c_st, n_sv = n_st;
     mmap_lib::str c_s1(c_st), n_s1(n_st), c_s2(c_sv), n_s2(c_sv);
-    
+   
+   /* 
+    std::cout << "pstr c_s1: ";
+    c_s1.print_string();
+    std::cout << "\npstr n_s1: ";
+    n_s1.print_string();
+    std::cout << std::endl;
+   */
+
     EXPECT_TRUE(c_s1 == c_s2);
     EXPECT_TRUE(c_s1 == c_st);
     EXPECT_TRUE(c_s1 == c_sv);
@@ -112,15 +120,27 @@ TEST_F(Mmap_str_test, random_comparisons) {
     EXPECT_FALSE(c_s1 != c_st.c_str());
   
     //tests for next and curr
-    EXPECT_TRUE(c_s1 != n_s1);
-    EXPECT_TRUE(c_s1 != n_st);
-    EXPECT_TRUE(c_s1 != n_sv);
-    EXPECT_TRUE(c_s1 != n_st.c_str());
+    if (c_st == n_st) {
+      EXPECT_FALSE(c_s1 != n_s1);
+      EXPECT_FALSE(c_s1 != n_st);
+      EXPECT_FALSE(c_s1 != n_sv);
+      EXPECT_FALSE(c_s1 != n_st.c_str());
     
-    EXPECT_FALSE(n_s1 == c_s1); 
-    EXPECT_FALSE(n_s1 == c_st); 
-    EXPECT_FALSE(n_s1 == c_sv);    
-    EXPECT_FALSE(n_s1 == c_st.c_str());
+      EXPECT_TRUE(n_s1 == c_s1); 
+      EXPECT_TRUE(n_s1 == c_st); 
+      EXPECT_TRUE(n_s1 == c_sv);    
+      EXPECT_TRUE(n_s1 == c_st.c_str());
+    } else { 
+      EXPECT_TRUE(c_s1 != n_s1);
+      EXPECT_TRUE(c_s1 != n_st);
+      EXPECT_TRUE(c_s1 != n_sv);
+      EXPECT_TRUE(c_s1 != n_st.c_str());
+    
+      EXPECT_FALSE(n_s1 == c_s1); 
+      EXPECT_FALSE(n_s1 == c_st); 
+      EXPECT_FALSE(n_s1 == c_sv);    
+      EXPECT_FALSE(n_s1 == c_st.c_str());
+    }
   }
 }
 
@@ -159,7 +179,6 @@ TEST_F(Mmap_str_test, isI_operator) {
 //    -> else it is false
 TEST_F(Mmap_str_test, starts_with) {
   uint32_t start = 0, end = 0; 
-
   // ALWAYS TRUE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i); // std::string creation
@@ -171,14 +190,25 @@ TEST_F(Mmap_str_test, starts_with) {
     std::string stable = orig.substr(0, end);
     std::string_view sv_check = stable; //sv
     mmap_lib::str check(stable); // str
-     
+
+
+    #if 0    
+    std::cout << "pstr temp: ";
+    temp.print_string();
+    std::cout << "\npstr check: ";
+    check.print_string();
+    std::cout << std::endl;
+    #endif
+    
     EXPECT_TRUE(temp.starts_with(check));
     EXPECT_TRUE(temp.starts_with(sv_check));
   }
 
+
   // TRUE AND FALSE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i);
+    std::string_view sv_temp = orig;
     mmap_lib::str temp(orig);
     
     if (temp.size() == 0) { start = 0; } // gen start
@@ -190,15 +220,30 @@ TEST_F(Mmap_str_test, starts_with) {
     std::string_view sv_check = stable;
     mmap_lib::str check(stable);
     
+    #if 0
+    std::cout << "pstr temp: ";
+    temp.print_string();
+    std::cout << "\npstr check: ";
+    check.print_string();
+    std::cout << std::endl;
+    #endif
+
     if (start == 0) {
       EXPECT_TRUE(temp.starts_with(check));
       EXPECT_TRUE(temp.starts_with(sv_check));
     } else {
-      EXPECT_FALSE(temp.starts_with(check));
-      EXPECT_FALSE(temp.starts_with(sv_check));
+      if (orig.substr(0, stable.size()) == stable) {
+        EXPECT_TRUE(temp.starts_with(check));
+        EXPECT_TRUE(temp.starts_with(sv_check));
+      } else {
+        EXPECT_FALSE(temp.starts_with(check));
+        EXPECT_FALSE(temp.starts_with(sv_check));
+      }
     }
   }
+
 }
+
 
 TEST_F(Mmap_str_test, ends_with) {
   uint32_t start = 0, end = 0; 
@@ -214,18 +259,19 @@ TEST_F(Mmap_str_test, ends_with) {
     std::string stable = orig.substr(start);
     std::string_view sv_check = stable; //sv
     mmap_lib::str check(stable); // str
- 
+
+    #if 0 
     std::cout << "pstr temp: ";
     temp.print_string();
     std::cout << "\npstr check: ";
     check.print_string();
     std::cout << std::endl;
+    #endif
 
     EXPECT_TRUE(temp.ends_with(check));
     //EXPECT_TRUE(temp.ends_with(sv_check));
   }
 
-  /*
   // TRUE AND FALSE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i);
@@ -240,17 +286,29 @@ TEST_F(Mmap_str_test, ends_with) {
     std::string_view sv_check = stable;
     mmap_lib::str check(stable);
     
-    if (start == 0) {
-      EXPECT_TRUE(temp.starts_with(check));
-      EXPECT_TRUE(temp.starts_with(sv_check));
+    #if 1 
+    std::cout << "pstr temp: ";
+    temp.print_string();
+    std::cout << "\npstr check: ";
+    check.print_string();
+    std::cout << std::endl;
+    #endif
+    
+    if (end == (temp.size() - 1)) {
+      EXPECT_TRUE(temp.ends_with(check));
+      //EXPECT_TRUE(temp.ends_with(sv_check));
     } else {
-      EXPECT_FALSE(temp.starts_with(check));
-      EXPECT_FALSE(temp.starts_with(sv_check));
+      if (orig.substr(orig.size() - stable.size()) == stable) {
+        EXPECT_TRUE(temp.ends_with(check));
+        //EXPECT_TRUE(temp.ends_with(sv_check));
+      } else {
+        EXPECT_FALSE(temp.ends_with(check));
+        //EXPECT_FALSE(temp.ends_with(sv_check));
+      }
     }
   }
-  */
-  
 }
+
 
 
 #if 0
