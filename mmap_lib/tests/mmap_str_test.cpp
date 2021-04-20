@@ -10,7 +10,7 @@
 #include "gtest/gtest.h"
 
 #define RNDN 100 // number of rand strings
-#define MaxLen 5 // max len + 1 for rand strings
+#define MaxLen 4 // max len + 1 for rand strings
 #define MinLen 0  // min len for rand strings
 #define RUN 1
 
@@ -202,6 +202,7 @@ TEST_F(Mmap_str_test, starts_with) {
     
     EXPECT_TRUE(temp.starts_with(check));
     EXPECT_TRUE(temp.starts_with(sv_check));
+    EXPECT_TRUE(temp.starts_with(stable));
   }
 
 
@@ -231,13 +232,16 @@ TEST_F(Mmap_str_test, starts_with) {
     if (start == 0) {
       EXPECT_TRUE(temp.starts_with(check));
       EXPECT_TRUE(temp.starts_with(sv_check));
+      EXPECT_TRUE(temp.starts_with(stable));
     } else {
       if (orig.substr(0, stable.size()) == stable) {
         EXPECT_TRUE(temp.starts_with(check));
         EXPECT_TRUE(temp.starts_with(sv_check));
+        EXPECT_TRUE(temp.starts_with(stable));
       } else {
         EXPECT_FALSE(temp.starts_with(check));
         EXPECT_FALSE(temp.starts_with(sv_check));
+        EXPECT_FALSE(temp.starts_with(stable));
       }
     }
   }
@@ -260,7 +264,7 @@ TEST_F(Mmap_str_test, ends_with) {
     std::string_view sv_check = stable; //sv
     mmap_lib::str check(stable); // str
 
-    #if 0 
+    #if 0
     std::cout << "pstr temp: ";
     temp.print_string();
     std::cout << "\npstr check: ";
@@ -269,7 +273,8 @@ TEST_F(Mmap_str_test, ends_with) {
     #endif
 
     EXPECT_TRUE(temp.ends_with(check));
-    //EXPECT_TRUE(temp.ends_with(sv_check));
+    EXPECT_TRUE(temp.ends_with(sv_check));
+    EXPECT_TRUE(temp.ends_with(stable));
   }
 
   // TRUE AND FALSE
@@ -286,7 +291,7 @@ TEST_F(Mmap_str_test, ends_with) {
     std::string_view sv_check = stable;
     mmap_lib::str check(stable);
     
-    #if 1 
+    #if 0 
     std::cout << "pstr temp: ";
     temp.print_string();
     std::cout << "\npstr check: ";
@@ -294,16 +299,19 @@ TEST_F(Mmap_str_test, ends_with) {
     std::cout << std::endl;
     #endif
     
-    if (end == (temp.size() - 1)) {
+    if (end == temp.size()) {
       EXPECT_TRUE(temp.ends_with(check));
-      //EXPECT_TRUE(temp.ends_with(sv_check));
+      EXPECT_TRUE(temp.ends_with(sv_check));
+      EXPECT_TRUE(temp.ends_with(stable));
     } else {
       if (orig.substr(orig.size() - stable.size()) == stable) {
         EXPECT_TRUE(temp.ends_with(check));
-        //EXPECT_TRUE(temp.ends_with(sv_check));
+        EXPECT_TRUE(temp.ends_with(sv_check));
+        EXPECT_TRUE(temp.ends_with(stable));
       } else {
         EXPECT_FALSE(temp.ends_with(check));
-        //EXPECT_FALSE(temp.ends_with(sv_check));
+        EXPECT_FALSE(temp.ends_with(sv_check));
+        EXPECT_FALSE(temp.ends_with(stable));
       }
     }
   }

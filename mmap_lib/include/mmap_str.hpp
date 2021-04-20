@@ -509,35 +509,35 @@ public:
         uint8_t mx = posShifter(_size);
         mx = mx - (_size - en.size());
         uint8_t mx_st = posShifter(en.size());
-        printf("posShift(%d) = %d for *this.\n", _size, posShifter(_size));        
-        printf("posShift(%d) = %d for en.\n", en.size(), posShifter(en.size()));        
-        printf("diff is: %d, mx is: %d, mx_st is: %d\n", _size-en.size(), mx, mx_st);
+        //printf("posShift(%d) = %d for *this.\n", _size, posShifter(_size));        
+        //printf("posShift(%d) = %d for en.\n", en.size(), posShifter(en.size()));        
+        //printf("diff is: %d, mx is: %d, mx_st is: %d\n", _size-en.size(), mx, mx_st);
         for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
           // -> *this and en are in ptr_or_start 
-          // FIXME: things are weird here with the shifting,
-          // print and check
           if ((i <= 3) && (mx_st <= 3) && (mx_st >= 0)) { // en needs to shift
             if (mx <= 3 && mx >= 0) { // *this needs to shift
               uint8_t one = isol8(ptr_or_start, mx);
               uint8_t two = isol8(en.ptr_or_start, mx_st);
               if (one != two) {
-                printf("2\n"); 
-                printf("*this: %d\n", isol8(ptr_or_start, mx)); 
-                printf("en: %d\n", isol8(en.ptr_or_start, mx_st)); 
+                //printf("2\n"); 
+                //printf("*this: %d\n", isol8(ptr_or_start, mx)); 
+                //printf("en: %d\n", isol8(en.ptr_or_start, mx_st)); 
                 return false;
               } else {
                 --mx_st; --mx;
               }
             } else { // *this does not need to shift anymore
               if (e[j-4] != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
-                printf("3\n"); return false;
+                //printf("3\n"); 
+                return false;
               } else {
                 --mx_st;
               }
             }
           } else { // en goes to e
             if (e[j-4] != en.e[i-4]) {
-              printf("4\n"); return false;
+              //printf("4\n"); 
+              return false;
             }
           } 
         }
@@ -548,23 +548,27 @@ public:
             if (i < 2) { // en in e[0,1]
               if (j < 2) { // *this is in e[]
                 if (e[j] != en.e[i]) {
-                  printf("5\n"); return false;
+                  //printf("5\n"); 
+                  return false;
                 }
               } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vector now
                 if (string_vector.at(ptr_or_start + (j-2)) != en.e[i]) {
-                  printf("6\n"); return false;
+                  //printf("6\n"); 
+                  return false;
                 }
               } 
             } else if ((i >= 2) && (i < (en.size() - 8))) { // en in vec
               if ((j >= 2) && (j < (_size - 8))) { // *this is in vector
                 if (string_vector.at(ptr_or_start + (j-2)) != string_vector.at(en.ptr_or_start + (i-2))) {
-                  printf("7\n"); return false;
+                  //printf("7\n"); 
+                  return false;
                 }
               }
             } else { // last 8 for both
               if (l8(_size,j) <= 9 && l8(en.size(),i) <= 9 && l8(_size,j) == l8(en.size(),i)) {
                 if (e[l8(_size, j)] != en.e[l8(en.size(), i)]) {
-                  printf("8\n"); return false;
+                  //printf("8\n"); 
+                  return false;
                 }
               }
             }
@@ -575,20 +579,22 @@ public:
           for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
             if (i < 4) { //en needs to shift
               if (j < 2) { // *this in e[0,1]
-                if (e[j] != isol8(en.ptr_or_start, mx_st--)) {
-                  printf("9\n"); return false;
+                if (e[j] != static_cast<char>(isol8(en.ptr_or_start, mx_st--))) {
+                  //printf("9\n"); 
+                  return false;
                 }
               } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vec
                 if (string_vector.at(ptr_or_start + (j-2)) != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
-                  printf("10\n"); return false;
+                  //printf("10\n"); 
+                  return false;
                 } else {
                   --mx_st;
                 }
               } else { // *this is in last 8
                 if (e[l8(_size, j)] != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
-                  printf("11\n"); 
-                  std::cout << "e[" << l8(_size,j) << "]: " << e[l8(_size, j)] << std::endl;
-                  printf("ptr_or_start shifter: %c\n", isol8(en.ptr_or_start, mx_st));
+                  //printf("11\n"); 
+                  //std::cout << "e[" << l8(_size,j) << "]: " << e[l8(_size, j)] << std::endl;
+                  //printf("ptr_or_start shifter: %c\n", isol8(en.ptr_or_start, mx_st));
                   return false;
                 } else {
                   --mx_st;
@@ -597,11 +603,13 @@ public:
             } else { // en is in e[]
               if ((j >= 2) && (j < (_size - 8))) {
                 if (string_vector.at(ptr_or_start + (j-2)) != en.e[i-4]) {
-                  printf("13\n"); return false;
+                  //printf("13\n"); 
+                  return false;
                 }
               } else { // *this is in last 8
                 if (e[l8(_size, j)] != en.e[i-4]) {
-                  printf("14\n"); return false;
+                  //printf("14\n"); 
+                  return false;
                 }
               }
             }
@@ -616,8 +624,62 @@ public:
   bool ends_with(std::string_view en) const {
     if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
+    else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
       // Actual compare logic
+      auto fndsize = 0;
+      if (_size <= 13) {
+        uint8_t mx = posShifter(_size);
+        mx = mx - (_size - en.size());
+        for (auto j = _size-en.size(); j < _size; ++j) {
+          if (j <= 3) { // *this needs to shift
+            
+            if (static_cast<char>(isol8(ptr_or_start, mx)) != en[fndsize++]) {
+              //printf("1\n");
+              return false;
+            } else {
+              --mx;
+              if (fndsize == en.size()) { return true; }
+            }            
+          } else { // *this is in e
+            if (e[j-4] != en[fndsize++]) {
+              //printf("2\n");
+              return false;
+            } else {
+              --mx;
+              if (fndsize == en.size()) { return true; }
+            }
+          }
+        }
+        return true;
+      } else { 
+        for (auto j = _size-en.size(); j < _size; ++j) {
+          if (j < 2) {
+            if (e[j] != en[fndsize++]) {
+              //printf("3\n");
+              return false;
+            } else {
+              if (fndsize == en.size()) { return true; }
+            }
+          } else if (j >= 2 && j < (_size-8)) {
+            if (string_vector.at(ptr_or_start + (j-2)) != en[fndsize++]) {
+              //printf("4\n");
+              return false;
+            } else {
+              if (fndsize == en.size()) { return true; }
+            }
+          } else {
+            if (e[l8(_size, j)] != en[fndsize++]) {
+              //printf("5\n");
+              return false;
+            } else {
+              if (fndsize == en.size()) { return true; }
+            }
+          }
+        }
+        return true;
+      }
+      //printf("6\n");
       return false;
     }
   }
