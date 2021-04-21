@@ -710,6 +710,15 @@ public:
 
   // returns a pstr from two objects (pstr)
   static str concat(const str &a, const str &b) {
+    
+    std::string start = a.to_s();
+    start += b.to_s();
+    return mmap_lib::str(start);
+
+    // Directly modify the data in string_vec (similar to constructor)
+    // First create a small string and then add to it
+
+    #if 0
     // concat a str -> make a new str?
     std::string front, back;
     
@@ -763,7 +772,7 @@ public:
         }
       } else { // if b is LONG, a can be LONG or SHORT
         if (a.size() <= 13) { // a is SHORT
-        
+          
         } else { // a is LONG
 
         }
@@ -773,7 +782,7 @@ public:
       // if a is SHORT, b is SHORT
       // if a is LONG, b can be LONG or SHORT
     }
-
+    #endif
   }
 
 
