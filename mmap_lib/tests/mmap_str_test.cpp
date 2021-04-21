@@ -9,20 +9,17 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 100 // number of rand strings
-#define MaxLen 4 // max len + 1 for rand strings
-#define MinLen 0  // min len for rand strings
+#define RNDN 200 // number of rand strings
+#define MaxLen 50 // max len + 1 for rand strings
+#define MaxNum 10 
+#define MinLen 2  // min len for rand strings
+#define MinNum 1
 #define RUN 1
 
 class Mmap_str_test : public ::testing::Test {
   //std::vector<std::vector<std::string>> ast_sorted_verification;
   std::vector<std::string> str_bank;
-  std::vector<std::string> num_bank = {"hello", "888888", "-111111", "123g5", 
-                                       "-1234f", "12.34", "0.44", "-123.56", 
-                                       "-g12350", "0"};
-  std::vector<bool> isi_res =         {false, true, true, false, 
-                                       false, false, false, false, 
-                                       false, true};
+  std::vector<std::string> num_bank;
 
 public:
 
@@ -33,17 +30,42 @@ public:
     // random string generation
     for (uint8_t i = 0; i < RNDN; ++i) { // # of strings in vectors
       std::string ele;
-      t_len = MinLen + (rand() % MaxLen); // deciding string length (0-31)                      
+      t_len = MinLen + (rand() % (MaxLen-MinLen)); // deciding string length (0-31)
       // construct string with ASCII (32-126) -> 95 chars
-      for(uint8_t j = 0; j < t_len; ++j) { ele += ('!' + (rand() % 94)); }
+      for(uint8_t j = 0; j < t_len; ++j) { 
+        if (j % 2 == 0) {
+          uint8_t hd = rand() % 94;
+          while (hd >= 15 && hd <= 24) {
+            hd = rand() % 94;
+          }
+          ele += ('!' + hd);
+        } else {
+          ele += ('!' + (rand() % 94)); 
+        }
+      }
       str_bank.push_back(ele); // add string to vector
+    }
+
+    for (uint8_t i = 0; i < RNDN; ++i) {
+      std::string ele;
+      t_len = MinNum + (rand() % (MaxNum-MinNum));
+      for (uint8_t j = 0; j < t_len; ++j) { 
+        if (j == 0) {
+          if ((rand() % 2) == 1) { 
+            ele += '-';
+            ele += ('1' + (rand() % 9)); 
+          } else { 
+            ele += ('1' + (rand() % 9)); 
+          }
+        } else { ele += ('0' + (rand() % 10)); }
+      }
+      num_bank.push_back(ele);
     }
   }
 
   // wrapper for .at() since vectors are private
   std::string s_get(int i) { return str_bank.at(i); }
   std::string n_get(int i) { return num_bank.at(i); }
-  bool isi_res_get(int i) { return isi_res.at(i); }
 };
 
 // TEST_F are different types of tests
@@ -101,13 +123,13 @@ TEST_F(Mmap_str_test, random_comparisons) {
     std::string_view c_sv = c_st, n_sv = n_st;
     mmap_lib::str c_s1(c_st), n_s1(n_st), c_s2(c_sv), n_s2(c_sv);
    
-   /* 
+    #if 0 
     std::cout << "pstr c_s1: ";
     c_s1.print_string();
     std::cout << "\npstr n_s1: ";
     n_s1.print_string();
     std::cout << std::endl;
-   */
+    #endif
 
     EXPECT_TRUE(c_s1 == c_s2);
     EXPECT_TRUE(c_s1 == c_st);
@@ -158,14 +180,23 @@ TEST_F(Mmap_str_test, random_at_operator) {
 // Uses two user-generated arrays to check each other
 // one for numbers, one for outcomes (bool)
 TEST_F(Mmap_str_test, isI_operator) {
-  //FIXME: how to come up with rand gen tests for is_i?
-  // IDEA: pull from two vecs, but one is rand gen for just numbers
-  //       other will be rand str vec
-  //       If pull from rand strs => false
-  //       If pull from rand nums => true
-  for (auto i = 0; i < 10; ++i) {
-    mmap_lib::str temp(n_get(i)); 
-    EXPECT_EQ(temp.is_i(), isi_res_get(i));
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string hold1 = n_get(i), hold2 = s_get(i);
+    mmap_lib::str str1(hold1), str2(hold2);
+   
+    #if 0 
+    std::cout << "str1: ";
+    str1.print_string();
+    std::cout << "\nstr2: ";
+    str2.print_string();
+    std::cout << "\n";
+    #endif
+
+    if ((rand() % 100) >= 50) {
+      EXPECT_TRUE(str1.is_i());
+    } else {
+      EXPECT_FALSE(str2.is_i());
+    }
   }
 }
 
@@ -317,6 +348,36 @@ TEST_F(Mmap_str_test, ends_with) {
   }
 }
 
+
+#if 0
+TEST_F(Mmap_str_test, find) {
+  for (auto i = 0; i < RNDN; ++i) { 
+    std::string curr = s_get(i % RNDN), next = s_get((i+1) % RNDN);
+    auto start = rand() % curr.size(), end = (rand() % curr.size())+1;
+    auto start2 = rand() % next.size(), end2 = (rand() % next.size())+1;
+    std::string stable_c = curr.substr(start, end), stable_n = next.substr(start2, end2);
+    std::string_view c_sv = stable_c, n_sv = stable_n;
+    mmap_lib::str curr_str(curr), next_str(next), curr_sub(stable_c), next_sub(stable_n);
+
+
+    #if 1
+    std::cout << "curr_str: ";
+    curr_str.print_string();
+    std::cout << "\ncurr_sub: ";
+    curr_sub.print_string();
+    std::cout << "\nnext_str: ";
+    next_str.print_string();
+    std::cout << "\nnext_sub: ";
+    next_sub.print_string();
+    std::cout << "\n";
+    #endif
+
+
+    EXPECT_EQ(curr_str.find(curr_sub), curr.find(stable_c));
+    EXPECT_EQ(next_str.find(next_sub), next.find(stable_n)); 
+  }
+}
+#endif
 
 
 #if 0

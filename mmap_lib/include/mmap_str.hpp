@@ -14,6 +14,7 @@
 #define posStopper(s) s<4 ? s:4
 #define isol8(pos, s) (pos >> (s*8)) & 0xff
 #define l8(size, i) i - (size - 10) 
+#define mid(pos, i) pos + (i-2)
 
 namespace mmap_lib {
 
@@ -375,7 +376,9 @@ public:
       if (_size <= 13) { //==== case 1: if *this is SHORT, st is SHORT
         for (auto i = 0; i < st.size(); ++i) { // iterate based on st
           if (i < 4) { // for *this and st, first 4 will be in p_o_s
-            if (((st.ptr_or_start >> (mx_st*8)) & 0xff) != ((ptr_or_start >> (mx*8)) & 0xff)) {
+            uint8_t one = isol8(st.ptr_or_start,mx_st);
+            uint8_t two = isol8(ptr_or_start,mx);
+            if (one != two) {
               return false;
             } else { --mx_st; --mx; }
           } else { // rest of string will be in e
@@ -392,14 +395,14 @@ public:
             // for *this, data will be in e -> index with i
             // for st   , data will be in p_o_s -> shift 
             if (i < 2) { // i = 0, 1 : *this.e is used, st.ptr_or_start is used
-              if (e[e_ptr] != ((st.ptr_or_start >> (mx_st*8)) & 0xff)) { 
+              if (e[e_ptr] != static_cast<char>(isol8(st.ptr_or_start,mx_st))) { 
                 return false; 
               } else { --mx_st; ++e_ptr; }
             // i = 2, 3
             // for *this, data will be in vec only -> index with v_ptr
             // for st   , data will be in p_o_s -> shift
             } else if ((i >= 2) && (i < 4)) {
-              if (string_vector.at(v_ptr) != ((st.ptr_or_start >> (mx_st*8)) & 0xff)) {
+              if (string_vector.at(v_ptr) != static_cast<char>(isol8(st.ptr_or_start,mx_st))) {
                 return false;
               } else { --mx_st; ++v_ptr; }
             // i = 4 ... 12 (max)
@@ -464,7 +467,7 @@ public:
       if (_size <= 13) {
         uint8_t mx = posShifter(_size);
         for (auto i = mx; i >= 0, i <= 3; --i) {
-          if (((ptr_or_start >> (i*8)) & 0xff) != st[fndsize++] ) {
+          if (static_cast<char>(isol8(ptr_or_start,i)) != st[fndsize++] ) {
             return false; 
           }
           if (fndsize == st.size()) { return true; }
@@ -500,15 +503,15 @@ public:
 
   // checks if *this pstr ends with en
   bool ends_with(const str &en) const {
-    if (en.size() > _size) { printf("1\n"); return false; }
+    if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
-      if (_size <= 13) {// if *this is SHORT
-
-        uint8_t mx = posShifter(_size);
-        mx = mx - (_size - en.size());
-        uint8_t mx_st = posShifter(en.size());
+      if (_size <= 13) {// if *this is SHORT, en is SHORT too
+        uint8_t mx = posShifter(_size); // shifter for *this
+        mx = mx - (_size - en.size()); // adjusted for size of en
+        uint8_t mx_st = posShifter(en.size()); // en's shifter
+        // i keeps track of en, j keeps track of *this
         for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
           // -> *this and en are in ptr_or_start 
           if ((i <= 3) && (mx_st <= 3) && (mx_st >= 0)) { // en needs to shift
@@ -522,25 +525,25 @@ public:
                 return false;
               } else { --mx_st; }
             }
-          } else { // en goes to e
+          } else { // en is in e now
             if (e[j-4] != en.e[i-4]) { return false; }
           } 
         }
         return true;
-      } else if (_size > 13) { // if *this is LONG
+      } else if (_size > 13) { // if *this is LONG, en can be either
         if (en.size() > 13) { // -> en is LONG
           for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
             if (i < 2) { // en in e[0,1]
               if (j < 2) { // *this is in e[]
                 if (e[j] != en.e[i]) { return false; }
               } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vector now
-                if (string_vector.at(ptr_or_start + (j-2)) != en.e[i]) {
+                if (string_vector.at(mid(ptr_or_start,j)) != en.e[i]) {
                   return false;
                 }
               } 
             } else if ((i >= 2) && (i < (en.size() - 8))) { // en in vec
               if ((j >= 2) && (j < (_size - 8))) { // *this is in vector
-                if (string_vector.at(ptr_or_start + (j-2)) != string_vector.at(en.ptr_or_start + (i-2))) {
+                if (string_vector.at(mid(ptr_or_start,j)) != string_vector.at(mid(en.ptr_or_start,i))) {
                   return false;
                 }
               }
@@ -561,8 +564,8 @@ public:
                 if (e[j] != static_cast<char>(isol8(en.ptr_or_start, mx_st--))) {
                   return false;
                 }
-              } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vec
-                if (string_vector.at(ptr_or_start + (j-2)) != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
+              } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vec 
+                if (string_vector.at(mid(ptr_or_start,j)) != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
                   return false;
                 } else { --mx_st; }
               } else { // *this is in last 8
@@ -572,7 +575,7 @@ public:
               }
             } else { // en is in e[]
               if ((j >= 2) && (j < (_size - 8))) {
-                if (string_vector.at(ptr_or_start + (j-2)) != en.e[i-4]) {
+                if (string_vector.at(mid(ptr_or_start,j)) != en.e[i-4]) {
                   return false;
                 }
               } else { // *this is in last 8
@@ -594,45 +597,35 @@ public:
     else if (en.size() < _size) {
       // Actual compare logic
       auto fndsize = 0;
-      if (_size <= 13) {
+      if (_size <= 13) { // *this is SHORT
         uint8_t mx = posShifter(_size);
-        mx = mx - (_size - en.size());
-        for (auto j = _size-en.size(); j < _size; ++j) {
+        mx = mx - (_size - en.size()); //shifter for *this
+        for (auto j = _size-en.size(); j < _size; ++j) { // iterate on *this
           if (j <= 3) { // *this needs to shift
-            
             if (static_cast<char>(isol8(ptr_or_start, mx)) != en[fndsize++]) {
               return false;
-            } else {
-              --mx;
-              if (fndsize == en.size()) { return true; }
-            }            
+            } else { --mx; }             
+            if (fndsize == en.size()) { return true; }
           } else { // *this is in e
             if (e[j-4] != en[fndsize++]) { return false; } 
-            else {
-              --mx;
-              if (fndsize == en.size()) { return true; }
-            }
+            else { --mx; }
+            if (fndsize == en.size()) { return true; }
           }
         }
         return true;
-      } else { 
+      } else { // *this is LONG
         for (auto j = _size-en.size(); j < _size; ++j) {
-          if (j < 2) {
+          if (j < 2) { // first two in e
             if (e[j] != en[fndsize++]) { return false; } 
-            else {
-              if (fndsize == en.size()) { return true; }
-            }
-          } else if (j >= 2 && j < (_size-8)) {
-            if (string_vector.at(ptr_or_start + (j-2)) != en[fndsize++]) {
+            if (fndsize == en.size()) { return true; }
+          } else if (j >= 2 && j < (_size-8)) { // in string_vec
+            if (string_vector.at(mid(ptr_or_start,j)) != en[fndsize++]) {
               return false;
-            } else {
-              if (fndsize == en.size()) { return true; }
             }
+            if (fndsize == en.size()) { return true; }
           } else {
             if (e[l8(_size, j)] != en[fndsize++]) { return false; } 
-            else {
-              if (fndsize == en.size()) { return true; }
-            }
+            if (fndsize == en.size()) { return true; }
           }
         }
         return true;
@@ -647,50 +640,64 @@ public:
   }
 
   //OLY
+
   std::size_t find(const str &v, std::size_t pos = 0) const{
     if (v._size >_size) return -1;
     //if size ==vsize and == is true return 0 else return -1
-    if (_size<=14){
-    	return -1;// find_small_size(this, v, pos);
+    if (_size<14){
+      char first = ((v.ptr_or_start >> (8 * (v._size-1))) & 0xFF);//different ways
+      size_t retval = 0;
+      bool found_flag = false;
+      int i,j,k;
+      int e_pos_self =0;
+      int e_pos_thier =0;
+      for ( i =0; i <4 ; i++){
+        retval = 0;
+        found_flag = false;
+        e_pos_self =0;
+        e_pos_thier =0;
+        if ((first == ((ptr_or_start >> (8 * (3 - i))) & 0xFF)) and  ( pos >= i)) {
+          retval = i;
+          found_flag = true;
+          for ( j = i,  k =1; j< 4; j++,k++){
+            
+            if (((v.ptr_or_start >> (8 * (3 - k))) & 0xFF) != ((ptr_or_start >> (8 * (3 - j))) & 0xFF)){
+              found_flag = false;
+              break;
+            }
+          }
+          while(k < v._size){
+            if (k < 4){
+              if(((v.ptr_or_start >> (8 * (3 - k))) & 0xFF)  != e[e_pos_self]) {
+
+                found_flag = false;
+                break;
+              }
+            } else {
+              if (v.e[e_pos_thier ] != e[e_pos_self]){
+                found_flag = false;
+                e_pos_thier++;
+                break;
+              }
+            }
+            e_pos_self++;
+            k++;
+          }
+
+        }
+        if (found_flag == true) return retval;
+      }
+      //if you havent found the string at this point and this string is < 4 chaars then find returns -1
+      //if((_size < 4 ) and (found_flag == false)) return -1;
+      return -1;
     } else {
-    	std::string my_string = this->to_s();
-    	std::string their_string = v.to_s ();
-    	return my_string.find(their_string);
+      std::string my_string = this->to_s();
+      std::string their_string = v.to_s ();
+      return my_string.find(their_string);
     }
   }
- 
-  std::size_t find(char c, std::size_t pos = 0) const {
-  	int count =0;
-  	if (_size <=14){
-  		for (int i = 0 ; i < ((_size>4) ? 4: _size);i++){
-  			char first = ((ptr_or_start >> (8 * (_size -1))) & 0xFF);
-  			if ((first == c) and (count >= pos )) return count;
-  			count ++;
-  		}
-  		if (_size >4 ){
-  			for (int i =0; i < (_size -4); i++){
-  				if ((e[i]) and (count >= pos)) return count ;
-  			}
-  		}
-  		return -1;
-  	} else {
-  		for (int i = 0 ; i <  2;i++){
-  			if ((e[i] == c) and (count >= pos) ) return count ;
-  			count ++;
-  		}
-  		for (int i = 0 ; i< (_size-10); i++){
-  			if ((string_vector.at(i)) and (count >= pos )) return count ;
-  			count ++;
-  		}
-  		for (int i = 2 ; i <  10;i++){
-  			if ((e[i] == c) and (count >= pos) ) return count ;
-  			count ++;
-  		}
-  		return -1;
-
-  	}
-  }
-
+  
+  std::size_t find(char c, std::size_t pos = 0) const;
   template <std::size_t N>
   constexpr std::size_t find(const char (&s)[N], std::size_t pos = 0) {
     return find(str(s), pos);
@@ -702,7 +709,9 @@ public:
   std::size_t rfind(const char *s, std::size_t pos = 0) const;
 
   // returns a pstr from two objects (pstr)
-  static str concat(const str &a, const str &b);
+  static str concat(const str &a, const str &b) {
+    
+  }
   static str concat(std::string_view a, const str &b);
   static str concat(const str &a, std::string_view b);
   static str concat(const str &a, int v);  // just puts two things together concat(x, b); -> x.append(b)
