@@ -725,7 +725,8 @@ public:
   //    0) use ctor 0 to make object
   //    a) add a strMap entry
   //    b) find end of strVec, then directly add on to vec
-  // 3) 
+  // 3) Easy way -> worst runtime, easiest to code 
+  //    > Currently implemented
   static str concat(const str &a, const str &b) { 
     return a.append(b);
   }
@@ -743,11 +744,36 @@ public:
     return a.append(v);
   }
 
+
+  #if 1
   str append(const str &b) const {
     std::string start = this->to_s();
     start += b.to_s();
     return mmap_lib::str(start);
   }
+  #endif
+
+  #if 0
+  // 2) create a new string and directly add into strVec (O(a+b))
+  //    -> The only thing here is that it's kind of copies ctor logic
+  //    0) use ctor 0 to make object
+  //    a) add a strMap entry
+  //    b) find end of strVec, then directly add on to vec
+  str append(const str &b) const {
+    mmap_lib::str ret();
+    uint16_t comb_size = _size + b.size();
+    if (comb_size <= 13) { // resulting combination will be SHORT
+      // both must be SHORT
+      // if *this.size >= 4: ret.pos = *this.pos, everything else in e
+      // else: ret.pos is combination of *this.pos and b.pos, everything else in e
+    } else {
+      // *this is SHORT, b is SHORT
+      // *this is SHORT, b is LONG
+      // *this is LONG, b is SHORT
+      // *this is LONG, b is LONG
+    }
+  }
+  #endif
 
   str append(std::string_view b) const {
     return this->append(mmap_lib::str(b));
