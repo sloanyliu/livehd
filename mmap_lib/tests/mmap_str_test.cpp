@@ -119,7 +119,7 @@ TEST_F(Mmap_str_test, random_ctor) {
 TEST_F(Mmap_str_test, random_comparisons) {
   for (auto i = 0; i < RNDN; ++i) {
     // from the str_bank, get string at current index and next index
-    std::string c_st = s_get(i % RNDN), n_st = s_get((i+1) % RNDN);
+    std::string c_st = s_get(i), n_st = s_get((i+1) % RNDN);
     std::string_view c_sv = c_st, n_sv = n_st;
     mmap_lib::str c_s1(c_st), n_s1(n_st), c_s2(c_sv), n_s2(c_sv);
    
@@ -216,7 +216,7 @@ TEST_F(Mmap_str_test, starts_with) {
     mmap_lib::str temp(orig);    // mmap_lib::str creation
 
     if (temp.size() == 0) { end = 0; } // generating end indx
-    else { end = rand() % temp.size() + 1; }
+    else { end = (rand() % temp.size()) + 1; }
 
     std::string stable = orig.substr(0, end);
     std::string_view sv_check = stable; //sv
@@ -243,10 +243,12 @@ TEST_F(Mmap_str_test, starts_with) {
     std::string_view sv_temp = orig;
     mmap_lib::str temp(orig);
     
-    if (temp.size() == 0) { start = 0; } // gen start
-    else { start = rand() % temp.size(); }
-    if (temp.size() == 0) { end = 0; } // gen end
-    else { end = rand() % temp.size() + 1; }
+    if (temp.size() == 0) { 
+      start = 0; end = 0;
+    } else { 
+      start = rand() % temp.size(); 
+      end = (rand() % (temp.size()-start)) + 1; 
+    }
     
     std::string stable = orig.substr(start, end);
     std::string_view sv_check = stable;
@@ -313,10 +315,12 @@ TEST_F(Mmap_str_test, ends_with) {
     std::string orig = s_get(i);
     mmap_lib::str temp(orig);
     
-    if (temp.size() == 0) { start = 0; } // gen start
-    else { start = rand() % temp.size(); }
-    if (temp.size() == 0) { end = 0; } // gen end
-    else { end = rand() % temp.size() + 1; }
+    if (temp.size() == 0) { 
+      start = 0; end = 0;
+    } else { 
+      start = rand() % temp.size(); 
+      end = (rand() % (temp.size()-start)) + 1; 
+    }
     
     std::string stable = orig.substr(start, end);
     std::string_view sv_check = stable;
@@ -348,19 +352,44 @@ TEST_F(Mmap_str_test, ends_with) {
   }
 }
 
+TEST_F(Mmap_str_test, to_s) {
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string temp = s_get(i);
+    mmap_lib::str check(temp);
+    std::string hold = check.to_s();
+    EXPECT_EQ(temp, hold);
+  }
+}
+
+// Failing some tests. returning -1 at the wrong time
 
 #if 0
 TEST_F(Mmap_str_test, find) {
   for (auto i = 0; i < RNDN; ++i) { 
-    std::string curr = s_get(i % RNDN), next = s_get((i+1) % RNDN);
-    auto start = rand() % curr.size(), end = (rand() % curr.size())+1;
-    auto start2 = rand() % next.size(), end2 = (rand() % next.size())+1;
+    std::string curr = s_get(i), next = s_get((i+1) % RNDN);
+    uint32_t start=0, start2=0, end=0, end2=0;    
+    
+    
+    if (curr.size() == 0) { 
+      start = 0; end = 0;
+    } else { 
+      start = rand() % curr.size(); 
+      end = (rand() % (curr.size()-start)) + 1; 
+    }
+    
+    if (next.size() == 0) { 
+      start2 = 0; end2 = 0;
+    } else { 
+      start2 = rand() % next.size(); 
+      end2 = (rand() % (next.size()-start2)) + 1; 
+    }
+    
+    
     std::string stable_c = curr.substr(start, end), stable_n = next.substr(start2, end2);
     std::string_view c_sv = stable_c, n_sv = stable_n;
     mmap_lib::str curr_str(curr), next_str(next), curr_sub(stable_c), next_sub(stable_n);
 
-
-    #if 1
+    #if 0
     std::cout << "curr_str: ";
     curr_str.print_string();
     std::cout << "\ncurr_sub: ";
@@ -374,7 +403,8 @@ TEST_F(Mmap_str_test, find) {
 
 
     EXPECT_EQ(curr_str.find(curr_sub), curr.find(stable_c));
-    EXPECT_EQ(next_str.find(next_sub), next.find(stable_n)); 
+    EXPECT_EQ(next_str.find(next_sub), next.find(stable_n));
+    
   }
 }
 #endif

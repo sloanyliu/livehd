@@ -60,7 +60,7 @@ public:
   // this holds all the raw data, (int kinda weird?)
   inline static std::vector<int> string_vector; // ptr_or_start points here! 
   
-  //===========constructor 1============
+  //===========constructor 1 (_size <= 13) ============
   template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
     // if _size is less than 4, then whole thing will be in ptr_or_start
@@ -118,7 +118,7 @@ public:
 #endif
   }
 
-  //==========constructor 2==========
+  //==========constructor 2 (_size >= 14) ==========
   template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
     // the first two characters saved in e
@@ -860,12 +860,14 @@ public:
     }
     std::cout << "The input is not an integer " << std::endl;
   } 
-  
+
+
+
   std::string to_s() const{  // convert to string
     std::string out;
-    if (_size <= 14 ){
+    if (_size <= 13 ){
       //adding charactors from ptr_or_start based on the size of the string
-      for (int i =0; i<((_size>4) ? 4: _size); i++){
+      for (int i =0; i < ((_size>4) ? 4: _size); i++){
         int temp = (_size >= 4) ? 3 : (_size-1); 
         out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
         //std::cout << "The out is  " << out << std::endl;
