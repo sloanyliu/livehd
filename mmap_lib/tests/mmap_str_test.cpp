@@ -10,7 +10,7 @@
 #include "gtest/gtest.h"
 
 #define RNDN 200 // number of rand strings
-#define MaxLen 50 // max len + 1 for rand strings
+#define MaxLen 40 // max len + 1 for rand strings
 #define MaxNum 10 
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
@@ -352,17 +352,43 @@ TEST_F(Mmap_str_test, ends_with) {
   }
 }
 
-TEST_F(Mmap_str_test, to_s) {
+TEST_F(Mmap_str_test, to_s_to_i) {
   for (auto i = 0; i < RNDN; ++i) {
-    std::string temp = s_get(i);
+    std::string temp = s_get(i), numt = n_get(i);
+    int numref = stoi(numt);
     mmap_lib::str check(temp);
+    mmap_lib::str numch(numt);
     std::string hold = check.to_s();
+    int numh = numch.to_i();
     EXPECT_EQ(temp, hold);
+    EXPECT_EQ(numref, numh);
+  }
+}
+
+
+TEST_F(Mmap_str_test, concat_append) {
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string one = s_get(i), two = s_get((i+1)%RNDN);
+    std::string_view sv1 = one, sv2 = two;
+    mmap_lib::str sone(one);
+    mmap_lib::str stwo(two);
+    std::string three = one + two;
+    mmap_lib::str ref(three);
+    mmap_lib::str test = mmap_lib::str::concat(sone, stwo);
+    mmap_lib::str test2 = mmap_lib::str::concat(sv1, stwo);
+    mmap_lib::str test3 = mmap_lib::str::concat(sone, sv2);
+    mmap_lib::str test4 = sone.append(stwo);
+    mmap_lib::str test5 = sone.append(sv2);
+    
+    EXPECT_EQ(ref, test);
+    EXPECT_EQ(ref, test2);
+    EXPECT_EQ(ref, test3);
+    EXPECT_EQ(ref, test4);
+    EXPECT_EQ(ref, test5);
   }
 }
 
 // Failing some tests. returning -1 at the wrong time
-
 #if 0
 TEST_F(Mmap_str_test, find) {
   for (auto i = 0; i < RNDN; ++i) { 
@@ -400,7 +426,6 @@ TEST_F(Mmap_str_test, find) {
     next_sub.print_string();
     std::cout << "\n";
     #endif
-
 
     EXPECT_EQ(curr_str.find(curr_sub), curr.find(stable_c));
     EXPECT_EQ(next_str.find(next_sub), next.find(stable_n));

@@ -692,7 +692,7 @@ public:
       return -1;
     } else {
       std::string my_string = this->to_s();
-      std::string their_string = v.to_s ();
+      std::string their_string = v.to_s();
       return my_string.find(their_string);
     }
   }
@@ -708,92 +708,38 @@ public:
   std::size_t rfind(const char *s, std::size_t pos, std::size_t n) const;
   std::size_t rfind(const char *s, std::size_t pos = 0) const;
 
-  // returns a pstr from two objects (pstr)
-  static str concat(const str &a, const str &b) {
-    
-    std::string start = a.to_s();
-    start += b.to_s();
-    return mmap_lib::str(start);
 
-    // Directly modify the data in string_vec (similar to constructor)
-    // First create a small string and then add to it
-
-    #if 0
-    // concat a str -> make a new str?
-    std::string front, back;
-    
-    // process both strings at the same time
-    if (a.size() == b.size()) { // a and b are same length
-      // a and b are both short
-      // a and b are both long
-      if (a.size() <= 13) { // a and b are SHORT
-        uint8_t mxa = posShifter(a.size());
-        uint8_t mxb = posShifter(b.size());
-        for (auto i = 0; i < a.size(); ++i) {
-          if (i <= 3) {
-            front += static_cast<char>(isol8(a.ptr_or_start,mxa));
-            back += static_cast<char>(isol8(b.ptr_or_start,mxb));
-            --mxa; --mxb; 
-          } else {
-            front += a.e[i-4]; back += b.e[i-4];
-          } 
-        }
-      } else { // a and b are LONG
-        for (auto i = 0; i < a.size(); ++i) {
-          if (i <= 1) {
-            front += a.e[i]; back += b.e[i];
-          } else if (i >= 2 && i < (a.size()-8)) {
-            front += string_vector.at(a.ptr_or_start + (i-2));
-            back += string_vector.at(b.ptr_or_start + (i-2));
-          } else {
-            front += a.e[l8(a.size(),i)]; 
-            back += b.e[l8(b.size(),i)];
-          }
-        }
-      }
-    } else if (a.size() < b.size()) { // b is longer than a
-      if (b.size() <= 13) {// if b is SHORT, a is SHORT
-        uint8_t mxa = posShifter(a.size());
-        uint8_t mxb = posShifter(b.size());
-        for (auto i = 0; i < b.size(); ++i) {
-          if (i <= 3) {
-            back += static_cast<char>(isol8(b.ptr_or_start,mxb));
-            --mxb;
-            if (i < a.size()) {
-              front += static_cast<char>(isol8(a.ptr_or_start,mxa));
-              --mxa;
-            }
-          } else {
-            back += b.e[i-4];
-            if (i < a.size()) {
-              front += a.e[i-4];
-            }
-          }
-        }
-      } else { // if b is LONG, a can be LONG or SHORT
-        if (a.size() <= 13) { // a is SHORT
-          
-        } else { // a is LONG
-
-        }
-      }
-      
-    } else { // a is longer than b
-      // if a is SHORT, b is SHORT
-      // if a is LONG, b can be LONG or SHORT
-    }
-    #endif
+  static str concat(const str &a, const str &b) { 
+    return a.append(b);
   }
 
+  static str concat(std::string_view a, const str &b) {
+    mmap_lib::str temp(a);
+    return temp.append(b); 
+  }
 
-  static str concat(std::string_view a, const str &b);
-  static str concat(const str &a, std::string_view b);
-  static str concat(const str &a, int v);  // just puts two things together concat(x, b); -> x.append(b)
-                                           //                               concat(b, x); -> b.append(x)
+  static str concat(const str &a, std::string_view b) {
+    return a.append(b);
+  }
 
-  str append(const str &b) const;
-  str append(std::string_view b) const;
-  str append(int b) const;
+  static str concat(const str &a, int v) {
+    return a.append(v);
+  }
+
+  str append(const str &b) const {
+    std::string start = this->to_s();
+    start += b.to_s();
+    return mmap_lib::str(start);
+  }
+
+  str append(std::string_view b) const {
+    return this->append(mmap_lib::str(b));
+  }
+
+  str append(int b) const {
+    std::string hold = std::to_string(b);
+    return this->append(mmap_lib::str(hold));
+  }
 
   std::vector<str> split(const char chr);  // used as a tokenizing func, return vector of pstr's
 
