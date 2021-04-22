@@ -59,6 +59,9 @@ public:
   
   // this holds all the raw data, (int kinda weird?)
   inline static std::vector<int> string_vector; // ptr_or_start points here! 
+   
+  //===========constructor 0 ============
+  str() : ptr_or_start(0), e{0}, _size(0) {}
   
   //===========constructor 1 (_size <= 13) ============
   template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
@@ -709,6 +712,20 @@ public:
   std::size_t rfind(const char *s, std::size_t pos = 0) const;
 
 
+
+  // concat implementation options
+  // 1) add directly to strVec behind a (O(b) and depends on current size of strMap)
+  //    a) find end of strVec pos with ptr_or_start
+  //    b) add b to it
+  //    c) Careful! Need to push everything else back
+  //    d) MUST modify the strMap for all strings that have ptr_or_start 
+  //       After *this's ptr_or_start
+  // 2) create a new string and directly add into strVec (O(a+b))
+  //    -> The only thing here is that it's kind of copies ctor logic
+  //    0) use ctor 0 to make object
+  //    a) add a strMap entry
+  //    b) find end of strVec, then directly add on to vec
+  // 3) 
   static str concat(const str &a, const str &b) { 
     return a.append(b);
   }
