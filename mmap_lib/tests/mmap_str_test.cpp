@@ -10,7 +10,7 @@
 #include "gtest/gtest.h"
 
 #define RNDN 200 // number of rand strings
-#define MaxLen 40 // max len + 1 for rand strings
+#define MaxLen 30 // max len + 1 for rand strings
 #define MaxNum 10 
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
@@ -208,80 +208,119 @@ TEST_F(Mmap_str_test, isI_operator) {
 // 5) if the randomly generated start indx is 0, 
 //    -> then starts_with should return true
 //    -> else it is false
-TEST_F(Mmap_str_test, starts_with) {
-  uint32_t start = 0, end = 0; 
+TEST_F(Mmap_str_test, starts_ends_with) {
+  uint32_t start_sw = 0, end_sw = 0;
+  uint32_t start_ew = 0, end_ew = 0;
+
   // ALWAYS TRUE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i); // std::string creation
     mmap_lib::str temp(orig);    // mmap_lib::str creation
 
-    if (temp.size() == 0) { end = 0; } // generating end indx
-    else { end = (rand() % temp.size()) + 1; }
+    // gen start/end indx
+    if (temp.size() == 0) { 
+      end_sw = 0; 
+      start_ew = 0; 
+    } else { 
+      end_sw = (rand() % temp.size()) + 1; 
+      start_ew = rand() % temp.size();
+    }
 
-    std::string stable = orig.substr(0, end);
-    std::string_view sv_check = stable; //sv
-    mmap_lib::str check(stable); // str
+    std::string stable_sw = orig.substr(0, end_sw);
+    std::string stable_ew = orig.substr(start_ew);
+    std::string_view sv_check_sw = stable_sw; //sv
+    std::string_view sv_check_ew = stable_ew;
+    mmap_lib::str check_sw(stable_sw); // str
+    mmap_lib::str check_ew(stable_ew); 
 
 
     #if 0    
     std::cout << "pstr temp: ";
     temp.print_string();
-    std::cout << "\npstr check: ";
-    check.print_string();
+    std::cout << "\npstr check_sw: ";
+    check_sw.print_string();
+    std::cout << "\npstr check_ew: ";
+    check_ew.print_string();
     std::cout << std::endl;
     #endif
     
-    EXPECT_TRUE(temp.starts_with(check));
-    EXPECT_TRUE(temp.starts_with(sv_check));
-    EXPECT_TRUE(temp.starts_with(stable));
+    EXPECT_TRUE(temp.starts_with(check_sw));
+    EXPECT_TRUE(temp.starts_with(sv_check_sw));
+    EXPECT_TRUE(temp.starts_with(stable_sw));
+    
+    EXPECT_TRUE(temp.ends_with(check_ew));
+    EXPECT_TRUE(temp.ends_with(sv_check_ew));
+    EXPECT_TRUE(temp.ends_with(stable_ew));
   }
 
 
   // TRUE AND FALSE
   for (auto i = 0; i < RNDN; ++i) {
     std::string orig = s_get(i);
-    std::string_view sv_temp = orig;
     mmap_lib::str temp(orig);
     
     if (temp.size() == 0) { 
-      start = 0; end = 0;
+      start_sw = 0; end_sw = 0;
+      start_ew = 0; end_ew = 0;
     } else { 
-      start = rand() % temp.size(); 
-      end = (rand() % (temp.size()-start)) + 1; 
+      start_sw = rand() % temp.size(); 
+      end_sw = (rand() % (temp.size()-start_sw)) + 1; 
+      start_ew = rand() % temp.size(); 
+      end_ew = (rand() % (temp.size()-start_ew)) + 1; 
     }
     
-    std::string stable = orig.substr(start, end);
-    std::string_view sv_check = stable;
-    mmap_lib::str check(stable);
+    std::string stable_sw = orig.substr(start_sw, end_sw);
+    std::string stable_ew = orig.substr(start_ew, end_ew);
+    std::string_view sv_check_sw = stable_sw;
+    std::string_view sv_check_ew = stable_ew;
+    mmap_lib::str check_sw(stable_sw);
+    mmap_lib::str check_ew(stable_ew);
     
-    #if 0
+    #if 0    
     std::cout << "pstr temp: ";
     temp.print_string();
-    std::cout << "\npstr check: ";
-    check.print_string();
+    std::cout << "\npstr check_sw: ";
+    check_sw.print_string();
+    std::cout << "\npstr check_ew: ";
+    check_ew.print_string();
     std::cout << std::endl;
     #endif
 
-    if (start == 0) {
-      EXPECT_TRUE(temp.starts_with(check));
-      EXPECT_TRUE(temp.starts_with(sv_check));
-      EXPECT_TRUE(temp.starts_with(stable));
+    if (start_sw == 0) {
+      EXPECT_TRUE(temp.starts_with(check_sw));
+      EXPECT_TRUE(temp.starts_with(sv_check_sw));
+      EXPECT_TRUE(temp.starts_with(stable_sw));
     } else {
-      if (orig.substr(0, stable.size()) == stable) {
-        EXPECT_TRUE(temp.starts_with(check));
-        EXPECT_TRUE(temp.starts_with(sv_check));
-        EXPECT_TRUE(temp.starts_with(stable));
+      if (orig.substr(0, stable_sw.size()) == stable_sw) {
+        EXPECT_TRUE(temp.starts_with(check_sw));
+        EXPECT_TRUE(temp.starts_with(sv_check_sw));
+        EXPECT_TRUE(temp.starts_with(stable_sw));
       } else {
-        EXPECT_FALSE(temp.starts_with(check));
-        EXPECT_FALSE(temp.starts_with(sv_check));
-        EXPECT_FALSE(temp.starts_with(stable));
+        EXPECT_FALSE(temp.starts_with(check_sw));
+        EXPECT_FALSE(temp.starts_with(sv_check_sw));
+        EXPECT_FALSE(temp.starts_with(stable_sw));
+      }
+    }
+    
+    if (end_ew == temp.size()) {
+      EXPECT_TRUE(temp.ends_with(check_ew));
+      EXPECT_TRUE(temp.ends_with(sv_check_ew));
+      EXPECT_TRUE(temp.ends_with(stable_ew));
+    } else {
+      if (orig.substr(orig.size() - stable_ew.size()) == stable_ew) {
+        EXPECT_TRUE(temp.ends_with(check_ew));
+        EXPECT_TRUE(temp.ends_with(sv_check_ew));
+        EXPECT_TRUE(temp.ends_with(stable_ew));
+      } else {
+        EXPECT_FALSE(temp.ends_with(check_ew));
+        EXPECT_FALSE(temp.ends_with(sv_check_ew));
+        EXPECT_FALSE(temp.ends_with(stable_ew));
       }
     }
   }
-
 }
 
-
+#if 0
 TEST_F(Mmap_str_test, ends_with) {
   uint32_t start = 0, end = 0; 
   
@@ -351,6 +390,8 @@ TEST_F(Mmap_str_test, ends_with) {
     }
   }
 }
+#endif
+
 
 TEST_F(Mmap_str_test, to_s_to_i) {
   for (auto i = 0; i < RNDN; ++i) {
@@ -388,11 +429,14 @@ TEST_F(Mmap_str_test, concat_append) {
   }
 }
 
+
+
 // Failing some tests. returning -1 at the wrong time
 #if 0
 TEST_F(Mmap_str_test, find) {
   for (auto i = 0; i < RNDN; ++i) { 
-    std::string curr = s_get(i), next = s_get((i+1) % RNDN);
+    std::string curr = s_get(i);
+    std::string next = s_get((i+1) % RNDN);
     uint32_t start=0, start2=0, end=0, end2=0;    
     
     
@@ -411,11 +455,16 @@ TEST_F(Mmap_str_test, find) {
     }
     
     
-    std::string stable_c = curr.substr(start, end), stable_n = next.substr(start2, end2);
-    std::string_view c_sv = stable_c, n_sv = stable_n;
-    mmap_lib::str curr_str(curr), next_str(next), curr_sub(stable_c), next_sub(stable_n);
+    std::string stable_c = curr.substr(start, end);
+    std::string stable_n = next.substr(start2, end2);
+    std::string_view c_sv = stable_c;
+    std::string_view n_sv = stable_n;
+    mmap_lib::str curr_str(curr);
+    mmap_lib::str next_str(next);
+    mmap_lib::str curr_sub(stable_c);
+    mmap_lib::str next_sub(stable_n);
 
-    #if 0
+    #if 1
     std::cout << "curr_str: ";
     curr_str.print_string();
     std::cout << "\ncurr_sub: ";
@@ -427,6 +476,7 @@ TEST_F(Mmap_str_test, find) {
     std::cout << "\n";
     #endif
 
+    // find(const str& a)
     EXPECT_EQ(curr_str.find(curr_sub), curr.find(stable_c));
     EXPECT_EQ(next_str.find(next_sub), next.find(stable_n));
     

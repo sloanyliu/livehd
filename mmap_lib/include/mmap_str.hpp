@@ -884,14 +884,47 @@ public:
     return out; 
   }
 
+  // get the str AFTER the last instance of chr inside *this
+  // EX)
+  // str h(helloworldworld)
+  // h.get_str_after_last('l') = "d"
   str get_str_after_last(const char chr) const;
+
+
   str get_str_after_first(const char chr) const;
 
   str get_str_before_last(const char chr) const;
   str get_str_before_first(const char chr) const;
 
-  str substr(size_t start) const;
-  str substr(size_t start, size_t end) const;
+  str substr(size_t start) const {
+    // first check the size
+    // then take start into account
+    if (start > (this->_size-1)) { 
+      return mmap_lib::str();
+    } else if (start == 0) { 
+      mmap_lib::str res(this->to_s()); 
+      return res;
+    } else {
+      std::string stable = this->to_s();
+      mmap_lib::str res(stable.substr(start));
+      return res;
+    }
+  }
+
+  #if 0
+  str substr(size_t start, size_t end) const {
+    if (end == 0) {
+      mmap_lib::str res();
+      return res; 
+    } else if (end >= (*this._size-start)) {
+      return this->substr(start);
+    } else {
+      std::string stable = this->to_s();
+      mmap_lib::str res(stable.substr(start, end));
+      return res;
+    }
+  }
+  #endif
 
   void test_cpp() const;
 };
