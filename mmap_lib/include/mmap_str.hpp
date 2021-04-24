@@ -666,9 +666,11 @@ public:
         if ((first == ((ptr_or_start >> (8 * (temp - i))) & 0xFF)) ){//and  ( pos >= i)) {
           //std::cout << "found first " << i << std::endl;
           retval = i;
+          if (v._size ==1 ) return retval;
           found_flag = true;
           if (v._size == 1)return retval;
           for ( j = i+1,  k =1; j< 4; j++,k++){
+            if (k >= v._size ) break;
             if (((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF) != ((ptr_or_start >> (8 * (temp - j))) & 0xFF)){//k starts from 1 
               //std::cout << "turned to false in 1" << std::endl;
               found_flag = false;
@@ -715,12 +717,16 @@ public:
             if (v._size == 1)return retval;
             found_flag = true;
             for ( j = m+1,  k =1; k< 4; j++,k++){
-              
+              if(k >= v._size ) break;
               if (((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF) != e[j] ){//k starts from 1 
                 found_flag = false;
+                char sge = ((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF); 
+                //std::cout << sge << "is not " << e[j] << std::endl;
+                //std::cout << "false in 1" << k << std::endl ;
                 break;
               }
             }
+            e_pos_self = j;
             while(k < v._size){
             	k++;
               if (k < 4){

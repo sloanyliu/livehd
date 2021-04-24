@@ -9,7 +9,7 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 200 // number of rand strings
+#define RNDN 250 // number of rand strings
 #define MaxLen 30 // max len + 1 for rand strings
 #define MaxNum 10 
 #define MinLen 2  // min len for rand strings
