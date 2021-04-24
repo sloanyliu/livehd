@@ -473,7 +473,7 @@ int main(int argc, char **argv) {
   mmap_pstr_ctor_tests();
   #endif
 
-  #if NEEQ_TESTS  
+  #if 0 // NEEQ_TESTS  
   std::cout << "==========================" << std::endl;
   pstrVchar_eqeq_tests(); 
   pstrVchar_noeq_tests(); 
@@ -485,9 +485,16 @@ int main(int argc, char **argv) {
   pstr_isI(); 
   std::cout << "==========================" << std::endl;
   #endif
+  mmap_lib::str one("testinghsuk");
+  mmap_lib::str two("testingh");
+  int result = one.find(two);
+  printf("The result is %d \n", result);
+  
+
+
 
   #if STARTS_WITH_TESTS
-  pstr_starts_with();
+  //pstr_starts_with();
   #endif
 
  /* 

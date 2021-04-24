@@ -648,7 +648,10 @@ public:
     if (v._size >_size) return -1;
     //if size ==vsize and == is true return 0 else return -1
     if (_size<14){
-      char first = ((v.ptr_or_start >> (8 * (v._size-1))) & 0xFF);//different ways
+      int vtemp = (v._size >=4 ) ? 3 : (v._size -1);
+      int temp = (_size >=4 ) ? 3 : (_size -1);
+      char first = ((v.ptr_or_start >> (8 * (vtemp))) & 0xFF);//different ways
+      std::cout << "first char is :" << first << std::endl;
       size_t retval = 0;
       bool found_flag = false;
       int i,j,k;
@@ -659,19 +662,20 @@ public:
         found_flag = false;
         e_pos_self =0;
         e_pos_thier =0;
-        if ((first == ((ptr_or_start >> (8 * (3 - i))) & 0xFF)) and  ( pos >= i)) {
+        if ((first == ((ptr_or_start >> (8 * (temp - i))) & 0xFF)) ){//and  ( pos >= i)) {
+          std::cout << "found first " << std::endl;
           retval = i;
           found_flag = true;
-          for ( j = i,  k =1; j< 4; j++,k++){
+          for ( j = i+1,  k =1; j< 4; j++,k++){
             
-            if (((v.ptr_or_start >> (8 * (3 - k))) & 0xFF) != ((ptr_or_start >> (8 * (3 - j))) & 0xFF)){
+            if (((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF) != ((ptr_or_start >> (8 * (temp - j))) & 0xFF)){//k starts from 1 
               found_flag = false;
               break;
             }
           }
           while(k < v._size){
             if (k < 4){
-              if(((v.ptr_or_start >> (8 * (3 - k))) & 0xFF)  != e[e_pos_self]) {
+              if(((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF)  != e[e_pos_self]) {
 
                 found_flag = false;
                 break;
@@ -686,12 +690,13 @@ public:
             e_pos_self++;
             k++;
           }
-
+          if (found_flag == true) return retval;
         }
-        if (found_flag == true) return retval;
+        //if (found_flag == true) return retval;
       }
       //if you havent found the string at this point and this string is < 4 chaars then find returns -1
       //if((_size < 4 ) and (found_flag == false)) return -1;
+      std::cout << "here" << std::endl;
       return -1;
     } else {
       std::string my_string = this->to_s();

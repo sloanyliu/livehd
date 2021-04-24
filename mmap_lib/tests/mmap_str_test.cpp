@@ -9,7 +9,7 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN 200 // number of rand strings
+#define RNDN 20 // number of rand strings
 #define MaxLen 30 // max len + 1 for rand strings
 #define MaxNum 10 
 #define MinLen 2  // min len for rand strings
@@ -432,7 +432,7 @@ TEST_F(Mmap_str_test, concat_append) {
 
 
 // Failing some tests. returning -1 at the wrong time
-#if 0
+#if 1
 TEST_F(Mmap_str_test, find) {
   for (auto i = 0; i < RNDN; ++i) { 
     std::string curr = s_get(i);
