@@ -644,6 +644,7 @@ public:
 
   //OLY
 
+
   std::size_t find(const str &v, std::size_t pos = 0) const{
     if (v._size >_size) return -1;
     //if size ==vsize and == is true return 0 else return -1
@@ -657,43 +658,88 @@ public:
       int i,j,k;
       int e_pos_self =0;
       int e_pos_thier =0;
-      for ( i =0; i <4 ; i++){
+      for (  i =0; i <4 ; i++){
         retval = 0;
         found_flag = false;
         e_pos_self =0;
         e_pos_thier =0;
         if ((first == ((ptr_or_start >> (8 * (temp - i))) & 0xFF)) ){//and  ( pos >= i)) {
-          std::cout << "found first " << std::endl;
+          std::cout << "found first " << i << std::endl;
           retval = i;
           found_flag = true;
           for ( j = i+1,  k =1; j< 4; j++,k++){
             
             if (((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF) != ((ptr_or_start >> (8 * (temp - j))) & 0xFF)){//k starts from 1 
+              std::cout << "turned to false in 1" << std::endl;
               found_flag = false;
               break;
             }
           }
+          if (found_flag == false) continue;
           while(k < v._size){
+            k++;
             if (k < 4){
               if(((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF)  != e[e_pos_self]) {
 
                 found_flag = false;
+                std::cout << "turned to false in 2" << std::endl;
                 break;
               }
             } else {
               if (v.e[e_pos_thier ] != e[e_pos_self]){
                 found_flag = false;
-                e_pos_thier++;
+                std::cout << "turned to false in 3" << std::endl;
+                //e_pos_thier++;
                 break;
               }
+              e_pos_thier++;
             }
             e_pos_self++;
-            k++;
+            //k++;
           }
           if (found_flag == true) return retval;
         }
         //if (found_flag == true) return retval;
       }
+      /*
+      if (_size > 4){
+        for (int m =0 ,k =1; m < (_size - 4);m++,k++){
+          retval = 0;
+          found_flag = false;
+          e_pos_self =0;
+          e_pos_thier =0;
+          if (first == e[m] ){//and  ( pos >= i)) {
+            std::cout << "found first " << std::endl;
+            retval = i;
+            found_flag = true;
+            for ( j = m+1,  k =1; k< 4; j++,k++){
+              
+              if (((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF) != e[j] ){//k starts from 1 
+                found_flag = false;
+                break;
+              }
+            }
+            while(k < v._size){
+              if (k < 4){
+                if(((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF)  != e[e_pos_self]) {
+
+                  found_flag = false;
+                  break;
+                }
+              } else {
+                if (v.e[e_pos_thier ] != e[e_pos_self]){
+                  found_flag = false;
+                  e_pos_thier++;
+                  break;
+                }
+              }
+              e_pos_self++;
+              k++;
+            }
+            if (found_flag == true) return retval;
+          }
+        }
+      }*/
       //if you havent found the string at this point and this string is < 4 chaars then find returns -1
       //if((_size < 4 ) and (found_flag == false)) return -1;
       std::cout << "here" << std::endl;
