@@ -485,8 +485,8 @@ int main(int argc, char **argv) {
   pstr_isI(); 
   std::cout << "==========================" << std::endl;
   #endif
-  mmap_lib::str one("testinghsuk");
-  mmap_lib::str two("testingh");
+  mmap_lib::str one("wip");
+  mmap_lib::str two("ip");
   int result = one.find(two);
   printf("The result is %d \n", result);
   

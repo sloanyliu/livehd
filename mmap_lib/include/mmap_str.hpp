@@ -667,8 +667,8 @@ public:
           //std::cout << "found first " << i << std::endl;
           retval = i;
           found_flag = true;
+          if (v._size == 1)return retval;
           for ( j = i+1,  k =1; j< 4; j++,k++){
-            
             if (((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF) != ((ptr_or_start >> (8 * (temp - j))) & 0xFF)){//k starts from 1 
               //std::cout << "turned to false in 1" << std::endl;
               found_flag = false;
@@ -677,8 +677,9 @@ public:
           }
           if (found_flag == false) continue;
           while(k < v._size){
-            k++;
+            //k++;
             if (k < 4){
+              //std::cout << "did i make it here " << std::endl;
               if(((v.ptr_or_start >> (8 * (vtemp - k))) & 0xFF)  != e[e_pos_self]) {
 
                 found_flag = false;
@@ -688,14 +689,14 @@ public:
             } else {
               if (v.e[e_pos_thier ] != e[e_pos_self]){
                 found_flag = false;
-                //std::cout << "turned to false in 3" << std::endl;
+                //std::cout << "turned to false in 3" << e_pos_thier << e_pos_self << std::endl;
                 //e_pos_thier++;
                 break;
               }
               e_pos_thier++;
             }
             e_pos_self++;
-            //k++;
+            k++;
           }
           if (found_flag == true) return retval;
         }
@@ -709,8 +710,9 @@ public:
           e_pos_self =0;
           e_pos_thier =0;
           if (first == e[m] ){//and  ( pos >= i)) {
-            std::cout << "found first in e[m]" << std::endl;
-            retval = i;
+            //std::cout << "found first in e[m]" << std::endl;
+            retval = m+4;
+            if (v._size == 1)return retval;
             found_flag = true;
             for ( j = m+1,  k =1; k< 4; j++,k++){
               
