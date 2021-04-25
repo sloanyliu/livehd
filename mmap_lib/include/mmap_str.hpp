@@ -59,10 +59,11 @@ public:
   
   // this holds all the raw data, (int kinda weird?)
   inline static std::vector<int> string_vector; // ptr_or_start points here! 
-   
-  //===========constructor 0 ============
+
+  //===========constructor 0 (template obj) ============
   str() : ptr_or_start(0), e{0}, _size(0) {}
-  
+
+
   //===========constructor 1 (_size <= 13) ============
   template<std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
   constexpr str(const char(&s)[N]): ptr_or_start(0), e{0}, _size(N-1) {
@@ -957,23 +958,42 @@ public:
   str get_str_before_last(const char chr) const;
   str get_str_before_first(const char chr) const;
 
+  
+  // Strategy to do without to_s()
+  /* 1) Create empty string
+   * 2) manually traverse old string to take out what is needed
+   * RUNTIME: O(substr.size())
+   * Conclusion: worth it.
+   */
+  
   str substr(size_t start) const {
-    // first check the size
-    // then take start into account
-    if (start > (this->_size-1)) { 
-      return mmap_lib::str();
-    } else if (start == 0) { 
-      mmap_lib::str res(this->to_s()); 
-      return res;
-    } else {
-      std::string stable = this->to_s();
-      mmap_lib::str res(stable.substr(start));
-      return res;
-    }
+    return mmap_lib::str(); // empty string
   }
 
-  #if 0
-  str substr(size_t start, size_t end) const {
+  str substr(size_t start, size_t end) const {   
+    std::string hold;
+    
+    // if *this is empty, or start indx out of range => return empty pstr
+    if ((_size() == 0) || (start > (_size()-1))) {
+      return sub;
+    }
+    // adjusting end in case user tries to step too far
+    size_t adj_end = (end > (_size-start)) ? (_size-start):end;
+    
+    for (auto i = start; i < (start + end); ++i) {
+      if (_size <= 13) { // *this is SHORT
+        uint8_t mx = posShifter(_size);
+        if (start <= 3) { // need to shift
+          
+        } else { // in e
+
+        }
+      } else { // *this is LONG
+
+      }
+    }
+    
+    #if 0
     if (end == 0) {
       mmap_lib::str res();
       return res; 
@@ -984,8 +1004,8 @@ public:
       mmap_lib::str res(stable.substr(start, end));
       return res;
     }
+    #endif
   }
-  #endif
 
   void test_cpp() const;
 };
