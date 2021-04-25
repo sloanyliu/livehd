@@ -957,15 +957,7 @@ public:
 
   str get_str_before_last(const char chr) const;
   str get_str_before_first(const char chr) const;
-
-  
-  // Strategy to do without to_s()
-  /* 1) Create empty string
-   * 2) manually traverse old string to take out what is needed
-   * RUNTIME: O(substr.size())
-   * Conclusion: worth it.
-   */
-  
+ 
   str substr(size_t start) const {
     return this->substr(start, _size-start);
   }
@@ -982,14 +974,14 @@ public:
     
     uint8_t mx = posShifter(_size);
     mx = mx - start;
-    uint8_t e_ptr = 0;
+    // uint8_t e_ptr = 0;
     for (auto i = start; i < (start + adj_end); ++i) {
       if (_size <= 13) { // *this is SHORT
-        if (mx <= 3) { // need to shift
+        if (i <= 3) { // need to shift
           hold += static_cast<char>(isol8(ptr_or_start, mx));
           --mx;
         } else { // in e
-          hold += e[e_ptr++];
+          hold += e[i-4];
         }
       } else { // *this is LONG
         if (i <= 1) { // first two

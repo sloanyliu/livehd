@@ -412,7 +412,6 @@ TEST_F(Mmap_str_test, find) {
     // find(const str& a)
     EXPECT_EQ(curr_str.find(curr_sub), curr.find(stable_c));
     EXPECT_EQ(next_str.find(next_sub), next.find(stable_n));
-    
   }
 }
 
@@ -441,23 +440,25 @@ TEST_F(Mmap_str_test, substr) {
     
     std::string stable_c = curr.substr(start, end);
     std::string stable_n = next.substr(start2, end2);
+    mmap_lib::str curr_sub_ref(stable_c);
+    mmap_lib::str next_sub_ref(stable_n);
     mmap_lib::str curr_str(curr);
     mmap_lib::str next_str(next);
     mmap_lib::str curr_sub = curr_str.substr(start, end);
     mmap_lib::str next_sub = next_str.substr(start2, end2);
-    mmap_lib::str curr_sub_ref(stable_c);
-    mmap_lib::str next_sub_ref(stable_n);
 
 
-    #if 1
+    #if 0
     std::cout << "curr_str: ";
     curr_str.print_string();
+    std::cout << "\nstart = " << start << " end = " << end;
     std::cout << "\ncurr_sub: ";
     curr_sub.print_string();
     std::cout << "\ncurr_sub_ref: ";
     curr_sub_ref.print_string();
     std::cout << "\nnext_str: ";
     next_str.print_string();
+    std::cout << "\nstart2 = " << start2 << " end2 = " << end2;
     std::cout << "\nnext_sub: ";
     next_sub.print_string();
     std::cout << "\nnext_sub_ref: ";
