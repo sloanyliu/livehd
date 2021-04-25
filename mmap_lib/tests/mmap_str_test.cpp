@@ -328,79 +328,6 @@ TEST_F(Mmap_str_test, starts_ends_with) {
   }
 }
 
-#if 0
-TEST_F(Mmap_str_test, ends_with) {
-  uint32_t start = 0, end = 0; 
-  
-  // ALWAYS TRUE
-  for (auto i = 0; i < RNDN; ++i) {
-    std::string orig = s_get(i); // std::string creation
-    mmap_lib::str temp(orig);    // mmap_lib::str creation
-
-    if (temp.size() == 0) { start = 0; } // generating start indx
-    else { start = rand() % temp.size(); }
-
-    std::string stable = orig.substr(start);
-    std::string_view sv_check = stable; //sv
-    mmap_lib::str check(stable); // str
-
-    #if 0
-    std::cout << "pstr temp: ";
-    temp.print_string();
-    std::cout << "\npstr check: ";
-    check.print_string();
-    std::cout << std::endl;
-    #endif
-
-    EXPECT_TRUE(temp.ends_with(check));
-    EXPECT_TRUE(temp.ends_with(sv_check));
-    EXPECT_TRUE(temp.ends_with(stable));
-  }
-
-  // TRUE AND FALSE
-  for (auto i = 0; i < RNDN; ++i) {
-    std::string orig = s_get(i);
-    mmap_lib::str temp(orig);
-    
-    if (temp.size() == 0) { 
-      start = 0; end = 0;
-    } else { 
-      start = rand() % temp.size(); 
-      end = (rand() % (temp.size()-start)) + 1; 
-    }
-    
-    std::string stable = orig.substr(start, end);
-    std::string_view sv_check = stable;
-    mmap_lib::str check(stable);
-    
-    #if 0 
-    std::cout << "pstr temp: ";
-    temp.print_string();
-    std::cout << "\npstr check: ";
-    check.print_string();
-    std::cout << std::endl;
-    #endif
-    
-    if (end == temp.size()) {
-      EXPECT_TRUE(temp.ends_with(check));
-      EXPECT_TRUE(temp.ends_with(sv_check));
-      EXPECT_TRUE(temp.ends_with(stable));
-    } else {
-      if (orig.substr(orig.size() - stable.size()) == stable) {
-        EXPECT_TRUE(temp.ends_with(check));
-        EXPECT_TRUE(temp.ends_with(sv_check));
-        EXPECT_TRUE(temp.ends_with(stable));
-      } else {
-        EXPECT_FALSE(temp.ends_with(check));
-        EXPECT_FALSE(temp.ends_with(sv_check));
-        EXPECT_FALSE(temp.ends_with(stable));
-      }
-    }
-  }
-}
-#endif
-
-
 TEST_F(Mmap_str_test, to_s_to_i) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string temp = s_get(i), numt = n_get(i);
@@ -489,6 +416,60 @@ TEST_F(Mmap_str_test, find) {
   }
 }
 
+
+TEST_F(Mmap_str_test, substr) {
+  for (auto i = 0; i < RNDN; ++i) { 
+    std::string curr = s_get(i);
+    std::string next = s_get((i+1) % RNDN);
+    uint32_t start=0, start2=0, end=0, end2=0;    
+    
+    
+    if (curr.size() == 0) { 
+      start = 0; end = 0;
+    } else { 
+      start = rand() % curr.size(); 
+      end = (rand() % (curr.size()-start)) + 1; 
+    }
+    
+    if (next.size() == 0) { 
+      start2 = 0; end2 = 0;
+    } else { 
+      start2 = rand() % next.size(); 
+      end2 = (rand() % (next.size()-start2)) + 1; 
+    }
+    
+    
+    std::string stable_c = curr.substr(start, end);
+    std::string stable_n = next.substr(start2, end2);
+    mmap_lib::str curr_str(curr);
+    mmap_lib::str next_str(next);
+    mmap_lib::str curr_sub = curr_str.substr(start, end);
+    mmap_lib::str next_sub = next_str.substr(start2, end2);
+    mmap_lib::str curr_sub_ref(stable_c);
+    mmap_lib::str next_sub_ref(stable_n);
+
+
+    #if 1
+    std::cout << "curr_str: ";
+    curr_str.print_string();
+    std::cout << "\ncurr_sub: ";
+    curr_sub.print_string();
+    std::cout << "\ncurr_sub_ref: ";
+    curr_sub_ref.print_string();
+    std::cout << "\nnext_str: ";
+    next_str.print_string();
+    std::cout << "\nnext_sub: ";
+    next_sub.print_string();
+    std::cout << "\nnext_sub_ref: ";
+    next_sub_ref.print_string();
+    std::cout << "\n";
+    #endif
+
+    // find(const str& a)
+    EXPECT_EQ(curr_sub, curr_sub_ref);
+    EXPECT_EQ(next_sub, next_sub_ref);  
+  }
+}
 
 #if 0
 TEST_F(Mmap_str_test, const_expr_trival_cmp) {

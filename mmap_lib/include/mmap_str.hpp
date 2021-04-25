@@ -967,45 +967,43 @@ public:
    */
   
   str substr(size_t start) const {
-    return mmap_lib::str(); // empty string
+    return this->substr(start, _size-start);
   }
 
   str substr(size_t start, size_t end) const {   
     std::string hold;
     
     // if *this is empty, or start indx out of range => return empty pstr
-    if ((_size() == 0) || (start > (_size()-1))) {
-      return sub;
+    if ((_size == 0) || (start > (_size-1))) {
+      return mmap_lib::str();
     }
     // adjusting end in case user tries to step too far
     size_t adj_end = (end > (_size-start)) ? (_size-start):end;
     
-    for (auto i = start; i < (start + end); ++i) {
+    uint8_t mx = posShifter(_size);
+    mx = mx - start;
+    uint8_t e_ptr = 0;
+    for (auto i = start; i < (start + adj_end); ++i) {
       if (_size <= 13) { // *this is SHORT
-        uint8_t mx = posShifter(_size);
-        if (start <= 3) { // need to shift
-          
+        if (mx <= 3) { // need to shift
+          hold += static_cast<char>(isol8(ptr_or_start, mx));
+          --mx;
         } else { // in e
-
+          hold += e[e_ptr++];
         }
       } else { // *this is LONG
-
+        if (i <= 1) { // first two
+          hold += e[i];
+        } else if (i >= 2 && i < (_size-8)) { // long in vec
+          hold += string_vector.at(mid(ptr_or_start, i));
+        } else { // last 8
+          hold += e[l8(_size, i)];
+        }
       }
     }
-    
-    #if 0
-    if (end == 0) {
-      mmap_lib::str res();
-      return res; 
-    } else if (end >= (*this._size-start)) {
-      return this->substr(start);
-    } else {
-      std::string stable = this->to_s();
-      mmap_lib::str res(stable.substr(start, end));
-      return res;
-    }
-    #endif
-  }
+    mmap_lib::str sub(hold);
+    return sub;
+  }    
 
   void test_cpp() const;
 };
