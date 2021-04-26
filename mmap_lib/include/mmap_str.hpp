@@ -16,7 +16,7 @@
 #define l8(size, i) i - (size - 10) 
 #define mid(p_o_s, i) p_o_s + (i-2)
 
-#define atImpl 0
+#define atImpl 1
 
 
 namespace mmap_lib {
@@ -346,25 +346,27 @@ public:
 
   constexpr char operator[](std::size_t pos) const {
     if (pos >= _size) { throw std::out_of_range(""); }
-    #if atImpl == 1
+    #if 1
     if (_size < 14) {
-      if (pos < 4){
+      if (pos < 4) {
         uint8_t mx = posShifter(_size);
-        return static_cast<char>(isol8(ptr_or_start, mx-pos));
+        mx = mx - pos;
+        return static_cast<char>(isol8(ptr_or_start, mx));
       } else {
         return e[pos - 4];
       }
     } else {
-      if (pos < 2){
+      if (pos < 2) {
         return e[pos];
-      } else if (pos >= 2 && pos <= (_size - 8)) {
+      } else if (pos >= 2 && pos < (_size - 8)) {
         return string_vector.at(mid(ptr_or_start, pos));
       } else {
         return e[l8(_size, pos)];
       }
     }
-    
-    #elif atImpl == 0
+    #endif
+
+    #if 0
     if (_size < 14) {
       if (pos < 4){
         if(_size == 1) return (ptr_or_start >> (8 * (0 - pos))) & 0xFF;
@@ -664,7 +666,7 @@ public:
     else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
       // Actual compare logic
-      for (auto j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
+      for (uint32_t j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
         if ((*this)[j] != en[i]) {
           return false;
         }

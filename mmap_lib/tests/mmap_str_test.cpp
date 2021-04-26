@@ -33,7 +33,7 @@ public:
       t_len = MinLen + (rand() % (MaxLen-MinLen)); // deciding string length (0-31)
       // construct string with ASCII (32-126) -> 95 chars
       for(uint8_t j = 0; j < t_len; ++j) { 
-        if (j % 2 == 0) {
+        if (j == 0 || j == 1 || j == 2) {
           uint8_t hd = rand() % 94;
           while (hd >= 15 && hd <= 24) {
             hd = rand() % 94;
@@ -102,10 +102,12 @@ TEST_F(Mmap_str_test, basic_ctor) {
   mmap_lib::str empT("");
   mmap_lib::str empT2("");
 
+#if 0
   std::cout << "testing empty str ctor:\n";
   empT.print_string();
   std::cout << std::endl;
   empT2.print_string();
+#endif
 }
 
 // random mmap_lib::str creation
@@ -466,7 +468,6 @@ TEST_F(Mmap_str_test, substr) {
     std::cout << "\n";
     #endif
 
-    // find(const str& a)
     EXPECT_EQ(curr_sub, curr_sub_ref);
     EXPECT_EQ(next_sub, next_sub_ref);  
   }
