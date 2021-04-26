@@ -14,7 +14,10 @@
 #define posStopper(s) s<4 ? s:4
 #define isol8(pos, s) (pos >> (s*8)) & 0xff
 #define l8(size, i) i - (size - 10) 
-#define mid(pos, i) pos + (i-2)
+#define mid(p_o_s, i) p_o_s + (i-2)
+
+#define atImpl 0
+
 
 namespace mmap_lib {
 
@@ -342,10 +345,26 @@ public:
   constexpr bool operator!=(std::string_view rhs) const { return !(*this == rhs); }
 
   constexpr char operator[](std::size_t pos) const {
-  #ifndef NDEBUG
-    if (pos >= _size)
-      throw std::out_of_range("");
-  #endif
+    if (pos >= _size) { throw std::out_of_range(""); }
+    #if atImpl == 1
+    if (_size < 14) {
+      if (pos < 4){
+        uint8_t mx = posShifter(_size);
+        return static_cast<char>(isol8(ptr_or_start, mx-pos));
+      } else {
+        return e[pos - 4];
+      }
+    } else {
+      if (pos < 2){
+        return e[pos];
+      } else if (pos >= 2 && pos <= (_size - 8)) {
+        return string_vector.at(mid(ptr_or_start, pos));
+      } else {
+        return e[l8(_size, pos)];
+      }
+    }
+    
+    #elif atImpl == 0
     if (_size < 14) {
       if (pos < 4){
         if(_size == 1) return (ptr_or_start >> (8 * (0 - pos))) & 0xFF;
@@ -364,6 +383,7 @@ public:
         return string_vector.at(ptr_or_start+pos-2);
       }
     }
+    #endif
   }
 
   // checks if *this pstr starts with st
@@ -371,6 +391,20 @@ public:
   // Can use substr function of sview in cases where both st and *this are LONG,
   //    and just compare sviews
   bool starts_with(str &st) const { 
+    #if atImpl == 1
+    if (st.size() > _size) { return false; }// st.size > *this.size, false
+    else if (st.size() == _size) { return *this == st; }
+    else if (st.size() == 0) { return true; }
+    else { // if (st._size < *this._size), compare   
+      for (auto i = 0; i < st.size(); ++i) {
+        if ((*this)[i] != st[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+    
+    #elif atImpl == 0
     if (st.size() > _size) { return false; }// st.size > *this.size, false
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() == 0) { return true; }
@@ -458,10 +492,24 @@ public:
       }
       return false;
     }
+    #endif
   }
 
   // const char * and std::string will come thru here
   bool starts_with(std::string_view st) const { 
+    #if atImpl == 1
+    if (st.size() > _size) { return false; }
+    else if (st.size() == _size) { return *this == st; }
+    else if (st.size() == 0) { return true; }
+    else if (st.size() < _size) {
+      for (auto i = 0; i < st.size(); ++i) {
+        if ((*this)[i] != st[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+    #elif atImpl == 0
     if (st.size() > _size) { return false; }
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() == 0) { return true; }
@@ -503,10 +551,24 @@ public:
       }
       return false;
     }
+    #endif
   }
 
   // checks if *this pstr ends with en
   bool ends_with(const str &en) const {
+    #if atImpl == 1
+    if (en.size() > _size) { return false; }
+    else if (en.size() == _size) { return *this == en; }
+    else if (en.size() == 0) { return true; }
+    else if (en.size() < _size) {
+      for (uint32_t j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
+        if ((*this)[j] != en[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+    #elif atImpl == 0
     if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
@@ -592,9 +654,24 @@ public:
       }
       return false;
     }
+    #endif
   }
 
   bool ends_with(std::string_view en) const {
+    #if atImpl == 1
+    if (en.size() > _size) { return false; }
+    else if (en.size() == _size) { return *this == en; }
+    else if (en.size() == 0) { return true; }
+    else if (en.size() < _size) {
+      // Actual compare logic
+      for (auto j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
+        if ((*this)[j] != en[i]) {
+          return false;
+        }
+      }
+      return true;
+    } 
+    #elif atImpl == 0    
     if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
@@ -636,6 +713,7 @@ public:
       }
       return false;
     }
+    #endif
   }
 
   // will use the string_view function
@@ -845,8 +923,20 @@ public:
     std::string hold = std::to_string(b);
     return this->append(mmap_lib::str(hold));
   }
-
-  std::vector<str> split(const char chr);  // used as a tokenizing func, return vector of pstr's
+  
+  // used as a tokenizing func, return vector of pstr's
+  std::vector<str> split(const char chr) {  
+    std::vector<str> vec;
+    std::string hold;
+    for (auto i = 0; i < _size; ++i) {
+      if ((*this)[i] == chr) {
+        vec.push_back(mmap_lib::str(hold));
+        hold.clear();
+      } else {
+        hold += (*this)[i];
+      }
+    }
+  }
 
   bool is_i() const{ 
     if (_size < 14) {
@@ -914,8 +1004,18 @@ public:
 
 
 
-  std::string to_s() const{  // convert to string
+  std::string to_s() const{  // convert to string    
+    #if atImpl == 1
     std::string out;
+    for (auto i = 0; i < _size; ++i) {
+      out += (*this)[i];
+    }
+    return out;
+
+
+    #elif atImpl == 0
+    std::string out;
+    
     if (_size <= 13 ){
       //adding charactors from ptr_or_start based on the size of the string
       for (int i =0; i < ((_size>4) ? 4: _size); i++){
@@ -943,7 +1043,8 @@ public:
         out += e[i];
       }
     }
-    return out; 
+    return out;
+    #endif 
   }
 
   // get the str AFTER the last instance of chr inside *this
@@ -962,7 +1063,22 @@ public:
     return this->substr(start, _size-start);
   }
 
-  str substr(size_t start, size_t end) const {   
+  str substr(size_t start, size_t end) const { 
+    #if atImpl == 1
+    std::string hold;
+    // if *this is empty, or start indx out of range => return empty pstr
+    if ((_size == 0) || (start > (_size-1))) {
+      return mmap_lib::str();
+    }
+    // adjusting end in case user tries to step too far
+    size_t adj_end = (end > (_size-start)) ? (_size-start):end;
+
+    for (auto i = start; i < (start + adj_end); ++i) {
+      hold += (*this)[i];
+    }
+    return mmap_lib::str(hold);
+
+    #elif atImpl == 0  
     std::string hold;
     
     // if *this is empty, or start indx out of range => return empty pstr
@@ -994,7 +1110,8 @@ public:
       }
     }
     mmap_lib::str sub(hold);
-    return sub;
+    return sub;  
+    #endif
   }    
 
   void test_cpp() const;
