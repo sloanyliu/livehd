@@ -369,11 +369,13 @@ TEST_F(Mmap_str_test, find) {
     std::string curr = s_get(i);
     std::string next = s_get((i+1) % RNDN);
     uint32_t start=0, start2=0, end=0, end2=0;    
-    
-    if (curr.size() == 0) { start = 0; end = 0; } \
+    char chcurr, chnext;
+
+    if (curr.size() == 0) { start = 0; end = 0; } 
     else { 
       start = rand() % curr.size(); 
       end = (rand() % (curr.size()-start)) + 1; 
+      //chcurr = curr[rand() % ];
     }
     
     if (next.size() == 0) { start2 = 0; end2 = 0; } 
@@ -497,7 +499,7 @@ TEST_F(Mmap_str_test, split) {
   }
 }
 
-#if 0
+#if 1
 TEST_F(Mmap_str_test, get_str_before_after) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string temp = s_get(i);
