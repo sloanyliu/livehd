@@ -370,14 +370,14 @@ TEST_F(Mmap_str_test, find_rfind) {
     uint32_t start=0, start2=0, end=0, end2=0;    
     char chcurr, chnext;
 
-    if (curr.size() == 0) { start = 0; end = 0; } 
+    if (curr.size() == 0) { start = 0; end = 0; chcurr = ''; } 
     else { 
       start = rand() % curr.size(); 
       end = (rand() % (curr.size()-start)) + 1; 
       chcurr = curr[rand() % curr.size()];
     }
     
-    if (next.size() == 0) { start2 = 0; end2 = 0; } 
+    if (next.size() == 0) { start2 = 0; end2 = 0; chnext = '';} 
     else { 
       start2 = rand() % next.size(); 
       end2 = (rand() % (next.size()-start2)) + 1;
