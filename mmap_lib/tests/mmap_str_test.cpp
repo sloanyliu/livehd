@@ -414,8 +414,8 @@ TEST_F(Mmap_str_test, find_rfind) {
     EXPECT_EQ(next_str.rfind(next_sub), next.rfind(stable_n));
     EXPECT_EQ(curr_str.find(chcurr), curr.find_first_of(chcurr));
     EXPECT_EQ(next_str.find(chnext), next.find_first_of(chnext));
-    EXPECT_EQ(curr_str.rfind(chcurr), curr.rfind(chcurr));
-    EXPECT_EQ(next_str.rfind(chnext), next.rfind(chnext));
+    EXPECT_EQ(curr_str.rfind(chcurr), curr.find_last_of(chcurr));
+    EXPECT_EQ(next_str.rfind(chnext), next.find_last_of(chnext));
   }
 }
 #endif
