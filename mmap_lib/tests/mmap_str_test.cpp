@@ -362,7 +362,7 @@ TEST_F(Mmap_str_test, concat_append) {
   }
 }
 
-#if 0
+#if 1
 TEST_F(Mmap_str_test, find_rfind) {
   for (auto i = 0; i < RNDN; ++i) { 
     std::string curr = s_get(i);
@@ -370,14 +370,14 @@ TEST_F(Mmap_str_test, find_rfind) {
     uint32_t start=0, start2=0, end=0, end2=0;    
     char chcurr, chnext;
 
-    if (curr.size() == 0) { start = 0; end = 0; chcurr = ''; } 
+    if (curr.size() == 0) { start = 0; end = 0; } 
     else { 
       start = rand() % curr.size(); 
       end = (rand() % (curr.size()-start)) + 1; 
       chcurr = curr[rand() % curr.size()];
     }
     
-    if (next.size() == 0) { start2 = 0; end2 = 0; chnext = '';} 
+    if (next.size() == 0) { start2 = 0; end2 = 0; } 
     else { 
       start2 = rand() % next.size(); 
       end2 = (rand() % (next.size()-start2)) + 1;
@@ -507,7 +507,7 @@ TEST_F(Mmap_str_test, split) {
   }
 }
 
-#if 0
+#if 1
 TEST_F(Mmap_str_test, get_str_before_after) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string temp = s_get(i);
@@ -516,20 +516,22 @@ TEST_F(Mmap_str_test, get_str_before_after) {
     size_t ffo = temp.find_first_of(ch);
     size_t flo = temp.find_last_of(ch);
 
+    #if 0
     std::cout << "Original string is: " << temp << std::endl;
     std::cout << "Chosen char is: " << ch << std::endl;
     std::cout << "ffo = " << ffo << " flo = " << flo << std::endl;
+    #endif
 
     mmap_lib::str gsaf = hold.get_str_after_first(ch);
-    /*
     mmap_lib::str gsbf = hold.get_str_before_first(ch);
     mmap_lib::str gsal = hold.get_str_after_last(ch);
     mmap_lib::str gsbl = hold.get_str_before_last(ch);
-    */
 
+    #if 0
     std::cout << "pstr gsaf: ";
     gsaf.print_string();
     std::cout << std::endl;
+    #endif
 
     std::string gsaf_stable = temp.substr(ffo+1, temp.size() - (ffo+1));
     std::string gsbf_stable = temp.substr(0, ffo);
@@ -541,18 +543,17 @@ TEST_F(Mmap_str_test, get_str_before_after) {
     mmap_lib::str gsal_ref(gsal_stable);
     mmap_lib::str gsbl_ref(gsbl_stable);
 
+    #if 0
     std::cout << "std gsaf_stable: " << gsaf_stable << std::endl;
     std::cout << "pstr gsaf_ref: ";
     gsaf_ref.print_string();
     std::cout << std::endl;
+    #endif
 
-
-    /*
     EXPECT_EQ(gsaf, gsaf_ref);
     EXPECT_EQ(gsbf, gsbf_ref);
     EXPECT_EQ(gsal, gsal_ref);
     EXPECT_EQ(gsbl, gsbl_ref);
-    */
   }
 }
 #endif
