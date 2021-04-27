@@ -297,7 +297,7 @@ public:
   constexpr bool operator!=(std::string_view rhs) const { return !(*this == rhs); }
 
   constexpr char operator[](std::size_t pos) const {
-    if (pos >= _size) { throw std::out_of_range(""); }
+    if (pos >= _size) { throw std::out_of_range("[] operator out of range."); }
     if (_size < 14) {
       if (pos < 4) {
         uint8_t mx = posShifter(_size);
