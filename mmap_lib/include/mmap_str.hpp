@@ -374,8 +374,8 @@ public:
   std::size_t find(const str &v, std::size_t pos = 0) const{
     char first = v[0];
     for (size_t i = ((pos == 0) ? 0 : pos); i< _size ; i++){
-      if (first == (*this)[i]){
-        for (size_t j = i, k =1; j < i+ v._size ;j++,k++){
+      if ((first == (*this)[i]) and ((i+ v._size) <= _size)){
+        for (size_t j = i, k =0; j < i+ v._size ;j++,k++){
            if ((*this)[j] != v[k]) break;
            if (j == (i + v._size -1)) return i;
         }
