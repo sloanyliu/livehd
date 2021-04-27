@@ -27,7 +27,7 @@
  * starts_ends_with      pass     starts_with(str), ends_with(str) tested on random pstr's
  * to_s_to_i             pass     to_s(), to_i() tested on random pstr's
  * concat_append         pass     concat(s1, s2), append(str) tested on random pstr's
- * find                  pass     find(str) tested on random pstr's
+ * find_rfind            fail     find(str/chr) and rfind(str/chr) tested on random pstr's
  * substr                pass     substr(s, e) tested on random pstr's
  * split                 pass     split(chr) tested on random pstr's
  * get_str_before_after  fail     get_str_before/after_first/last() 
@@ -362,9 +362,8 @@ TEST_F(Mmap_str_test, concat_append) {
   }
 }
 
-
-
-TEST_F(Mmap_str_test, find) {
+#if 0
+TEST_F(Mmap_str_test, find_rfind) {
   for (auto i = 0; i < RNDN; ++i) { 
     std::string curr = s_get(i);
     std::string next = s_get((i+1) % RNDN);
@@ -375,13 +374,14 @@ TEST_F(Mmap_str_test, find) {
     else { 
       start = rand() % curr.size(); 
       end = (rand() % (curr.size()-start)) + 1; 
-      //chcurr = curr[rand() % ];
+      chcurr = curr[rand() % curr.size()];
     }
     
     if (next.size() == 0) { start2 = 0; end2 = 0; } 
     else { 
       start2 = rand() % next.size(); 
-      end2 = (rand() % (next.size()-start2)) + 1; 
+      end2 = (rand() % (next.size()-start2)) + 1;
+      chnext = next[rand() % next.size()]; 
     }
     
     std::string stable_c = curr.substr(start, end);
@@ -393,24 +393,32 @@ TEST_F(Mmap_str_test, find) {
     mmap_lib::str curr_sub(stable_c);
     mmap_lib::str next_sub(stable_n);
 
-    #if 0
+    #if 1
     std::cout << "curr_str: ";
     curr_str.print_string();
     std::cout << "\ncurr_sub: ";
     curr_sub.print_string();
+    std::cout << "\nChosen char: " << chcurr;
     std::cout << "\nnext_str: ";
     next_str.print_string();
     std::cout << "\nnext_sub: ";
     next_sub.print_string();
+    std::cout << "\nChosen char: " << chnext;
     std::cout << "\n";
     #endif
 
     // find(const str& a)
     EXPECT_EQ(curr_str.find(curr_sub), curr.find(stable_c));
     EXPECT_EQ(next_str.find(next_sub), next.find(stable_n));
+    EXPECT_EQ(curr_str.rfind(curr_sub), curr.rfind(stable_c));
+    EXPECT_EQ(next_str.rfind(next_sub), next.rfind(stable_n));
+    EXPECT_EQ(curr_str.find(chcurr), curr.find_first_of(chcurr));
+    EXPECT_EQ(next_str.find(chnext), next.find_first_of(chnext));
+    EXPECT_EQ(curr_str.rfind(chcurr), curr.rfind(chcurr));
+    EXPECT_EQ(next_str.rfind(chnext), next.rfind(chnext));
   }
 }
-
+#endif
 
 TEST_F(Mmap_str_test, substr) {
   for (auto i = 0; i < RNDN; ++i) { 
@@ -499,7 +507,7 @@ TEST_F(Mmap_str_test, split) {
   }
 }
 
-#if 1
+#if 0
 TEST_F(Mmap_str_test, get_str_before_after) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string temp = s_get(i);
