@@ -27,10 +27,10 @@
  * starts_ends_with      pass     starts_with(str), ends_with(str) tested on random pstr's
  * to_s_to_i             pass     to_s(), to_i() tested on random pstr's
  * concat_append         pass     concat(s1, s2), append(str) tested on random pstr's
- * find_rfind            fail     find(str/chr) and rfind(str/chr) tested on random pstr's
+ * find_rfind            pass     find(str/chr) and rfind(str/chr) tested on random pstr's
  * substr                pass     substr(s, e) tested on random pstr's
  * split                 pass     split(chr) tested on random pstr's
- * get_str_before_after  fail     get_str_before/after_first/last() 
+ * get_str_before_after  pass     get_str_before/after_first/last() 
  */
 
 
@@ -393,7 +393,7 @@ TEST_F(Mmap_str_test, find_rfind) {
     mmap_lib::str curr_sub(stable_c);
     mmap_lib::str next_sub(stable_n);
 
-    #if 1
+    #if 0
     std::cout << "curr_str: ";
     curr_str.print_string();
     std::cout << "\ncurr_sub: ";
