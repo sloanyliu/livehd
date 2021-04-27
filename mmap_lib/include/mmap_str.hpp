@@ -16,9 +16,6 @@
 #define l8(size, i) i - (size - 10) 
 #define mid(p_o_s, i) p_o_s + (i-2)
 
-#define atImpl 1
-
-
 namespace mmap_lib {
 
 class str {
@@ -100,29 +97,6 @@ public:
       return std::make_pair(string_map2.get(it), size); //found it, return
       // pair is (ptr_or_start, size of string)
     }
-
-#if 0
-    bool vector_flag = true;
-    
-    // the line below should be constant time
-    
-    for (auto i = string_map.begin(), end = string_map.end(); i != end; ++i) {
-      uint32_t key   = string_map.get_key(i);
-      uint16_t value = string_map.get(i);
-      if (value != size)
-        continue;i
-      for (int i = 0; i < size; i++) {
-        if (string_vector.at(key + i) != string_to_check[i]) {
-          vector_flag = false;
-          break;
-        }
-        if (vector_flag)
-          return std::make_pair(key, value);
-        vector_flag = true;
-      }
-    }
-    return std::make_pair(0/*pos in vector*/, 0/*size of str*/);
-#endif
   }
 
   //==========constructor 2 (_size >= 14) ==========
@@ -257,25 +231,6 @@ public:
 
   //=================================
 
-#if 0
-  fixme_const_iterator begin()  const {
-    for(const auto &ch:data.b) {
-      if (ch!=0) { return &ch; }
-    }
-    if (size<16) { return &e[0]; }
-    return ptr;
-  }
-  fixme_const_iterator end()    const {
-    if (size<16)
-      return &e[size-4];
-
-    for(const auto &ch:e) {
-      if (ch==0)
-        return &ch;
-    }
-    return e.end();}
-#endif
-
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
   [[nodiscard]] constexpr std::size_t max_size() const { return 65535; }
@@ -326,15 +281,12 @@ public:
   }
 
   constexpr bool operator==(const str &rhs) const {
-    //1) compare size
-    //1) compare e
-    //2) compare ptr_or_start
-    if (_size == 0 && rhs._size == 0) { return true; }
+    if (_size == 0 && rhs._size == 0) { return true; } // size
     if (_size != rhs._size) { return false; }
-    for (auto i = 0; i < e.size(); ++i) {
+    for (auto i = 0; i < e.size(); ++i) { // e[]
       if (e[i] != rhs.e[i]) { return false; }
     }
-    return (ptr_or_start == rhs.ptr_or_start);
+    return (ptr_or_start == rhs.ptr_or_start); // p_o_s
   }
 
   constexpr bool operator!=(const str &rhs) const { return !(*this == rhs); }
@@ -346,46 +298,17 @@ public:
 
   constexpr char operator[](std::size_t pos) const {
     if (pos >= _size) { throw std::out_of_range(""); }
-    #if 1
     if (_size < 14) {
       if (pos < 4) {
         uint8_t mx = posShifter(_size);
         mx = mx - pos;
         return static_cast<char>(isol8(ptr_or_start, mx));
-      } else {
-        return e[pos - 4];
-      }
+      } else { return e[pos - 4]; }
     } else {
-      if (pos < 2) {
-        return e[pos];
-      } else if (pos >= 2 && pos < (_size - 8)) {
-        return string_vector.at(mid(ptr_or_start, pos));
-      } else {
-        return e[l8(_size, pos)];
-      }
+      if (pos < 2) { return e[pos]; } 
+      else if (pos >= (_size - 8)) { return e[l8(_size, pos)]; }
+      else { return string_vector.at(mid(ptr_or_start, pos)); }
     }
-    #endif
-
-    #if 0
-    if (_size < 14) {
-      if (pos < 4){
-        if(_size == 1) return (ptr_or_start >> (8 * (0 - pos))) & 0xFF;
-        if(_size == 2) return (ptr_or_start >> (8 * (1 - pos))) & 0xFF;
-        if(_size == 3) return (ptr_or_start >> (8 * (2 - pos))) & 0xFF;
-        return (ptr_or_start >> (8 * (3 - pos))) & 0xFF;
-      }else{
-        return e[pos - 4];
-      }
-    } else {
-      if(pos <2){
-        return e[pos];
-      } else if (pos >= (_size-8)) {
-        return e[10 -( _size - pos)];
-      } else{
-        return string_vector.at(ptr_or_start+pos-2);
-      }
-    }
-    #endif
   }
 
   // checks if *this pstr starts with st
@@ -393,338 +316,60 @@ public:
   // Can use substr function of sview in cases where both st and *this are LONG,
   //    and just compare sviews
   bool starts_with(str &st) const { 
-    #if atImpl == 1
     if (st.size() > _size) { return false; }// st.size > *this.size, false
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() == 0) { return true; }
     else { // if (st._size < *this._size), compare   
       for (auto i = 0; i < st.size(); ++i) {
-        if ((*this)[i] != st[i]) {
-          return false;
-        }
+        if ((*this)[i] != st[i]) { return false; }
       }
       return true;
     }
-    
-    #elif atImpl == 0
-    if (st.size() > _size) { return false; }// st.size > *this.size, false
-    else if (st.size() == _size) { return *this == st; }
-    else if (st.size() == 0) { return true; }
-    else { // if (st._size < *this._size), compare   
-      uint8_t mx = posShifter(_size);
-      uint8_t mx_st = posShifter(st.size());
-      if (_size <= 13) { //==== case 1: if *this is SHORT, st is SHORT
-        for (auto i = 0; i < st.size(); ++i) { // iterate based on st
-          if (i < 4) { // for *this and st, first 4 will be in p_o_s
-            uint8_t one = isol8(st.ptr_or_start,mx_st);
-            uint8_t two = isol8(ptr_or_start,mx);
-            if (one != two) {
-              return false;
-            } else { --mx_st; --mx; }
-          } else { // rest of string will be in e
-            if (e[i-4] != st.e[i-4]) { return false; }
-          }
-        }
-        return true; 
-      } else if (_size > 13) { //==== case 2: if *this is LONG, st can be LONG or SHORT
-        uint32_t v_ptr = ptr_or_start;
-        uint8_t e_ptr = 0;
-        if (st._size <= 13) { //==== case 2a: *this is LONG, st is SHORT
-          for (auto i = 0; i < st.size(); ++i) { //i refers to st index
-            // i = 0, 1
-            // for *this, data will be in e -> index with i
-            // for st   , data will be in p_o_s -> shift 
-            if (i < 2) { // i = 0, 1 : *this.e is used, st.ptr_or_start is used
-              if (e[e_ptr] != static_cast<char>(isol8(st.ptr_or_start,mx_st))) { 
-                return false; 
-              } else { --mx_st; ++e_ptr; }
-            // i = 2, 3
-            // for *this, data will be in vec only -> index with v_ptr
-            // for st   , data will be in p_o_s -> shift
-            } else if ((i >= 2) && (i < 4)) {
-              if (string_vector.at(v_ptr) != static_cast<char>(isol8(st.ptr_or_start,mx_st))) {
-                return false;
-              } else { --mx_st; ++v_ptr; }
-            // i = 4 ... 12 (max)
-            // for *this, data will be in vec/e depend on length
-            // for st   , data will be in e -> index with i-4
-            } else {
-              // if we're done using string_vector, we use last 8 of e of *this
-              if ((v_ptr - ptr_or_start) >= (_size - 10)) {
-                if (e[e_ptr] != st.e[i - 4]) { return false; } 
-                else { ++e_ptr; }
-              } else { // use e for st and use vector for *this
-                if (string_vector.at(v_ptr) != (st.e[i - 4])) { return false; } 
-                else { ++v_ptr; }
-              }
-            }
-          }
-          return true; // made it out of the for loop means no mismatch 
-        } else if (st.size() > 13) { //===== case 2b: *this is LONG, st is LONG
-          uint8_t e_ptr = 2, ste_ptr = 2; // used to iterate through last 8 of e
-          uint32_t v_ptr = ptr_or_start, stv_ptr = st.ptr_or_start;
-          // start with first two of e for both, then move to vector, then last 8 of e
-          // NOTE: be careful when *this is still in vec, and st runs out of vec
-          for (auto i = 0; i < st.size(); ++i) { // using st._size to iterate 
-            // i = 0, 1
-            // for both, in e
-            if (i < 2) {
-              if (e[i] != st.e[i]) { return false; }
-            // i = 2 .. start of last 8
-            // for both, in vec, BUT, st will ALWAYS reach e before *this
-            } else if ((i >= 2) && (i < (st.size() - 8))) {
-              if (string_vector.at(v_ptr) != string_vector.at(stv_ptr)) {
-                return false;
-              } else { ++v_ptr; ++stv_ptr; }
-            // i = last 8 of st
-            // *this can still be in vec, st always n e here
-            } else {
-              // if *this has reached last 8, we use e for *this
-              if ((v_ptr - ptr_or_start) >= (_size - 10)) {
-                if (e[e_ptr] != st.e[ste_ptr]) { return false; } 
-                else { ++e_ptr; ++ste_ptr; }
-              } else { // use vec for *this, e for st
-                if (st.e[ste_ptr] != string_vector.at(v_ptr)) { return false; } 
-                else { ++ste_ptr; ++v_ptr; }
-              }
-            }
-          }
-          return true;
-        }
-      }
-      return false;
-    }
-    #endif
   }
 
   // const char * and std::string will come thru here
   bool starts_with(std::string_view st) const { 
-    #if atImpl == 1
     if (st.size() > _size) { return false; }
     else if (st.size() == _size) { return *this == st; }
     else if (st.size() == 0) { return true; }
     else if (st.size() < _size) {
       for (auto i = 0; i < st.size(); ++i) {
-        if ((*this)[i] != st[i]) {
-          return false;
-        }
+        if ((*this)[i] != st[i]) { return false; }
       }
       return true;
     }
-    #elif atImpl == 0
-    if (st.size() > _size) { return false; }
-    else if (st.size() == _size) { return *this == st; }
-    else if (st.size() == 0) { return true; }
-    else if (st.size() < _size) {
-      // Actual compare logic
-      auto fndsize = 0;
-      if (_size <= 13) {
-        uint8_t mx = posShifter(_size);
-        for (auto i = mx; i >= 0, i <= 3; --i) {
-          if (static_cast<char>(isol8(ptr_or_start,i)) != st[fndsize++] ) {
-            return false; 
-          }
-          if (fndsize == st.size()) { return true; }
-        }
-        for (uint8_t j = 0; j < e.size(); ++j) {
-          if (e[j] != st[fndsize++]) { return false; }
-          if (fndsize == st.size()) { return true; }
-        }
-      } else {
-        // compare first two of e
-        // then all the way up till _size-10
-        for (auto i = 0; i < 2; ++i) {
-          if (e[i] != st[i]) { return false; } 
-          else { 
-            ++fndsize;
-            if (fndsize == st.size()) { return true; }
-          }
-        }
-        for (auto i = 0; i < _size-10; ++i) {
-          if (string_vector.at(ptr_or_start + i) != st[fndsize++]) {
-            return false;
-          }
-          if (fndsize == st.size()) { return true; }
-        }
-        for (uint8_t i = 2; i < 10; ++i) {
-          if (e[i] != st[fndsize++]) { return false; }
-          if (fndsize == st.size()) { return true; }
-        }
-      }
-      return false;
-    }
-    #endif
   }
 
   // checks if *this pstr ends with en
   bool ends_with(const str &en) const {
-    #if atImpl == 1
     if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
       for (uint32_t j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
-        if ((*this)[j] != en[i]) {
-          return false;
-        }
+        if ((*this)[j] != en[i]) { return false; }
       }
       return true;
     }
-    #elif atImpl == 0
-    if (en.size() > _size) { return false; }
-    else if (en.size() == _size) { return *this == en; }
-    else if (en.size() == 0) { return true; }
-    else if (en.size() < _size) {
-      if (_size <= 13) {// if *this is SHORT, en is SHORT too
-        uint8_t mx = posShifter(_size); // shifter for *this
-        mx = mx - (_size - en.size()); // adjusted for size of en
-        uint8_t mx_st = posShifter(en.size()); // en's shifter
-        // i keeps track of en, j keeps track of *this
-        for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
-          // -> *this and en are in ptr_or_start 
-          if ((i <= 3) && (mx_st <= 3) && (mx_st >= 0)) { // en needs to shift
-            if (mx <= 3 && mx >= 0) { // *this needs to shift
-              uint8_t one = isol8(ptr_or_start, mx);
-              uint8_t two = isol8(en.ptr_or_start, mx_st);
-              if (one != two) { return false; }
-              else { --mx_st; --mx; }
-            } else { // *this does not need to shift anymore
-              if (e[j-4] != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
-                return false;
-              } else { --mx_st; }
-            }
-          } else { // en is in e now
-            if (e[j-4] != en.e[i-4]) { return false; }
-          } 
-        }
-        return true;
-      } else if (_size > 13) { // if *this is LONG, en can be either
-        if (en.size() > 13) { // -> en is LONG
-          for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
-            if (i < 2) { // en in e[0,1]
-              if (j < 2) { // *this is in e[]
-                if (e[j] != en.e[i]) { return false; }
-              } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vector now
-                if (string_vector.at(mid(ptr_or_start,j)) != en.e[i]) {
-                  return false;
-                }
-              } 
-            } else if ((i >= 2) && (i < (en.size() - 8))) { // en in vec
-              if ((j >= 2) && (j < (_size - 8))) { // *this is in vector
-                if (string_vector.at(mid(ptr_or_start,j)) != string_vector.at(mid(en.ptr_or_start,i))) {
-                  return false;
-                }
-              }
-            } else { // last 8 for both
-              if (l8(_size,j) <= 9 && l8(en.size(),i) <= 9 && l8(_size,j) == l8(en.size(),i)) {
-                if (e[l8(_size, j)] != en.e[l8(en.size(), i)]) {
-                  return false;
-                }
-              }
-            }
-          }
-          return true;
-        } else if (en.size() <= 13) { // -> en is SHORT
-          uint8_t mx_st = posShifter(en.size());
-          for (long unsigned int i = 0, j = _size-en.size(); i < en.size(); ++i, ++j) {
-            if (i < 4) { //en needs to shift
-              if (j < 2) { // *this in e[0,1]
-                if (e[j] != static_cast<char>(isol8(en.ptr_or_start, mx_st--))) {
-                  return false;
-                }
-              } else if ((j >= 2) && (j < (_size - 8))) { // *this is in vec 
-                if (string_vector.at(mid(ptr_or_start,j)) != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
-                  return false;
-                } else { --mx_st; }
-              } else { // *this is in last 8
-                if (e[l8(_size, j)] != static_cast<char>(isol8(en.ptr_or_start, mx_st))) {
-                  return false;
-                } else { --mx_st; }
-              }
-            } else { // en is in e[]
-              if ((j >= 2) && (j < (_size - 8))) {
-                if (string_vector.at(mid(ptr_or_start,j)) != en.e[i-4]) {
-                  return false;
-                }
-              } else { // *this is in last 8
-                if (e[l8(_size, j)] != en.e[i-4]) { return false; }
-              }
-            }
-          }
-          return true;
-        }
-      }
-      return false;
-    }
-    #endif
   }
 
   bool ends_with(std::string_view en) const {
-    #if atImpl == 1
     if (en.size() > _size) { return false; }
     else if (en.size() == _size) { return *this == en; }
     else if (en.size() == 0) { return true; }
     else if (en.size() < _size) {
       // Actual compare logic
       for (uint32_t j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
-        if ((*this)[j] != en[i]) {
-          return false;
-        }
+        if ((*this)[j] != en[i]) { return false; }
       }
       return true;
     } 
-    #elif atImpl == 0    
-    if (en.size() > _size) { return false; }
-    else if (en.size() == _size) { return *this == en; }
-    else if (en.size() == 0) { return true; }
-    else if (en.size() < _size) {
-      // Actual compare logic
-      auto fndsize = 0;
-      if (_size <= 13) { // *this is SHORT
-        uint8_t mx = posShifter(_size);
-        mx = mx - (_size - en.size()); //shifter for *this
-        for (auto j = _size-en.size(); j < _size; ++j) { // iterate on *this
-          if (j <= 3) { // *this needs to shift
-            if (static_cast<char>(isol8(ptr_or_start, mx)) != en[fndsize++]) {
-              return false;
-            } else { --mx; }             
-            if (fndsize == en.size()) { return true; }
-          } else { // *this is in e
-            if (e[j-4] != en[fndsize++]) { return false; } 
-            else { --mx; }
-            if (fndsize == en.size()) { return true; }
-          }
-        }
-        return true;
-      } else { // *this is LONG
-        for (auto j = _size-en.size(); j < _size; ++j) {
-          if (j < 2) { // first two in e
-            if (e[j] != en[fndsize++]) { return false; } 
-            if (fndsize == en.size()) { return true; }
-          } else if (j >= 2 && j < (_size-8)) { // in string_vec
-            if (string_vector.at(mid(ptr_or_start,j)) != en[fndsize++]) {
-              return false;
-            }
-            if (fndsize == en.size()) { return true; }
-          } else {
-            if (e[l8(_size, j)] != en[fndsize++]) { return false; } 
-            if (fndsize == en.size()) { return true; }
-          }
-        }
-        return true;
-      }
-      return false;
-    }
-    #endif
   }
 
   // will use the string_view function
   bool ends_with(std::string en) const {
     return ends_with(std::string_view(en.c_str())); 
   }
-
-  //OLY
-
 
   std::size_t find(const str &v, std::size_t pos = 0) const{
     if (v._size >_size) return -1;
@@ -853,8 +498,6 @@ public:
   std::size_t rfind(const char *s, std::size_t pos, std::size_t n) const;
   std::size_t rfind(const char *s, std::size_t pos = 0) const;
 
-
-
   // concat implementation options
   // 1) add directly to strVec behind a (O(b) and depends on current size of strMap)
   //    a) find end of strVec pos with ptr_or_start
@@ -887,13 +530,11 @@ public:
   }
 
 
-  #if 1
   str append(const str &b) const {
     std::string start = this->to_s();
     start += b.to_s();
     return mmap_lib::str(start);
   }
-  #endif
 
   #if 0
   // 2) create a new string and directly add into strVec (O(a+b))
@@ -930,14 +571,18 @@ public:
   std::vector<str> split(const char chr) {  
     std::vector<str> vec;
     std::string hold;
+
+    if (_size == 0) { return vec; }
     for (auto i = 0; i < _size; ++i) {
       if ((*this)[i] == chr) {
         vec.push_back(mmap_lib::str(hold));
         hold.clear();
-      } else {
-        hold += (*this)[i];
-      }
+      } else { hold += (*this)[i]; }
     }
+    if (hold.size() != 0) {
+      vec.push_back(mmap_lib::str(hold));
+    }
+    return vec;
   }
 
   bool is_i() const{ 
@@ -1007,113 +652,211 @@ public:
 
 
   std::string to_s() const{  // convert to string    
-    #if atImpl == 1
     std::string out;
-    for (auto i = 0; i < _size; ++i) {
-      out += (*this)[i];
-    }
+    for (auto i = 0; i < _size; ++i) { out += (*this)[i]; }
     return out;
-
-
-    #elif atImpl == 0
-    std::string out;
-    
-    if (_size <= 13 ){
-      //adding charactors from ptr_or_start based on the size of the string
-      for (int i =0; i < ((_size>4) ? 4: _size); i++){
-        int temp = (_size >= 4) ? 3 : (_size-1); 
-        out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
-        //std::cout << "The out is  " << out << std::endl;
-      }
-      //if there are any characotrs in e, we add them as well
-      if(_size>4){
-        for(int i =0 ; i< (_size-4); i++){
-          out += e[i];
-        }
-      } 
-    } else{
-      //adding the first two charactors
-      for (int i =0; i< 2; i++){
-        out += e[i];
-      }
-      //adding the middle section of the string from string vector
-      for (int i = ptr_or_start; i < (ptr_or_start + _size - 10); i++) {   
-        out += string_vector.at(i);
-      }
-      //adding the last 8 charactors
-      for (int i = 2; i<10; i++){
-        out += e[i];
-      }
-    }
-    return out;
-    #endif 
   }
 
-  // get the str AFTER the last instance of chr inside *this
-  // EX)
-  // str h(helloworldworld)
-  // h.get_str_after_last('l') = "d"
-  str get_str_after_last(const char chr) const;
+  str get_str_after_last(const char chr) const{
+#if 1
+    size_t val = this->rfind(chr);
+    std::string out;
+    
+    if (val != -1){
+          if (_size <= 13 ){
+          //adding charactors from ptr_or_start based on the size of the string
+          if (val <= 3)
+          for (int i =val; i<((_size>4) ? 4: _size); i++){
+            int temp = (_size >= 4) ? 3 : (_size-1); 
+            out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
+            //std::cout << "The out is  " << out << std::endl;
+          }
+          //if there are any characotrs in e, we add them as well
+          if(_size>4){
+            for(int i = ((val <=3) ? 0:val) ; i< (_size-4); i++){
+              out += e[i];
+            }
+          } 
+        } else{
+          //adding the first two charactors
+          if (val <=1)
+          for (int i =val; i< 2; i++){
+            out += e[i];
+          }
+          //adding the middle section of the string from string vector
+          if (val < (_size-8) ){ 
+          for (int j = 2,i = ptr_or_start; i < (ptr_or_start + _size - 10); j++,i++) {   
+             if (j>= val ) out += string_vector.at(i);
+          }
+          }
+          //adding the last 8 charactors
+          for (int j =(_size -8), i = 2; i<10; j++,i++){
+            if (j>= val ) out += e[i];
+          }
 
+        }
+        return str(out);
+    }
+    //i dont know what to return if we cant find chr 
+#endif
+  }
+  str get_str_after_first(const char chr) const{
+    #if 1
+    size_t val = this->find(chr);
+    std::string out;
+    
+    if (val != -1){
+          if (_size <= 13 ){
+          //adding charactors from ptr_or_start based on the size of the string
+          if (val <= 3)
+          for (int i =val; i<((_size>4) ? 4: _size); i++){
+            int temp = (_size >= 4) ? 3 : (_size-1); 
+            out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
+            //std::cout << "The out is  " << out << std::endl;
+          }
+          //if there are any characotrs in e, we add them as well
+          if(_size>4){
+            for(int i = ((val <=3) ? 0:val) ; i< (_size-4); i++){
+              out += e[i];
+            }
+          } 
+        } else{
+          //adding the first two charactors
+          if (val <=1)
+          for (int i =val; i< 2; i++){
+            out += e[i];
+          }
+          //adding the middle section of the string from string vector
+          if (val < (_size-8) ){ 
+          for (int j = 2, i = ptr_or_start; i < (ptr_or_start + _size - 10); j++,i++) {   
+             if (j>= val ) out += string_vector.at(i);
+          }
+          }
+          //adding the last 8 charactors
+          for (int j =(_size -8), i = 2; i<10; j++,i++){
+            if (j>= val ) out += e[i];
+          }
 
-  str get_str_after_first(const char chr) const;
+        }
+        return str(out);
+    }
+    //i dont know what to return if we cant find chr
+   #endif 
+  }
 
-  str get_str_before_last(const char chr) const;
-  str get_str_before_first(const char chr) const;
+  str get_str_before_last(const char chr) const{
+    #if 1 
+    size_t val = this->rfind(chr);
+    //if (val ==0 ) return;
+    std::string out;
+     if (val ==0 ) return str(out);
+    size_t counter =0;
+    if (val != -1){
+    	if (_size <= 13 ){
+      //adding charactors from ptr_or_start based on the size of the string
+		      for (int i =0; i<((_size>4) ? 4: _size); i++){
+		      	counter++;
+		        int temp = (_size >= 4) ? 3 : (_size-1); 
+		        out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
+		        if(val == counter) return str(out);
+		        //std::cout << "The out is  " << out << std::endl;
+		      }
+		      //if there are any characotrs in e, we add them as well
+		      if(_size>4){
+		        for(int i =0 ; i< (_size-4); i++){
+		        	counter++;
+		        	out += e[i];
+		        	if(val == counter) return str(out);
+		        }
+		      } 
+    } else{
+	      //adding the first two charactors
+	      for (int i =0; i< 2; i++){
+	      	counter++;
+	        out += e[i];
+	        if(val == counter) return str(out);
+	      }
+	      //adding the middle section of the string from string vector
+	      for (int i = ptr_or_start; i < (ptr_or_start + _size - 10); i++) {   
+	        counter++;
+	        out += string_vector.at(i);
+	        if(val == counter) return str(out);
+	      }
+	      //adding the last 8 charactors
+	      for (int i = 2; i<10; i++){
+	      	counter++;
+	        out += e[i];
+	        if(val == counter) return str(out);
+	      }
+
+    }
+        return str(out);
+    }
+    //i dont know what to return if we cant find chr
+   #endif 
+  }
+  str get_str_before_first(const char chr) const{
+    #if 1
+    size_t val = this->find(chr);
+    //if (val ==0 ) return;
+    std::string out;
+    if (val ==0 ) return str(out);
+    size_t counter =0;
+    if (val != -1){
+    	if (_size <= 13 ){
+      //adding charactors from ptr_or_start based on the size of the string
+		      for (int i =0; i<((_size>4) ? 4: _size); i++){
+		      	counter++;
+		        int temp = (_size >= 4) ? 3 : (_size-1); 
+		        out += (ptr_or_start >> (8 * (temp-i))) & 0xFF;
+		        if(val == counter) return str(out);
+		        //std::cout << "The out is  " << out << std::endl;
+		      }
+		      //if there are any characotrs in e, we add them as well
+		      if(_size>4){
+		        for(int i =0 ; i< (_size-4); i++){
+		        	counter++;
+		        	out += e[i];
+		        	if(val == counter) return str(out);
+		        }
+		      } 
+    } else{
+	      //adding the first two charactors
+	      for (int i =0; i< 2; i++){
+	      	counter++;
+	        out += e[i];
+	        if(val == counter) return str(out);
+	      }
+	      //adding the middle section of the string from string vector
+	      for (int i = ptr_or_start; i < (ptr_or_start + _size - 10); i++) {   
+	        counter++;
+	        out += string_vector.at(i);
+	        if(val == counter) return str(out);
+	      }
+	      //adding the last 8 charactors
+	      for (int i = 2; i<10; i++){
+	      	counter++;
+	        out += e[i];
+	        if(val == counter) return str(out);
+	      }
+
+    }
+        return str(out);
+    }
+    //i dont know what to return if we cant find chr
+   #endif 
+  }
  
   str substr(size_t start) const {
     return this->substr(start, _size-start);
   }
 
   str substr(size_t start, size_t end) const { 
-    #if atImpl == 1
     std::string hold;
-    // if *this is empty, or start indx out of range => return empty pstr
-    if ((_size == 0) || (start > (_size-1))) {
-      return mmap_lib::str();
-    }
-    // adjusting end in case user tries to step too far
-    size_t adj_end = (end > (_size-start)) ? (_size-start):end;
-
-    for (auto i = start; i < (start + adj_end); ++i) {
-      hold += (*this)[i];
-    }
+    if ((_size == 0) || (start > (_size-1))) { return mmap_lib::str(); }
+    size_t adj_end = (end > (_size-start)) ? (_size-start):end; // adjusting end for overflow
+    for (auto i = start; i < (start + adj_end); ++i) { hold += (*this)[i]; }
     return mmap_lib::str(hold);
-
-    #elif atImpl == 0  
-    std::string hold;
-    
-    // if *this is empty, or start indx out of range => return empty pstr
-    if ((_size == 0) || (start > (_size-1))) {
-      return mmap_lib::str();
-    }
-    // adjusting end in case user tries to step too far
-    size_t adj_end = (end > (_size-start)) ? (_size-start):end;
-    
-    uint8_t mx = posShifter(_size);
-    mx = mx - start;
-    // uint8_t e_ptr = 0;
-    for (auto i = start; i < (start + adj_end); ++i) {
-      if (_size <= 13) { // *this is SHORT
-        if (i <= 3) { // need to shift
-          hold += static_cast<char>(isol8(ptr_or_start, mx));
-          --mx;
-        } else { // in e
-          hold += e[i-4];
-        }
-      } else { // *this is LONG
-        if (i <= 1) { // first two
-          hold += e[i];
-        } else if (i >= 2 && i < (_size-8)) { // long in vec
-          hold += string_vector.at(mid(ptr_or_start, i));
-        } else { // last 8
-          hold += e[l8(_size, i)];
-        }
-      }
-    }
-    mmap_lib::str sub(hold);
-    return sub;  
-    #endif
   }    
 
   void test_cpp() const;

@@ -1,4 +1,3 @@
-
 #include "mmap_str.hpp"
 
 #include <functional>
@@ -16,6 +15,22 @@
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
 #define RUN 1
+
+/* Test Status:
+ * basic_ctor           pass 
+ * random_ctor          pass
+ * random_comparisons   pass
+ * random_at_operator   pass
+ * isI_operator         pass
+ * starts_ends_with     pass
+ * to_s_to_i            pass
+ * concat_append        pass
+ * find                 pass
+ * substr               pass
+ * split                pass
+ *
+ */
+
 
 class Mmap_str_test : public ::testing::Test {
   //std::vector<std::vector<std::string>> ast_sorted_verification;
@@ -65,6 +80,8 @@ public:
   // wrapper for .at() since vectors are private
   std::string s_get(int i) { return str_bank.at(i); }
   std::string n_get(int i) { return num_bank.at(i); }
+  std::string nu_get(int i) { return no_underscore.at(i); }
+  std::string nd_get(int i) { return no_dash.at(i); }
 };
 
 
@@ -445,6 +462,49 @@ TEST_F(Mmap_str_test, substr) {
 
 
 TEST_F(Mmap_str_test, split) {
+  std::vector<mmap_lib::str> ref_nu, ref_nd, hold_nu, hold_nd;
+  std::string longg_nu, longg_nd;
+  
+  uint8_t iter = 0, sum = 0;
+  for (auto i = 0; i < RNDN; ++i) {
+    while (iter == 0) { // while iter is 0 at beginning, make sure its not
+      iter = 1 + (rand() % 10); // between 1 and 10
+      // adjusting iter so we don't exceed RNDN
+      if ((sum + iter) > RNDN) { iter = iter - ((sum + iter) - RNDN); }
+      sum += iter; // add to sum to compare
+    }
+    ref_nu.push_back(mmap_lib::str(nu_get(i))); // add to ref_
+    ref_nd.push_back(mmap_lib::str(nd_get(i))); // add to ref-
+    longg_nu += nu_get(i); // add to long
+    longg_nd += nd_get(i);
+    --iter;
+    if (iter == 0) { // iter == 0 means times to split
+      mmap_lib::str tt_nu(longg_nu);
+      mmap_lib::str tt_nd(longg_nd);
+      hold_nu = tt_nu.split('_'); // splitting by underscore
+      hold_nd = tt_nd.split('-'); // splitting by dash
+      EXPECT_EQ(ref_nu, hold_nu); // checking
+      EXPECT_EQ(ref_nd, hold_nd);
+      if (sum == RNDN) { break; } // done with vec means break
+      else { 
+        ref_nu.clear(); hold_nu.clear(); longg_nu.clear(); 
+        ref_nd.clear(); hold_nd.clear(); longg_nd.clear(); 
+      } // else clear data
+    } else {
+      longg_nu += '_'; longg_nd += '-';// adding token
+    } 
+  }
+}
+
+
+TEST_F(Mmap_str_test, get_str_before_after) {
+  // get random string
+  // 1) get random char from random string
+  // 2) run all 4 funcs on it:
+  //    -> get_str_after_first
+  //    -> get_str_before_first
+  //    -> get_str_after_last
+  //    -> get_str_before_last
 
 }
 
