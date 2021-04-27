@@ -16,19 +16,21 @@
 #define MinNum 1
 #define RUN 1
 
-/* Test Status:
- * basic_ctor           pass 
- * random_ctor          pass
- * random_comparisons   pass
- * random_at_operator   pass
- * isI_operator         pass
- * starts_ends_with     pass
- * to_s_to_i            pass
- * concat_append        pass
- * find                 pass
- * substr               pass
- * split                pass
- *
+/* ---------TEST FIXTURES---------
+ * Test Name             Status   Description
+ * _________             ______   ___________
+ * basic_ctor            pass     basic pstr construction
+ * random_ctor           pass     randomly generated pstr construction
+ * random_comparisons    pass     == and != tested on random pstr's
+ * random_at_operator    pass     [] tested on random pstr's
+ * isI_operator          pass     is_i() tested on random number pstr's
+ * starts_ends_with      pass     starts_with(str), ends_with(str) tested on random pstr's
+ * to_s_to_i             pass     to_s(), to_i() tested on random pstr's
+ * concat_append         pass     concat(s1, s2), append(str) tested on random pstr's
+ * find                  pass     find(str) tested on random pstr's
+ * substr                pass     substr(s, e) tested on random pstr's
+ * split                 pass     split(chr) tested on random pstr's
+ * get_str_before_after  fail     get_str_before/after_first/last() 
  */
 
 
@@ -44,7 +46,6 @@ public:
   void SetUp() override {
     srand(time(0));
     uint8_t t_len = 0u;
-    bool isNeg = false, isFloat = false;
     // random string generation
     for (uint8_t i = 0; i < RNDN; ++i) { // # of strings in vectors
       std::string ele, ele2, ele3, ele4;
@@ -496,18 +497,55 @@ TEST_F(Mmap_str_test, split) {
   }
 }
 
-
+#if 0
 TEST_F(Mmap_str_test, get_str_before_after) {
-  // get random string
-  // 1) get random char from random string
-  // 2) run all 4 funcs on it:
-  //    -> get_str_after_first
-  //    -> get_str_before_first
-  //    -> get_str_after_last
-  //    -> get_str_before_last
+  for (auto i = 0; i < RNDN; ++i) {
+    std::string temp = s_get(i);
+    mmap_lib::str hold(temp);
+    char ch = temp[rand() % temp.size()];
+    size_t ffo = temp.find_first_of(ch);
+    size_t flo = temp.find_last_of(ch);
 
+    std::cout << "Original string is: " << temp << std::endl;
+    std::cout << "Chosen char is: " << ch << std::endl;
+    std::cout << "ffo = " << ffo << " flo = " << flo << std::endl;
+
+    mmap_lib::str gsaf = hold.get_str_after_first(ch);
+    /*
+    mmap_lib::str gsbf = hold.get_str_before_first(ch);
+    mmap_lib::str gsal = hold.get_str_after_last(ch);
+    mmap_lib::str gsbl = hold.get_str_before_last(ch);
+    */
+
+    std::cout << "pstr gsaf: ";
+    gsaf.print_string();
+    std::cout << std::endl;
+
+    std::string gsaf_stable = temp.substr(ffo+1, temp.size() - (ffo+1));
+    std::string gsbf_stable = temp.substr(0, ffo);
+    std::string gsal_stable = temp.substr(flo+1, temp.size() - (flo+1));
+    std::string gsbl_stable = temp.substr(0, flo);
+    
+    mmap_lib::str gsaf_ref(gsaf_stable); 
+    mmap_lib::str gsbf_ref(gsbf_stable);
+    mmap_lib::str gsal_ref(gsal_stable);
+    mmap_lib::str gsbl_ref(gsbl_stable);
+
+    std::cout << "std gsaf_stable: " << gsaf_stable << std::endl;
+    std::cout << "pstr gsaf_ref: ";
+    gsaf_ref.print_string();
+    std::cout << std::endl;
+
+
+    /*
+    EXPECT_EQ(gsaf, gsaf_ref);
+    EXPECT_EQ(gsbf, gsbf_ref);
+    EXPECT_EQ(gsal, gsal_ref);
+    EXPECT_EQ(gsbl, gsbl_ref);
+    */
+  }
 }
-
+#endif
 
 #if RUN
 int main(int argc, char **argv) {
