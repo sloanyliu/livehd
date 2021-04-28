@@ -55,11 +55,11 @@ protected:
   std::array<char, 10> e;             // last 10 "special <128" characters ending the string
   uint16_t             _size;         // 2 bytes
   constexpr bool       is_digit(char c) const { return c >= '0' && c <= '9'; }
-  constexpr uint8_t    posShifter(uint8_t s) { return s < 4 ? (s - 1) : 3; }
-  constexpr uint8_t    posStopper(uint8_t s) { return s < 4 ? s : 4; }
-  constexpr char       isol8(uint32_t p_o_s, uint8_t s) { return (p_o_s >> (s * 8)) & 0xff; }
-  constexpr uint32_t   l8(uint32_t size, uint8_t i) { return i - (size - 10); }
-  constexpr uint32_t   mid(uint32_t p_o_s, uint8_t i) { return p_o_s + (i - 2); }
+  constexpr uint8_t    posShifter(uint8_t s) const { return s < 4 ? (s - 1) : 3; }
+  constexpr uint8_t    posStopper(uint8_t s) const { return s < 4 ? s : 4; }
+  constexpr char       isol8(uint32_t p_o_s, uint8_t s) const { return (p_o_s >> (s * 8)) & 0xff; }
+  constexpr uint32_t   l8(uint32_t size, uint8_t i) const { return i - (size - 10); }
+  constexpr uint32_t   mid(uint32_t p_o_s, uint8_t i) const { return p_o_s + (i - 2); }
 
 public:
   // FIXME: This is a non persistent map. Something like string_map2("lgdb","global_str");
