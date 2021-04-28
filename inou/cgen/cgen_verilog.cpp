@@ -366,27 +366,21 @@ void Cgen_verilog::create_subs(std::string &buffer, Lgraph *lg) {
 
     bool first_entry = true;
     for (auto &io_pin : sub.get_sorted_io_pins()) {
-      if (first_entry) {
-        absl::StrAppend(&buffer, "  .");
-        first_entry = false;
-      } else {
-        absl::StrAppend(&buffer, " ,.");
-      }
+      Node_pin dpin;
       if (io_pin.is_input()) {
         auto spin = node.get_sink_pin(io_pin.name);
-        auto dpin = spin.get_driver_pin();
-        if (dpin.is_invalid()) {
-          absl::StrAppend(&buffer, io_pin.name, "() // disconnected input\n");
+        dpin = spin.get_driver_pin();
+      }else{
+        dpin = node.get_driver_pin(io_pin.name);
+        if (!dpin.is_connected())
+          dpin.invalidate();
+      }
+      if (!dpin.is_invalid()) {
+        if (first_entry) {
+          absl::StrAppend(&buffer, ".", io_pin.name, "(", get_scaped_name(dpin.get_wire_name()), ")\n");
+          first_entry = false;
         } else {
-          absl::StrAppend(&buffer, io_pin.name, "(", get_scaped_name(dpin.get_wire_name()), ")\n");
-        }
-      } else {
-        I(io_pin.is_output());
-        auto dpin = node.get_driver_pin(io_pin.name);
-        if (dpin.is_invalid()) {
-          absl::StrAppend(&buffer, io_pin.name, "() // disconnected output\n");
-        } else {
-          absl::StrAppend(&buffer, io_pin.name, "(", get_scaped_name(dpin.get_wire_name()), ")\n");
+          absl::StrAppend(&buffer, ",.", io_pin.name, "(", get_scaped_name(dpin.get_wire_name()), ")\n");
         }
       }
     }
@@ -553,11 +547,13 @@ void Cgen_verilog::create_locals(std::string &buffer, Lgraph *lg) {
 
     if (Ntype::is_multi_driver(op)) {
       if (op == Ntype_op::Sub) {
-        auto iname = get_scaped_name(node.default_instance_name());
-        for (auto &e : node.out_edges()) {
-          auto name = get_scaped_name(e.driver.get_wire_name());
-          absl::StrAppend(&buffer, "wire signed [", e.driver.get_bits() - 1, ":0] ", name, ";\n");
-          pin2var.emplace(e.driver.get_compact_class(), name);
+        for (auto &e : node.inp_edges()) {
+          auto name2 = get_scaped_name(e.driver.get_wire_name());
+          add_to_pin2var(buffer, e.driver, name2, e.driver.is_unsign());
+        }
+        for (auto &dpin2 : node.out_connected_pins()) {
+          auto name2 = get_scaped_name(dpin2.get_wire_name());
+          add_to_pin2var(buffer, dpin2, name2, dpin2.is_unsign());
         }
       }
       continue;
@@ -572,7 +568,7 @@ void Cgen_verilog::create_locals(std::string &buffer, Lgraph *lg) {
 
     std::string name = get_scaped_name(dpin.get_wire_name());
 
-    bool out_unsigned = false;
+    bool out_unsigned = dpin.is_unsign();
 
     if (op == Ntype_op::Mux) {
       // mux needs name, but it can also has a vector to avoid ifs
@@ -596,6 +592,14 @@ void Cgen_verilog::create_locals(std::string &buffer, Lgraph *lg) {
     } else if (op == Ntype_op::Get_mask) {
       name         = get_scaped_name(node.get_sink_pin("a").get_wire_name() + "_unsign");
       out_unsigned = true;  // Get_mask uses a variable to converts/removes sign in a cleaner way
+      {
+        // Force the "a" pin in get_mask to be a variable (yosys fails otherwise)
+        auto dpin2 = node.get_sink_pin("a").get_driver_pin();
+        if (!pin2var.contains(dpin2.get_compact_class())) {
+          auto name2 = get_scaped_name(dpin2.get_wire_name());
+          add_to_pin2var(buffer, dpin2, name2, false);
+        }
+      }
     } else if (!node.is_type_flop()) {
       if (node.has_name() && node.get_name()[0] != '_')
         continue;

@@ -39,9 +39,11 @@ void Firmap::do_firbits_analysis(Lgraph *lg) {
   do {
     if (firbits_iters > 10) 
       Pass::error("FIRBITS cannot converge within 10 iterations!\n");
+
 #ifndef NDEBUG
-    fmt::print("FIRBITS Iteration:{}\n", firbits_iters);
+    fmt::print("\nFIRBITS Iteration:{}\n", firbits_iters);
 #endif
+
     lg->regenerate_htree();  // called bottom up, and the hierarchy may have been unfinished before
     firbits_wait_flop = false;
     for (auto node : lg->forward()) {
@@ -97,17 +99,13 @@ void Firmap::analysis_lg_flop(Node &node, FBMap &fbmap) {
     auto sign = it_d_dpin->second.get_sign();
     fbmap.insert_or_assign(node.get_driver_pin().get_compact_flat(), Firrtl_bits(bits, sign));
     return;
-  // } else if (it_qpin != fbmap.end()) {  // At least propagate backward the width
-  //   // FIXME->sh: to be deprecated, won't happen for CHIRRTL front-end
-  //   auto bits = it_qpin->second.get_bits();
-  //   auto sign = it_qpin->second.get_sign();
-  //   fbmap.insert_or_assign(d_dpin.get_compact_flat(), Firrtl_bits(bits, sign));
-  //   return;
   } else {
-#ifndef NDEBUG
-    fmt::print("    {} input driver {} not ready\n", node.debug_name(), d_dpin.debug_name());
-    fmt::print("    {} flop q_pin {} not ready\n", node.debug_name(), qpin.debug_name());
-#endif
+
+    #ifndef NDEBUG
+      fmt::print("    {} input driver {} not ready\n", node.debug_name(), d_dpin.debug_name());
+      fmt::print("    {} flop q_pin {} not ready\n", node.debug_name(), qpin.debug_name());
+    #endif
+
     firbits_issues = true;
     return;
   }
@@ -425,7 +423,11 @@ void Firmap::analysis_fir_tail(Node &node, XEdge_iterator &inp_edges, FBMap &fbm
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (firbits_wait_flop == true) 
+        return;
+      
+      // driver is not from other sugraph, wait next iteration for Flop being solved
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -449,8 +451,11 @@ void Firmap::analysis_fir_head(Node &node, XEdge_iterator &inp_edges, FBMap &fbm
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -475,8 +480,11 @@ void Firmap::analysis_fir_bits_extract(Node &node, XEdge_iterator &inp_edges, FB
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -502,8 +510,11 @@ void Firmap::analysis_fir_cat(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -534,8 +545,11 @@ void Firmap::analysis_fir_bitwise(Node &node, XEdge_iterator &inp_edges, FBMap &
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -560,8 +574,11 @@ void Firmap::analysis_fir_not(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -583,8 +600,11 @@ void Firmap::analysis_fir_neg(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -607,8 +627,11 @@ void Firmap::analysis_fir_cvt(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -637,8 +660,11 @@ void Firmap::analysis_fir_dshr(Node &node, XEdge_iterator &inp_edges, FBMap &fbm
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -663,8 +689,11 @@ void Firmap::analysis_fir_dshl(Node &node, XEdge_iterator &inp_edges, FBMap &fbm
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -688,8 +717,11 @@ void Firmap::analysis_fir_shr(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -719,8 +751,11 @@ void Firmap::analysis_fir_shl(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -744,8 +779,11 @@ void Firmap::analysis_fir_as_sint(Node &node, XEdge_iterator &inp_edges, FBMap &
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -766,8 +804,11 @@ void Firmap::analysis_fir_as_uint(Node &node, XEdge_iterator &inp_edges, FBMap &
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -789,8 +830,11 @@ void Firmap::analysis_fir_pad(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -814,8 +858,11 @@ void Firmap::analysis_fir_comp(Node &node, XEdge_iterator &inp_edges, FBMap &fbm
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -839,8 +886,11 @@ void Firmap::analysis_fir_rem(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -867,8 +917,11 @@ void Firmap::analysis_fir_div(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -898,8 +951,11 @@ void Firmap::analysis_fir_mul(Node &node, XEdge_iterator &inp_edges, FBMap &fbma
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
@@ -942,11 +998,15 @@ void Firmap::analysis_fir_add_sub(Node &node, XEdge_iterator &inp_edges, FBMap &
   for (auto e : inp_edges) {
     auto it = fbmap.find(e.driver.get_compact_flat());
     if (it == fbmap.end()) {
+      if (firbits_wait_flop == true) 
+        return;
+
       // driver is not from other sugraph, wait next iteration for Flop being solved
-      if (e.driver.get_hidx() == node.get_hidx()) {
+      if (e.driver.get_type_op() == Ntype_op::Flop) {
         firbits_wait_flop = true;
         return;
       }
+      
       it = get_fbits_from_hierarchy(e);
     }
 

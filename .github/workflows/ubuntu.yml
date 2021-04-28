@@ -42,11 +42,11 @@ jobs:
       - name: Print the list of targets
         run: bazel query --output label_kind //...
 
-      - run: bazel coverage --collect_code_coverage --test_tag_filters=-fixme --combined_report=lcov --test_output=all -s //...
+      - run: bazel coverage --instrument_test_targets --collect_code_coverage --test_tag_filters=-fixme --combined_report=lcov --test_output=all -s //...
 
       - uses: codecov/codecov-action@v1
         with:
-          directory: ./bazel-testlogs/
+          directory: ./bazel-out/_coverage
 
   clang:
     runs-on: ubuntu-20.04
@@ -62,7 +62,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.cache/bazel
-          key: bazel-clang-12
+          key: bazel-clang-11
 
       - name: Install Clang
         run: |
@@ -81,7 +81,7 @@ jobs:
           sudo ln -sf /usr/bin/llvm-strip-$LLVM_VERSION /usr/bin/llvm-strip
           sudo ln -sf /usr/bin/llvm-config-$LLVM_VERSION /usr/bin/llvm-config
         env:
-          LLVM_VERSION: 12
+          LLVM_VERSION: 11
 
       - run: sudo apt install -y build-essential
       - run: sudo wget https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 -O /usr/local/bin/bazel

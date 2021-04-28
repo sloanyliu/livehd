@@ -24,7 +24,6 @@ tuple_reg tuple_reg2 tuple_nested2 get_mask1'
 # pts='vector2'
 # pts='hier_tuple_nested_if8'  # LNAST_TO failure
 
-
 # Note: in this bash script, you MUST specify top module name AT FIRST POSITION
 pts_hier1='top sum top'
 pts_hier2='top top sum'
@@ -166,8 +165,8 @@ Pyrope_compile_hier () {
     echo "LGraph -> Verilog"
     echo "----------------------------------------------------"
 
-    ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
-    # ${LGSHELL} "lgraph.open name:${pt} |> inou.cgen.verilog "
+    #${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
+    ${LGSHELL} "lgraph.open name:${pt} |> inou.cgen.verilog "
     if [ $? -eq 0 ] && [ -f ${pt}.v ]; then
         echo "Successfully generate Verilog: ${pt}.v"
         rm -f  yosys_script.*
@@ -206,9 +205,9 @@ Pyrope_compile_hier () {
 rm -rf ./lgdb
 Pyrope_compile "$pts"
 rm -rf ./lgdb
-#Pyrope_compile_hier "$pts_hier1"
+Pyrope_compile_hier "$pts_hier1"
 rm -rf ./lgdb
-#Pyrope_compile_hier "$pts_hier2"
+Pyrope_compile_hier "$pts_hier2"
 
 # Do not remove verilog, I tend to have tests cases in homedirectory
 # rm -f *.v

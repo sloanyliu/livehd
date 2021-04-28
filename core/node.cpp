@@ -98,6 +98,34 @@ Node::Node(Lgraph *_g, const Hierarchy_index &_hidx, const Compact_class &comp)
   // I(top_g->get_hierarchy_class_lgid(hidx) == current_g->get_lgid());
 }
 
+Node::Node(Lgraph *_g, const Compact_flat &comp)
+    : top_g(nullptr), current_g(nullptr), hidx(Hierarchy_tree::invalid_index()), nid(comp.nid) {
+  I(nid);
+  auto *lib = _g->ref_library();
+  top_g = lib->try_find_lgraph(comp.lgid);
+  I(top_g);
+  current_g = top_g;
+  I(top_g);
+
+  I(current_g->is_valid_node(nid));
+}
+
+Node::Node(std::string_view path, const Compact_flat &comp)
+    : top_g(nullptr), current_g(nullptr), hidx(Hierarchy_tree::invalid_index()), nid(comp.nid) {
+  I(nid);
+  top_g = Graph_library::try_find_lgraph(path, comp.lgid);
+  I(top_g);
+  current_g = top_g;
+  I(top_g);
+
+  I(current_g->is_valid_node(nid));
+}
+
+Node::Compact_flat Node::get_compact_flat() const {
+  I(!is_invalid());
+  return Compact_flat(current_g->get_lgid(), nid);
+}
+
 Node_pin Node::get_driver_pin_raw(Port_ID pid) const {
   I(!is_type_sub());  // Do not setup subs by PID, use name. IF your really need it, use setup_driver_pin_raw
   I(Ntype::has_driver(get_type_op(), pid));
@@ -576,21 +604,18 @@ Bits_t Node::get_bits() const {
 bool Node::has_place() const { return Ann_node_place::ref(top_g)->has(get_compact()); }
 
 //----- Subject to changes in the future:
-enum { WHITE = 0, GREY, BLACK };
-void Node::set_color(int new_color) { Ann_node_color::ref(current_g)->set(get_compact_class(), std::to_string(new_color)); }
+void Node::set_color(int new_color) {
+  Ann_node_color::ref(current_g)->set(get_compact_class(), new_color);
+}
 
 int Node::get_color() const {
-  auto str = Ann_node_color::ref(current_g)->get_val(get_compact_class());
-  int  color;
-  auto ok = absl::SimpleAtoi(str, &color);
-  I(ok);
-  return color;
+  return Ann_node_color::ref(current_g)->get_val(get_compact_class());
 }
 
 bool Node::has_color() const { return Ann_node_color::ref(current_g)->has_key(get_compact_class()); }
 
 // LCOV_EXCL_START
-void Node::dump() {
+void Node::dump() const {
   fmt::print("nid: {} type: {} lgraph: {} ", nid, get_type_name(), current_g->get_name());
   if (get_type_op() == Ntype_op::LUT) {
     fmt::print(" lut = {}\n", get_type_lut().to_pyrope());

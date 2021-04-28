@@ -25,24 +25,21 @@ if [ $# -eq 0 ]; then
   # FIRRTL_LEVEL='lo'
   FIRRTL_LEVEL='hi'
 
-  pts='TrivialAdd Test2 VendingMachineSwitch VendingMachine LFSR16
+  pts='Cell_alone Accumulator Coverage LFSR16 TrivialAdd Test2 VendingMachineSwitch VendingMachine 
   Trivial Tail TrivialArith NotAnd Shifts Darken HiLoMultiplier AddNot
   GCD_3bits Test3 Register RegisterSimple Parity ResetShiftRegister
   SimpleALU ByteSelector Test2 MaxN Max2 Flop EnableShiftRegister LogShifter
-  Decrementer Counter'
+  Decrementer Counter RegXor'
   # pts='VecShiftRegister'
-  # pts='Cell_alone'
-  # pts='SingleEvenFilter'
-  # pts='SubModule'
-  # pts='BundleConnect'
-  # pts='Coverage'
+
+  # issue: /foo.bar.a mismatch with foo_bar_a in hierarchical design
+  # pts='Mux4 SubModule SingleEvenFilter Adder4 XorSelfThread1 Xor6Thread2' 
+
+
+  # pts='BundleConnect ' # issue: bits attribute missing
+  # pts='PlusAnd'        # issue: first element of Vector is not ended with _0
+  # pts='Test1'          # issue: run-time index
   # pts='Adder4'
-  # pts='Xor6Thread2'
-  # pts='XorSelfThread1'
-  # pts='Accumulator'
-  # pts='RegXor'
-  # pts='PlusAnd'
-  # pts='Mux4'
 
 else
   file=$(basename $1)
@@ -129,7 +126,7 @@ firrtl_test() {
     echo "LGraph -> Verilog"
     echo "----------------------------------------------------"
 
-    ${LGSHELL} "lgraph.open name:${pt} |> inou.cgen.verilog"
+    ${LGSHELL} "lgraph.open name:${pt} hier:true |> inou.cgen.verilog"
     # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
     ret_val=$?
     # ${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg"

@@ -1,10 +1,14 @@
+
+#include <vector>
+#include <type_traits>
+
 #include "fmt/format.h"
 #include "iassert.hpp"
-#include <vector>
+
 #include "lrand.hpp"
 #include "lbench.hpp"
 #include "flat_hash_map.hpp"
-#include <type_traits>
+
 #include "mmap_str.hpp"
 #include "mmap_map.hpp"
 
@@ -472,26 +476,6 @@ void pstr_starts_with() {
 
 void bench_str_cmp() {
 
-  #if 0
-  Lbench b("bench_str_cmp");
-  Lrand_range<char>     ch(33,126);
-  Lrand_range<uint16_t> sz(1,400);
-
-  std::vector<mmap_lib::str> v;
-  for(auto i=0u;i<10;++i) {
-    auto s = sz.any();
-    mmap_lib::str temp;
-    for(auto j=0;j<s;++j) {
-      std::cout << ch.any();
-      temp = temp.append(ch.any());
-    }
-    v.emplace_back(temp);
-    temp.print_string();
-    std::cout << std::endl;
-  }
-  #endif
-
-  #if 1
   {
     Lbench b("bench_str_cmp");
 
@@ -501,20 +485,18 @@ void bench_str_cmp() {
     std::vector<mmap_lib::str> v;
     for(auto i=0u;i<1e4;++i) {
       auto s = sz.any();
-      mmap_lib::str temp;
+      mmap_lib::str str;
       for(auto j=0;j<s;++j) {
-        temp = temp.append(ch.any());
+        str = str.append(ch.any());
       }
-      v.emplace_back(temp);
+      v.emplace_back(str);
     }
 
     int conta=0;
-    // O(n^2)
     for(auto i=0u;i<1e4;++i) {
       for(auto j=0u;j<1e4;++j) {
-        if (v[i] == v[j]) {
+        if (v[i] == v[j])
           conta++;
-        }
       }
     }
 
@@ -547,7 +529,6 @@ void bench_str_cmp() {
 
     fmt::print("bench_string_cmp conta:{}\n",conta);
   }
-  #endif
 }
 
 

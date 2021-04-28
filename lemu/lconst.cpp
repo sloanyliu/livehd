@@ -372,7 +372,8 @@ Lconst Lconst::get_mask_op(const Lconst &mask) const {
   auto   mask_bits = mask.get_bits();
   if (mask < 0) {
     auto m   = std::max(get_bits(), mask.get_bits());
-    mask_num = (Number(1) << m) + ((Lconst(1) - mask).not_op()).get_num();
+    //mask_num = (Number(1) << m) + ((Lconst(1) - mask).not_op()).get_num();
+    mask_num = ((Number(1) << m)-1) & (((Lconst(-1) - mask).not_op()).get_num());
   }
 
   if (has_unknowns()) {
@@ -634,7 +635,7 @@ Lconst Lconst::lsh_op(Bits_t amount) const {
     return *this;
 
   if (has_unknowns()) {
-    auto qmarks = to_string();
+    auto qmarks = to_pyrope();
     qmarks.append(amount, '0');
     return Lconst(qmarks);
   }
@@ -649,7 +650,7 @@ Lconst Lconst::rsh_op(Bits_t amount) const {
     return *this;
 
   if (is_string()) {
-    auto qmarks = to_string();
+    auto qmarks = to_pyrope();
     auto s      = qmarks.substr(amount);
     return Lconst(s);
   }

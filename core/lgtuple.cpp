@@ -394,6 +394,14 @@ int Lgtuple::get_first_level_pos(std::string_view key) {
   return x;
 }
 
+std::string_view Lgtuple::get_first_level_name(std::string_view key) {
+  if (key.size()>0 && key[0] != ':')
+    return key;
+
+  auto n = key.substr(1).find(':');
+  return key.substr(1+1+n);
+}
+
 std::string_view Lgtuple::get_canonical_name(std::string_view key) {
   // Remove 0.0.0.xxxx and xxx.0.0.0 if it exists
 
@@ -594,6 +602,8 @@ void Lgtuple::del(std::string_view key) {
 void Lgtuple::add(std::string_view key, std::shared_ptr<Lgtuple const> tup) {
   I(!key.empty());
 
+  correct = correct && tup->correct;
+
   for (const auto &it : tup->key_map) {
     if (it.first.empty()) {
       add(key, it.second);
@@ -616,6 +626,24 @@ void Lgtuple::add(std::string_view key, std::shared_ptr<Lgtuple const> tup) {
 }
 
 void Lgtuple::add(std::string_view key, const Node_pin &dpin) {
+
+#ifndef NDEBUG
+  // Dangerous. The Tup are deleted in program order. If stored here. It can be
+  // garbage later.
+  //
+  // Only TupGet for a root attr can be because they will be converted to AttrGet
+  if(dpin.get_node().is_type_tup()) {
+    auto pos_spin = dpin.get_node().get_sink_pin("position");
+    I(pos_spin.is_connected());
+    I(pos_spin.get_driver_pin().is_type_const());
+    auto v = pos_spin.get_driver_pin().get_type_const().to_string();
+    if (is_correct()) {
+      I(is_root_attribute(v));
+    }else{
+      fmt::print("tup:{} adding potentially incorrect key:{} (more iterations needed to fix)\n", name, key);
+    }
+  }
+#endif
 
   bool ordered = is_ordered();
 
@@ -1039,7 +1067,8 @@ std::shared_ptr<Lgtuple> Lgtuple::make_flop(Node &flop) const {
         if (parent_node.is_type(Ntype_op::AttrSet)) {
           auto attr2_dpin = parent_node.get_sink_pin("field").get_driver_pin();
           I(!attr2_dpin.is_invalid());
-          auto attr2 = attr2_dpin.get_name();
+          I(attr2_dpin.is_type_const());
+          auto attr2 = attr2_dpin.get_type_const().to_string();
           if (attr2 == attr)
             continue; // same attribute already set (can it have different value??)
         }
