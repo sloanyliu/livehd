@@ -11,6 +11,8 @@
 #define CTOR_TESTS 0
 #define NEEQ_TESTS 0
 #define STARTS_WITH_TESTS 0
+#define FIND 0
+#define BENCH 1
 
 #if 0
 //implicitly changes ts to string_view
@@ -468,12 +470,97 @@ void pstr_starts_with() {
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t-r, t);
 }
 
+void bench_str_cmp() {
+
+  #if 0
+  Lbench b("bench_str_cmp");
+  Lrand_range<char>     ch(33,126);
+  Lrand_range<uint16_t> sz(1,400);
+
+  std::vector<mmap_lib::str> v;
+  for(auto i=0u;i<10;++i) {
+    auto s = sz.any();
+    mmap_lib::str temp;
+    for(auto j=0;j<s;++j) {
+      std::cout << ch.any();
+      temp = temp.append(ch.any());
+    }
+    v.emplace_back(temp);
+    temp.print_string();
+    std::cout << std::endl;
+  }
+  #endif
+
+  #if 1
+  {
+    Lbench b("bench_str_cmp");
+
+    Lrand_range<char>     ch(33,126);
+    Lrand_range<uint16_t> sz(1,400);
+
+    std::vector<mmap_lib::str> v;
+    for(auto i=0u;i<1e4;++i) {
+      auto s = sz.any();
+      mmap_lib::str temp;
+      for(auto j=0;j<s;++j) {
+        temp = temp.append(ch.any());
+      }
+      v.emplace_back(temp);
+    }
+
+    int conta=0;
+    // O(n^2)
+    for(auto i=0u;i<1e4;++i) {
+      for(auto j=0u;j<1e4;++j) {
+        if (v[i] == v[j]) {
+          conta++;
+        }
+      }
+    }
+
+    fmt::print("bench_str_cmp conta:{}\n",conta);
+  }
+
+  {
+    Lbench b("bench_string_cmp");
+
+    Lrand_range<char>     ch(33,126);
+    Lrand_range<uint16_t> sz(1,400);
+
+    std::vector<mmap_lib::str> v;
+    for(auto i=0u;i<1e4;++i) {
+      auto s = sz.any();
+      std::string str;
+      for(auto j=0;j<s;++j) {
+        str.append(1,ch.any());
+      }
+      v.emplace_back(str);
+    }
+
+    int conta=0;
+    for(auto i=0u;i<1e4;++i) {
+      for(auto j=0u;j<1e4;++j) {
+        if (v[i] == v[j])
+          conta++;
+      }
+    }
+
+    fmt::print("bench_string_cmp conta:{}\n",conta);
+  }
+  #endif
+}
+
+
 int main(int argc, char **argv) {
+  #if BENCH
+  bench_str_cmp();
+  #endif
+
   #if CTOR_TESTS
   mmap_pstr_ctor_tests();
   #endif
 
-  #if 0 // NEEQ_TESTS  
+  #if NEEQ_TESTS  
   std::cout << "==========================" << std::endl;
   pstrVchar_eqeq_tests(); 
   pstrVchar_noeq_tests(); 
@@ -485,16 +572,16 @@ int main(int argc, char **argv) {
   pstr_isI(); 
   std::cout << "==========================" << std::endl;
   #endif
+
+  #if FIND
   mmap_lib::str one("uiwjzabcdefl");
   mmap_lib::str two("efl");
   int result = one.rfind(two);
   printf("The result is %d \n", result);
-  
-
-
+  #endif 
 
   #if STARTS_WITH_TESTS
-  //pstr_starts_with();
+  pstr_starts_with();
   #endif
 
  /* 

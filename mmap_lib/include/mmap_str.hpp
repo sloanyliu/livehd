@@ -430,20 +430,6 @@ public:
     return rfind(str(s),pos);
   }
 
-  // concat implementation options
-  // 1) add directly to strVec behind a (O(b) and depends on current size of strMap)
-  //    a) find end of strVec pos with ptr_or_start
-  //    b) add b to it
-  //    c) Careful! Need to push everything else back
-  //    d) MUST modify the strMap for all strings that have ptr_or_start 
-  //       After *this's ptr_or_start
-  // 2) create a new string and directly add into strVec (O(a+b))
-  //    -> The only thing here is that it's kind of copies ctor logic
-  //    0) use ctor 0 to make object
-  //    a) add a strMap entry
-  //    b) find end of strVec, then directly add on to vec
-  // 3) Easy way -> worst runtime, easiest to code 
-  //    > Currently implemented
   static str concat(const str &a, const str &b) { 
     return a.append(b);
   }
@@ -459,13 +445,6 @@ public:
 
   static str concat(const str &a, int v) {
     return a.append(v);
-  }
-
-
-  str append(const str &b) const {
-    std::string start = this->to_s();
-    start += b.to_s();
-    return mmap_lib::str(start);
   }
 
   #if 0
@@ -490,6 +469,67 @@ public:
   }
   #endif
 
+  str append(const str &b) const {
+    // if _size <= 13, not in map yet
+    //   now check _size + v._size 
+    //   if _size + v._size <= 13, change p_o_s and e
+    //   else we add it to vec and map (new string)
+    // else if _size > 13 
+    //   if the string is the last in the vec 
+    //     add to vec and add to  map and change e
+    //   else 
+    //     DWWDN
+    if (_size <= 13) {
+      if ((_size + b._size) <= 13) { // size and b size < = 13
+        if (_size <= 3) {
+          auto i = 0;
+          for (; i < b._size; ++i) {
+            if (_size + i <= 4) {
+              // shift
+              ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
+            }
+          }
+          for (; i < b._size; ++i) { e[i-4] = b[i]; }
+        } else {
+          for (auto i = _size-4+1, j = 0; i < e.max_size(), j < b._size; ++i, ++j) {
+            e[i] = b[j];
+          }
+        }
+      } else { // size and b size > 13
+        // re make the string to be LONG
+        std::string hold;
+        for (auto i = 0; i < _size; ++i) { hold += (*this)[i]; }
+        for (auto i = 0; i < b._size; ++i) { hold += b[i]; }
+        str temp = str(hold);
+        ptr_or_start = temp.ptr_or_start;
+        for (auto i = 0; i < e.size(); ++i) { e[i] = temp.e[i]; }
+      }
+    } else {
+      if ((ptr_or_start + _size) == string_vector.size()) {
+        // add to vector end, change e
+        for (auto i = 0; i < b._size; ++i) {
+          if (b._size >= 8) {
+            for (auto i = 2; i < 10; ++i) { string_vector.append(e[i]); }
+            for (auto i = 0; i < b._size - 8; ++i) { string_vector.append(b[i]); }
+            for (auto i = b._size - 8, j = 2; i < b._size, j < 10; ++i, ++j) {e[j] = b[i]; } 
+          } else { // b._size < 8
+            for (auto i = 2; i < b._size + 2; ++i) { string_vector.append(e[i]); } // put e to vec
+            auto i = 2;
+            for (; i < b._size + 2; ++i) { e[i] = e[i+b._size]; } // overwrite e
+            for (auto j = 0; j < b._size, i < 10; ++i, ++j) { e[i] = b[j]; } // put b in e
+          }
+        }
+        // TODO: put the new string in map
+      } else {
+        std::string start = this->to_s(); // n
+        start += b.to_s(); // m
+        return mmap_lib::str(start); // n + m
+      }
+    }
+    _size += b._size;
+    return *this;
+  }
+
   str append(std::string_view b) const {
     return this->append(mmap_lib::str(b));
   }
@@ -498,6 +538,18 @@ public:
     std::string hold = std::to_string(b);
     return this->append(mmap_lib::str(hold));
   }
+
+  #if 1
+  str append(const char c) const {
+    // should we make a new string everytime we append?
+    // it's like adding on to another string, the same string
+    // let's try it
+    //std::cout << "here" << std::endl;
+    std::string hold;
+    hold += c;
+    return this->append(mmap_lib::str(hold));
+  }
+  #endif
   
   // used as a tokenizing func, return vector of pstr's
   std::vector<str> split(const char chr) {  
