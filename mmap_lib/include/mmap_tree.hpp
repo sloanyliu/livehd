@@ -24,7 +24,7 @@ public:
   constexpr Tree_index(Tree_level l, Tree_pos i) : level(l), pos(i) {}
 
   static constexpr Tree_index root() {
-    Tree_index i(0,0);
+    Tree_index i(0, 0);
     return i;
   }
 
@@ -227,8 +227,8 @@ protected:
     I((index.pos >> 2) < (int)pointers_stack[index.level].size());
 
     auto pos = pointers_stack[index.level][index.pos >> 2].next_sibling;
-    if ((pos & 3) > (index.pos & 3) || (pos&3)==0)
-      return true; // Either the index is smaller than end or all the entries are used (pos==0)
+    if ((pos & 3) > (index.pos & 3) || (pos & 3) == 0)
+      return true;  // Either the index is smaller than end or all the entries are used (pos==0)
 
     return false;
   }

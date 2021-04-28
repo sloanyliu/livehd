@@ -11,11 +11,13 @@
 #include "mmap_map.hpp"
 
 // FIXME: Move this as protected inline methods
+/*
 #define posShifter(s) s < 4 ? (s - 1) : 3
 #define posStopper(s) s < 4 ? s : 4
 #define isol8(pos, s) (pos >> (s * 8)) & 0xff
 #define l8(size, i)   i - (size - 10)
 #define mid(p_o_s, i) p_o_s + (i - 2)
+*/
 
 namespace mmap_lib {
 
@@ -53,13 +55,20 @@ protected:
   std::array<char, 10> e;             // last 10 "special <128" characters ending the string
   uint16_t             _size;         // 2 bytes
   constexpr bool       is_digit(char c) const { return c >= '0' && c <= '9'; }
+  constexpr uint8_t    posShifter(uint8_t s) { return s < 4 ? (s - 1) : 3; }
+  constexpr uint8_t    posStopper(uint8_t s) { return s < 4 ? s : 4; }
+  constexpr char       isol8(uint32_t p_o_s, uint8_t s) { return (p_o_s >> (s * 8)) & 0xff; }
+  constexpr uint32_t   l8(uint32_t size, uint8_t i) { return i - (size - 10); }
+  constexpr uint32_t   mid(uint32_t p_o_s, uint8_t i) { return p_o_s + (i - 2); }
 
 public:
   // FIXME: This is a non persistent map. Something like string_map2("lgdb","global_str");
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
+  //static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str");
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   inline static std::vector<int> string_vector;  // ptr_or_start points here!
+  //inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");  // ptr_or_start points here!
 
   //===========constructor 0 (template obj) ============
   str() : ptr_or_start(0), e{0}, _size(0) {}
@@ -85,16 +94,16 @@ public:
   }
 
   //=====helper function to check if a string exists in string_vector=====
-  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) { 
-    std::string_view sv(string_to_check); // string to sv
+  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
+    std::string_view sv(string_to_check);  // string to sv
     // using substr here to take out all the weird things that come with sview
-    auto it = string_map2.find(sv.substr(0, size)); // find the sv in the string_map2
-    if (it == string_map2.end()) {          // if we can't find the sv
+    auto it = string_map2.find(sv.substr(0, size));  // find the sv in the string_map2
+    if (it == string_map2.end()) {                   // if we can't find the sv
       //<std::string_view, uint32_t(position in vec)> string_map2
       string_map2.set(sv.substr(0, size), string_vector.size());  // insert it
-      return std::make_pair(0,0);
+      return std::make_pair(0, 0);
     } else {
-      return std::make_pair(string_map2.get(it), size); //found it, return
+      return std::make_pair(string_map2.get(it), size);  // found it, return
       // pair is (ptr_or_start, size of string)
     }
 
@@ -102,7 +111,7 @@ public:
   }
 
   //==========constructor 2 (_size >= 14) ==========
-  template<std::size_t N, typename = std::enable_if_t<(N-1)>=14>, typename=void>
+  template <std::size_t N, typename = std::enable_if_t<(N - 1) >= 14>, typename = void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
     // the first two characters saved in e
     e[0] = s[0];
@@ -124,9 +133,9 @@ public:
     // pair is (ptr_or_start, size of string)
     if (pair.second) {
       ptr_or_start = pair.first;
-    } else { // if string is not invector, put it in vector
-      for (int i = 0; i < _size - 10; i++) { 
-        string_vector.push_back(long_str[i]); 
+    } else {  // if string is not invector, put it in vector
+      for (int i = 0; i < _size - 10; i++) {
+        string_vector.push_back(long_str[i]);
       }
       ptr_or_start = string_vector.size() - (_size - 10);
     }
@@ -373,223 +382,6 @@ public:
   }
 
   // const char * and std::string will come thru here
-<<<<<<< HEAD
-  bool starts_with(std::string_view st) const { 
-    if (st.size() > _size) { return false; }
-    else if (st.size() == _size) { return *this == st; }
-    else if (st.size() == 0) { return true; }
-    else if (st.size() < _size) {
-      for (auto i = 0; i < st.size(); ++i) {
-        if ((*this)[i] != st[i]) { return false; }
-      }
-      return true;
-    }
-  }
-
-  // checks if *this pstr ends with en
-  bool ends_with(const str &en) const {
-    if (en.size() > _size) { return false; }
-    else if (en.size() == _size) { return *this == en; }
-    else if (en.size() == 0) { return true; }
-    else if (en.size() < _size) {
-      for (uint32_t j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
-        if ((*this)[j] != en[i]) { return false; }
-      }
-      return true;
-    }
-  }
-
-  bool ends_with(std::string_view en) const {
-    if (en.size() > _size) { return false; }
-    else if (en.size() == _size) { return *this == en; }
-    else if (en.size() == 0) { return true; }
-    else if (en.size() < _size) {
-      // Actual compare logic
-      for (uint32_t j = _size-en.size(), i = 0; j < _size; ++j, ++i) {
-        if ((*this)[j] != en[i]) { return false; }
-      }
-      return true;
-    } 
-  }
-
-  // will use the string_view function
-  bool ends_with(std::string en) const {
-    return ends_with(std::string_view(en.c_str())); 
-  }
-
-  std::size_t find(const str &v, std::size_t pos = 0) const{
-    char first = v[0];
-    for (size_t i = ((pos == 0) ? 0 : pos); i< _size ; i++){
-      if ((first == (*this)[i]) and ((i+ v._size) <= _size)){
-        for (size_t j = i, k =0; j < i+ v._size ;j++,k++){
-           if ((*this)[j] != v[k]) break;
-           if (j == (i + v._size -1)) return i;
-        }
-      }
-    }
-    return -1;
-  }
-  
-                  
-  std::size_t find(char c, std::size_t pos = 0) const{
-    for (size_t i =0; i<_size;i++){
-      if ((*this)[i] == c) return i;
-    }
-    return -1;
-  }
-
-  template <std::size_t N>
-  constexpr std::size_t find(const char (&s)[N], std::size_t pos = 0) {
-    return find(str(s), pos);
-  }
-
-
-  //last occurance
-  // atatatatatatat at
-  std::size_t rfind(const str &v, std::size_t pos = 0) const {
-     char first = v[0];
-     size_t retvalue =-1;
-    for (int i = (_size - v._size); i >= 0 ; i--){
-      //std::cout << "i is :" << i << std::endl;
-      if ((first == (*this)[i]) and ((i+ v._size) <= _size)){
-        if (v._size == 1) return i;
-        for (size_t j = i, k =0; k<v._size, j < i+ v._size ;j++,k++){
-         // std::cout << "J is :" << (*this)[j]  << V[k]; 
-          if ((*this)[j] != v[k]) break;
-           if (j == (i + v._size -1)) retvalue = i;
-        }
-      }
-    }
-    return retvalue; 
-  }
-
-  std::size_t rfind(char c, std::size_t pos = 0) const{
-    size_t returnval = -1;
-    for (size_t i =0; i<_size;i++){
-      if ((*this)[i] == c) returnval = i;
-    }
-    return returnval;
-  }
-
-  template <std::size_t N>
-  constexpr std::size_t rfind(const char (&s)[N], std::size_t pos = 0) {
-    return rfind(str(s),pos);
-  }
-
-  static str concat(const str &a, const str &b) { 
-    return a.append(b);
-  }
-
-  static str concat(std::string_view a, const str &b) {
-    mmap_lib::str temp(a);
-    return temp.append(b); 
-  }
-
-  static str concat(const str &a, std::string_view b) {
-    return a.append(b);
-  }
-
-  static str concat(const str &a, int v) {
-    return a.append(v);
-  }
-
-  str append(const str &b) const {
-    // if _size <= 13, not in map yet
-    //   now check _size + v._size 
-    //   if _size + v._size <= 13, change p_o_s and e
-    //   else we add it to vec and map (new string)
-    // else if _size > 13 
-    //   if the string is the last in the vec 
-    //     add to vec and add to  map and change e
-    //   else 
-    //     DWWDN
-    
-    #if 0
-    if (_size <= 13) { 
-      if ((_size + b._size) <= 13) { // size and b size < = 13
-        if (_size <= 3) {
-          auto i = 0;
-          for (; i < b._size; ++i) {
-            if (_size + i <= 4) {
-              // shift
-              ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
-            }
-          }
-          for (; i < b._size; ++i) { e[i-4] = b[i]; }
-        } else {
-          for (auto i = _size-4+1, j = 0; i < e.max_size(), j < b._size; ++i, ++j) {
-            e[i] = b[j];
-          }
-        }
-      } else { // size and b size > 13
-        // re make the string to be LONG
-        std::string hold;
-        for (auto i = 0; i < _size; ++i) { hold += (*this)[i]; }
-        for (auto i = 0; i < b._size; ++i) { hold += b[i]; }
-        str temp = str(hold);
-        ptr_or_start = temp.ptr_or_start;
-        for (auto i = 0; i < e.size(); ++i) { e[i] = temp.e[i]; }
-      }
-    } else {
-      if ((ptr_or_start + _size) == string_vector.size()) {
-        // add to vector end, change e
-        for (auto i = 0; i < b._size; ++i) {
-          if (b._size >= 8) {
-            for (auto i = 2; i < 10; ++i) { string_vector.append(e[i]); }
-            for (auto i = 0; i < b._size - 8; ++i) { string_vector.append(b[i]); }
-            for (auto i = b._size - 8, j = 2; i < b._size, j < 10; ++i, ++j) {e[j] = b[i]; } 
-          } else { // b._size < 8
-            for (auto i = 2; i < b._size + 2; ++i) { string_vector.append(e[i]); } // put e to vec
-            auto i = 2;
-            for (; i < b._size + 2; ++i) { e[i] = e[i+b._size]; } // overwrite e
-            for (auto j = 0; j < b._size, i < 10; ++i, ++j) { e[i] = b[j]; } // put b in e
-          }
-        }
-        // TODO: put the new string in map
-
-      } else {
-        std::string start = this->to_s(); // n
-        start += b.to_s(); // m
-        return mmap_lib::str(start); // n + m
-      }
-    }
-    _size += b._size;
-    return *this;
-    #endif
-
-    std::string start = this->to_s(); // n
-    start += b.to_s(); // m
-    return mmap_lib::str(start); // n + m
-  }
-
-  str append(std::string_view b) const {
-    return this->append(mmap_lib::str(b));
-  }
-
-  str append(int b) const {
-    std::string hold = std::to_string(b);
-    return this->append(mmap_lib::str(hold));
-  }
-
-  #if 1
-  str append(const char c) const {
-    // should we make a new string everytime we append?
-    // it's like adding on to another string, the same string
-    // let's try it
-    //std::cout << "here" << std::endl;
-    std::string hold;
-    hold += c;
-    return this->append(mmap_lib::str(hold));
-  }
-  #endif
-  
-  // used as a tokenizing func, return vector of pstr's
-  std::vector<str> split(const char chr) {  
-    std::vector<str> vec;
-    std::string hold;
-
-    if (_size == 0) { return vec; }
-=======
   bool starts_with(std::string_view st) const {
     if (st.size() > _size) {
       return false;
@@ -614,7 +406,7 @@ public:
       return *this == en;
     } else if (en.size() == 0) {
       return true;
-    } 
+    }
     for (uint32_t j = _size - en.size(), i = 0; j < _size; ++j, ++i) {
       if ((*this)[j] != en[i]) {
         return false;
@@ -686,7 +478,7 @@ public:
         if (v._size == 1)
           return i;
         size_t k = 0;
-        for (int j = i; k < v._size && j < i + v._size; j++, k++) { // FIXME: is hist k<v && j<i ??
+        for (int j = i; k < v._size && j < i + v._size; j++, k++) {  // FIXME: is hist k<v && j<i ??
           // std::cout << "J is :" << (*this)[j]  << V[k];
           if ((*this)[j] != v[k])
             break;
@@ -726,32 +518,72 @@ public:
   static str concat(const str &a, int v) { return a.append(v); }
 
   str append(const str &b) const {
+    // if _size <= 13, not in map yet
+    //   now check _size + v._size
+    //   if _size + v._size <= 13, change p_o_s and e
+    //   else we add it to vec and map (new string)
+    // else if _size > 13
+    //   if the string is the last in the vec
+    //     add to vec and add to  map and change e
+    //   else
+    //     DWWDN
+
+#if 0
+    if (_size <= 13) { 
+      if ((_size + b._size) <= 13) { // size and b size < = 13
+        if (_size <= 3) {
+          auto i = 0;
+          for (; i < b._size; ++i) {
+            if (_size + i <= 4) {
+              // shift
+              ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
+            }
+          }
+          for (; i < b._size; ++i) { e[i-4] = b[i]; }
+        } else {
+          for (auto i = _size-4+1, j = 0; i < e.max_size(), j < b._size; ++i, ++j) {
+            e[i] = b[j];
+          }
+        }
+      } else { // size and b size > 13
+        // re make the string to be LONG
+        std::string hold;
+        for (auto i = 0; i < _size; ++i) { hold += (*this)[i]; }
+        for (auto i = 0; i < b._size; ++i) { hold += b[i]; }
+        str temp = str(hold);
+        ptr_or_start = temp.ptr_or_start;
+        for (auto i = 0; i < e.size(); ++i) { e[i] = temp.e[i]; }
+      }
+    } else {
+      if ((ptr_or_start + _size) == string_vector.size()) {
+        // add to vector end, change e
+        for (auto i = 0; i < b._size; ++i) {
+          if (b._size >= 8) {
+            for (auto i = 2; i < 10; ++i) { string_vector.append(e[i]); }
+            for (auto i = 0; i < b._size - 8; ++i) { string_vector.append(b[i]); }
+            for (auto i = b._size - 8, j = 2; i < b._size, j < 10; ++i, ++j) {e[j] = b[i]; } 
+          } else { // b._size < 8
+            for (auto i = 2; i < b._size + 2; ++i) { string_vector.append(e[i]); } // put e to vec
+            auto i = 2;
+            for (; i < b._size + 2; ++i) { e[i] = e[i+b._size]; } // overwrite e
+            for (auto j = 0; j < b._size, i < 10; ++i, ++j) { e[i] = b[j]; } // put b in e
+          }
+        }
+        // TODO: put the new string in map
+
+      } else {
+        std::string start = this->to_s(); // n
+        start += b.to_s(); // m
+        return mmap_lib::str(start); // n + m
+      }
+    }
+    _size += b._size;
+    return *this;
+#endif
     std::string start = to_s();
     start += b.to_s();
     return mmap_lib::str(start);
   }
-
-#if 0
-  // 2) create a new string and directly add into strVec (O(a+b))
-  //    -> The only thing here is that it's kind of copies ctor logic
-  //    0) use ctor 0 to make object
-  //    a) add a strMap entry
-  //    b) find end of strVec, then directly add on to vec
-  str append(const str &b) const {
-    mmap_lib::str ret();
-    uint16_t comb_size = _size + b.size();
-    if (comb_size <= 13) { // resulting combination will be SHORT
-      // both must be SHORT
-      // if *this.size >= 4: ret.pos = *this.pos, everything else in e
-      // else: ret.pos is combination of *this.pos and b.pos, everything else in e
-    } else {
-      // *this is SHORT, b is SHORT
-      // *this is SHORT, b is LONG
-      // *this is LONG, b is SHORT
-      // *this is LONG, b is LONG
-    }
-  }
-#endif
 
   str append(std::string_view b) const { return append(mmap_lib::str(b)); }
 
@@ -768,18 +600,13 @@ public:
     if (_size == 0) {
       return vec;
     }
->>>>>>> upstream/master
     for (auto i = 0; i < _size; ++i) {
       if ((*this)[i] == chr) {
         vec.push_back(mmap_lib::str(hold));
         hold.clear();
-<<<<<<< HEAD
-      } else { hold += (*this)[i]; }
-=======
       } else {
         hold += (*this)[i];
       }
->>>>>>> upstream/master
     }
     if (hold.size() != 0) {
       vec.push_back(mmap_lib::str(hold));
@@ -789,20 +616,6 @@ public:
 
   bool is_i() const {
     if (_size < 14) {
-<<<<<<< HEAD
-      int temp = (_size >= 4) ? 3 : (_size-1);
-      char first = (ptr_or_start >> (8 * (temp))) & 0xFF;
-      if (first !='-' and( first <'0' or first > '9')) {
-        return false;
-      }
-      for (int i= 1; i<(_size>4?4:_size);i++){
-        switch ((ptr_or_start >> (8 * (temp - i))) & 0xFF){
-          case '0'...'9':
-            break;
-          default:
-            return false;
-            break;
-=======
       int  temp  = (_size >= 4) ? 3 : (_size - 1);
       char first = (ptr_or_start >> (8 * (temp))) & 0xFF;
       if (first != '-' and (first < '0' or first > '9')) {
@@ -812,7 +625,6 @@ public:
         switch ((ptr_or_start >> (8 * (temp - i))) & 0xFF) {
           case '0' ... '9': break;
           default: return false; break;
->>>>>>> upstream/master
         }
       }
       for (int i = 0; i < (_size > 4 ? _size - 4 : 0); i++) {
@@ -841,50 +653,6 @@ public:
     }
     return true;
   }
-<<<<<<< HEAD
-
-
-  int64_t to_i() const{  // convert to integer
-    if(this->is_i()){
-      std::string temp = this->to_s();
-      return stoi(temp);
-    } else {
-      return 0;
-    }
-  } 
-
-
-  std::string to_s() const{  // convert to string    
-    std::string out;
-    for (auto i = 0; i < _size; ++i) { out += (*this)[i]; }
-    return out;
-  }
-
-  str get_str_after_last(const char chr) const{
-    size_t val = this->rfind(chr);
-    std::string out;
-    if (val >= (_size - 1)) return str(out);
-    for (size_t i = val+1; i< _size; i++){
-      out += (*this)[i];
-    }
-    return str(out);
-  }
-  
-  str get_str_after_first(const char chr) const{
-    size_t val = this->find(chr);
-    std::string out;
-    if (val >= (_size - 1)) return str(out);
-    for (size_t i = val+1; i< _size; i++){
-      out += (*this)[i];
-    }
-    return str(out);
-  }
-
-  str get_str_before_last(const char chr) const{
-    size_t val = this->rfind(chr);
-    std::string out;
-    for (size_t i = 0; i< val; i++){
-=======
 
   int64_t to_i() const {  // convert to integer
     if (is_i()) {
@@ -910,40 +678,10 @@ public:
     if (val >= static_cast<size_t>(_size - 1))
       return str(out);
     for (size_t i = val + 1; i < _size; i++) {
->>>>>>> upstream/master
       out += (*this)[i];
     }
     return str(out);
   }
-<<<<<<< HEAD
-  
-  str get_str_before_first(const char chr) const{
-    size_t val = this->find(chr);
-    std::string out;
-    for (size_t i = 0; i< val; i++){
-      out += (*this)[i];
-    }
-    return str(out);
-  }
- 
-  str substr(size_t start) const {
-    return this->substr(start, _size-start);
-  }
-
-  str substr(size_t start, size_t end) const { 
-    std::string hold;
-    if ((_size == 0) || (start > (_size-1))) { return mmap_lib::str(); }
-    size_t adj_end = (end > (_size-start)) ? (_size-start):end; // adjusting end for overflow
-    for (auto i = start; i < (start + adj_end); ++i) { hold += (*this)[i]; }
-    return mmap_lib::str(hold);
-  }    
-
-};
-
-
-// For static string_map
-mmap_lib::map<std::string_view, uint32_t> str::string_map2;
-=======
 
   str get_str_after_first(const char chr) const {
     // FIXME: What if _size==0??
@@ -982,13 +720,14 @@ mmap_lib::map<std::string_view, uint32_t> str::string_map2;
       return mmap_lib::str();
     }
     std::string hold;
-    size_t adj_end = (end > (_size - start)) ? (_size - start) : end;  // adjusting end for overflow
+    size_t      adj_end = (end > (_size - start)) ? (_size - start) : end;  // adjusting end for overflow
     for (auto i = start; i < (start + adj_end); ++i) {
       hold += (*this)[i];
     }
     return mmap_lib::str(hold);
   }
 };
->>>>>>> upstream/master
+
+mmap_lib::map<std::string_view, uint32_t> str::string_map2;
 
 }  // namespace mmap_lib
