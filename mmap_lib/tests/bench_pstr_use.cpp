@@ -487,7 +487,7 @@ int main(int argc, char **argv) {
   #endif
   mmap_lib::str one("uiwjzabcdefl");
   mmap_lib::str two("efl");
-  int result = one.find(two);
+  int result = one.rfind(two);
   printf("The result is %d \n", result);
   
 

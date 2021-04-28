@@ -402,10 +402,13 @@ public:
   std::size_t rfind(const str &v, std::size_t pos = 0) const {
      char first = v[0];
      size_t retvalue =-1;
-    for (size_t i = ((pos == 0) ? 0 :pos ); i< _size ; i++){
+    for (int i = (_size - v._size); i >= 0 ; i--){
+      //std::cout << "i is :" << i << std::endl;
       if ((first == (*this)[i]) and ((i+ v._size) <= _size)){
-        for (size_t j = i, k =0; j < i+ v._size ;j++,k++){
-           if ((*this)[j] != v[k]) break;
+        if (v._size == 1) return i;
+        for (size_t j = i, k =0; k<v._size, j < i+ v._size ;j++,k++){
+         // std::cout << "J is :" << (*this)[j]  << V[k]; 
+          if ((*this)[j] != v[k]) break;
            if (j == (i + v._size -1)) retvalue = i;
         }
       }
