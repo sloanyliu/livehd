@@ -399,6 +399,7 @@ public:
 
 
   //last occurance
+  // atatatatatatat at
   std::size_t rfind(const str &v, std::size_t pos = 0) const {
      char first = v[0];
      size_t retvalue =-1;
