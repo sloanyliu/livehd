@@ -447,28 +447,6 @@ public:
     return a.append(v);
   }
 
-  #if 0
-  // 2) create a new string and directly add into strVec (O(a+b))
-  //    -> The only thing here is that it's kind of copies ctor logic
-  //    0) use ctor 0 to make object
-  //    a) add a strMap entry
-  //    b) find end of strVec, then directly add on to vec
-  str append(const str &b) const {
-    mmap_lib::str ret();
-    uint16_t comb_size = _size + b.size();
-    if (comb_size <= 13) { // resulting combination will be SHORT
-      // both must be SHORT
-      // if *this.size >= 4: ret.pos = *this.pos, everything else in e
-      // else: ret.pos is combination of *this.pos and b.pos, everything else in e
-    } else {
-      // *this is SHORT, b is SHORT
-      // *this is SHORT, b is LONG
-      // *this is LONG, b is SHORT
-      // *this is LONG, b is LONG
-    }
-  }
-  #endif
-
   str append(const str &b) const {
     // if _size <= 13, not in map yet
     //   now check _size + v._size 
@@ -479,7 +457,9 @@ public:
     //     add to vec and add to  map and change e
     //   else 
     //     DWWDN
-    if (_size <= 13) {
+    
+    #if 0
+    if (_size <= 13) { 
       if ((_size + b._size) <= 13) { // size and b size < = 13
         if (_size <= 3) {
           auto i = 0;
@@ -520,6 +500,7 @@ public:
           }
         }
         // TODO: put the new string in map
+
       } else {
         std::string start = this->to_s(); // n
         start += b.to_s(); // m
@@ -528,6 +509,11 @@ public:
     }
     _size += b._size;
     return *this;
+    #endif
+
+    std::string start = this->to_s(); // n
+    start += b.to_s(); // m
+    return mmap_lib::str(start); // n + m
   }
 
   str append(std::string_view b) const {
