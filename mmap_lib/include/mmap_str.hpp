@@ -48,18 +48,18 @@ protected:
   constexpr bool       is_digit(char c) const { return c >= '0' && c <= '9'; }
   constexpr uint8_t    posShifter(uint8_t s) const { return s < 4 ? (s - 1) : 3; }
   constexpr uint8_t    posStopper(uint8_t s) const { return s < 4 ? s : 4; }
-  constexpr char       isol8(uint32_t p_o_s, uint8_t s) const { return (p_o_s >> (s * 8)) & 0xff; }
+  constexpr char       isol8(uint32_t ps, uint8_t s) const { return (ps >> (s * 8)) & 0xff; }
   constexpr uint32_t   l8(uint32_t size, uint8_t i) const { return i - (size - 10); }
-  constexpr uint32_t   mid(uint32_t p_o_s, uint8_t i) const { return p_o_s + (i - 2); }
+  constexpr uint32_t   mid(uint32_t ps, uint8_t i) const { return ps + (i - 2); }
 
 public:
   // FIXME: This is a non persistent map. Something like string_map2("lgdb","global_str");
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  //static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str");
+  //static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str_map");
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   inline static std::vector<int> string_vector;  // ptr_or_start points here!
-  //inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");  // ptr_or_start points here!
+  // inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");  // ptr_or_start points here!
 
   //===========constructor 0 (template obj) ============
   str() : ptr_or_start(0), e{0}, _size(0) {}
@@ -218,7 +218,7 @@ public:
     if (_size <= 13) {
       uint8_t mx = posShifter(_size);
       for (uint8_t i = mx; i <= 3u; --i) {
-        std::cout << isol8(ptr_or_start,i);
+        std::cout << isol8(ptr_or_start, i);
       }
       if (_size > 4) {
         for (uint8_t j = 0; j < e.size(); ++j) {
@@ -442,7 +442,8 @@ public:
   }
 
   std::size_t find(char c, std::size_t pos = 0) const {
-    if (pos >= _size) return -1;
+    if (pos >= _size)
+      return -1;
     for (size_t i = pos; i < _size; i++) {
       if ((*this)[i] == c)
         return i;
@@ -458,8 +459,9 @@ public:
   // last occurance
   // atatatatatatat at
   std::size_t rfind(const str &v, std::size_t pos = 0) const {
-    int position = _size-1;
-    if(pos != 0) position = pos;
+    int position = _size - 1;
+    if (pos != 0)
+      position = pos;
     char   first    = v[0];
     size_t retvalue = -1;
     for (int i = (_size - v._size); i >= 0; i--) {
@@ -472,7 +474,8 @@ public:
           // std::cout << "J is :" << (*this)[j]  << V[k];
           if ((*this)[j] != v[k])
             break;
-          if ((j == (i + v._size - 1)) and (i <= position)) return i;
+          if ((j == (i + v._size - 1)) and (i <= position))
+            return i;
         }
       }
     }
@@ -480,9 +483,10 @@ public:
   }
 
   std::size_t rfind(char c, std::size_t pos = 0) const {
-    int position = _size-1;
-    if (pos != 0) position = pos;
-    for (int i = position; i >=0; i--) {
+    int position = _size - 1;
+    if (pos != 0)
+      position = pos;
+    for (int i = position; i >= 0; i--) {
       if ((*this)[i] == c)
         return i;
     }

@@ -17,10 +17,12 @@
 #define MinNum 1
 #define RUN    1
 
+// TODO: Unify test fixtures to reduce setup() and teardown() runs
+
 /* ---------TEST FIXTURES---------
  * Test Name             Status   Description
  * _________             ______   ___________
- * basic_ctor            pass     basic pstr construction
+ * basic_ctor            depr     basic pstr construction
  * random_ctor           pass     randomly generated pstr construction
  * random_comparisons    pass     == and != tested on random pstr's
  * random_at_operator    pass     [] tested on random pstr's
@@ -92,6 +94,7 @@ public:
   std::string nd_get(int i) { return no_dash.at(i); }
 };
 
+#if 0
 TEST_F(Mmap_str_test, basic_ctor) {
   mmap_lib::str a1("hello"), a2("hello");
   EXPECT_EQ(a1, a2);
@@ -117,19 +120,65 @@ TEST_F(Mmap_str_test, basic_ctor) {
   mmap_lib::str empT("");
   mmap_lib::str empT2("");
 }
+#endif
 
 // random mmap_lib::str creation
-TEST_F(Mmap_str_test, random_ctor) {
+TEST_F(Mmap_str_test, random_ctor_cmp) {
   for (auto i = 0; i < RNDN; ++i) {
-    std::string r_st = s_get(i);
-    // std::cout << r_st << std::endl;
-    std::string_view r_sv = r_st;
-    mmap_lib::str    r1(r_sv), r2(r_st), r3(r_st.c_str());
-    EXPECT_EQ(r3, r1);
-    EXPECT_EQ(r3, r2);
+    std::string      c_st = s_get(i), n_st = s_get((i + 1) % RNDN);
+    std::string_view c_sv = c_st, n_sv = n_st;
+    mmap_lib::str    c_s1(c_st), n_s1(n_st);
+    mmap_lib::str    c_s2(c_sv), n_s2(c_sv);
+    mmap_lib::str    c_s3(c_st.c_str()), n_s3(n_st.c_str());
+
+#if 0 
+    std::cout << "pstr c_s1: ";
+    c_s1.print_string();
+    std::cout << "\npstr n_s1: ";
+    n_s1.print_string();
+    std::cout << std::endl;
+#endif
+
+    EXPECT_EQ(c_s3, c_s1);
+    EXPECT_EQ(c_s3, c_s2);
+
+    EXPECT_TRUE(c_s1 == c_s2);
+    EXPECT_TRUE(c_s1 == c_st);
+    EXPECT_TRUE(c_s1 == c_sv);
+    EXPECT_TRUE(c_s1 == c_st.c_str());
+
+    EXPECT_FALSE(c_s1 != c_s2);
+    EXPECT_FALSE(c_s1 != c_st);
+    EXPECT_FALSE(c_s1 != c_sv);
+    EXPECT_FALSE(c_s1 != c_st.c_str());
+
+    // tests for next and curr
+    if (c_st == n_st) {
+      EXPECT_FALSE(c_s1 != n_s1);
+      EXPECT_FALSE(c_s1 != n_st);
+      EXPECT_FALSE(c_s1 != n_sv);
+      EXPECT_FALSE(c_s1 != n_st.c_str());
+
+      EXPECT_TRUE(n_s1 == c_s1);
+      EXPECT_TRUE(n_s1 == c_st);
+      EXPECT_TRUE(n_s1 == c_sv);
+      EXPECT_TRUE(n_s1 == c_st.c_str());
+    } else {
+      EXPECT_TRUE(c_s1 != n_s1);
+      EXPECT_TRUE(c_s1 != n_st);
+      EXPECT_TRUE(c_s1 != n_sv);
+      EXPECT_TRUE(c_s1 != n_st.c_str());
+
+      EXPECT_FALSE(n_s1 == c_s1);
+      EXPECT_FALSE(n_s1 == c_st);
+      EXPECT_FALSE(n_s1 == c_sv);
+      EXPECT_FALSE(n_s1 == c_st.c_str());
+    }
+
   }
 }
 
+#if 0
 // testing == and != ops
 // mmap_lib::str vs. mmap_lib::str
 // mmap_lib::str vs. string_view
@@ -183,6 +232,7 @@ TEST_F(Mmap_str_test, random_comparisons) {
     }
   }
 }
+#endif
 
 // std::string vs. mmap_lib::str
 TEST_F(Mmap_str_test, random_at_operator) {

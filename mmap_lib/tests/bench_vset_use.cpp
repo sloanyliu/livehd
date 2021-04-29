@@ -14,23 +14,22 @@
 #define BENCH_OUT_SIZE 100
 #define BENCH_INN_SIZE 100
 
-#define IED 1
-#define TS 1
-#define TD 1
+#define IED     1
+#define TS      1
+#define TD      1
 #define PROBLEM 0
 
-
 void random_mmap_set(int max, std::string_view name) {
-  Lrand<int> rng;
+  Lrand<int>  rng;
   std::string type_test("mmap.map_set");
   if (name.empty())
     type_test += "_effemeral_" + std::to_string(max);
   else
     type_test += "_persistent_" + std::to_string(max);
 
-  Lbench b(type_test);
+  Lbench                        b(type_test);
   mmap_lib::map<uint32_t, bool> map(name.empty() ? "" : "lgdb_bench", name);
-  int cntconta = 0, hitconta = 0, missconta = 0;
+  int                           cntconta = 0, hitconta = 0, missconta = 0;
 
 #if IED
   for (int n = 1; n < BENCH_OUT_SIZE; ++n) {
@@ -41,13 +40,15 @@ void random_mmap_set(int max, std::string_view name) {
       map.erase(pos);
       pos = rng.max(max);
       if (map.find(pos) != map.end()) {
-        map.erase(pos); 
+        map.erase(pos);
         ++hitconta;
-      } else { ++missconta; }
+      } else {
+        ++missconta;
+      }
     }
   }
   b.sample("insert/erase dense");
-  
+
   printf("hit %d, missed %d\n", hitconta, missconta);
 #endif
 
@@ -62,7 +63,9 @@ void random_mmap_set(int max, std::string_view name) {
     if (map.find(pos) != map.end()) {
       ++hitconta;
       map.erase(pos);
-    } else { ++missconta; }
+    } else {
+      ++missconta;
+    }
   }
   b.sample("traversal sparse");
 
@@ -89,7 +92,7 @@ void random_mmap_set(int max, std::string_view name) {
 }
 
 //=====
-template<typename k, typename v>
+template <typename k, typename v>
 void test_vset_erase(mmap_lib::vset<k, v>& temp) {
   temp.clear();
 }
@@ -98,7 +101,7 @@ void test_vset_erase(mmap_lib::vset<k, v>& temp) {
 /* Creates a vset from mmap_lib namespace
  */
 void random_mmap_vset(int max, std::string_view name) {
-  Lrand<int> rng;
+  Lrand<int>  rng;
   std::string type_test("mmap_vset ");
   if (name.empty()) {
     type_test += "_effemeral_" + std::to_string(max);
@@ -106,7 +109,7 @@ void random_mmap_vset(int max, std::string_view name) {
     type_test += "_persistent_" + std::to_string(max);
   }
 
-  Lbench b(type_test);
+  Lbench                             b(type_test);
   mmap_lib::vset<uint32_t, uint32_t> set("lgdb_bench", name);
 
   set.clear();
@@ -124,19 +127,21 @@ void random_mmap_vset(int max, std::string_view name) {
       auto pos = rng.max(max);
       set.insert(pos);
       pos = rng.max(max);
-			set.erase(pos);
+      set.erase(pos);
       pos = rng.max(max);
       if (set.find(pos) != set.end()) {
         ++hitconta;
         set.erase(pos);
-      } else { ++missconta; }
+      } else {
+        ++missconta;
+      }
     }
   }
-  
-  b.sample("insert/erase dense"); 
-  
+
+  b.sample("insert/erase dense");
+
   printf("hit %d, missed %d\n", hitconta, missconta);
-#endif  
+#endif
 
 #if TS
   hitconta = 0, missconta = 0;
@@ -146,20 +151,21 @@ void random_mmap_vset(int max, std::string_view name) {
   //   --> go through the whole map and increment a variable per map index
   //   --> insert a random number into map
   //   --> generate a random num, if num is not end of map, erase it
- 
-  
+
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    #if PROBLEM
+#if PROBLEM
     for (auto it = set.begin(), end = set.end(); it != end; ++it) {
-      cntconta++; 
+      cntconta++;
     }
-    #endif
+#endif
     set.insert(rng.max(max));
     auto pos = rng.max(max);
     if (set.find(pos) != set.end()) {
       ++hitconta;
       set.erase(pos);
-    } else { ++missconta; }
+    } else {
+      ++missconta;
+    }
   }
   b.sample("traversal sparse");
   printf("traversed %d, hit %d, missed %d\n", cntconta, hitconta, missconta);
@@ -177,13 +183,13 @@ void random_mmap_vset(int max, std::string_view name) {
     set.erase(rng.max(max));
     set.erase(rng.max(max));
   }
-  
+
   for (int i = 0; i < BENCH_INN_SIZE; ++i) {
-    #if PROBLEM
+#if PROBLEM
     for (auto it = set.begin(), end = set.end(); it != end; ++it) {
       cntconta++;
     }
-    #endif
+#endif
   }
 
   b.sample("traversal dense");
@@ -191,9 +197,9 @@ void random_mmap_vset(int max, std::string_view name) {
 #endif
 }
 
-int main(int argc, char **argv) {
-  bool run_random_mmap_set   = false;
-  bool run_random_mmap_vset  = false;
+int main(int argc, char** argv) {
+  bool run_random_mmap_set  = false;
+  bool run_random_mmap_vset = false;
 
   if (argc > 1) {
     if (strcasecmp(argv[1], "mmap") == 0)
@@ -201,8 +207,8 @@ int main(int argc, char **argv) {
     else if (strcasecmp(argv[1], "vset") == 0)
       run_random_mmap_vset = true;
   } else {
-    run_random_mmap_set   = true;
-    run_random_mmap_vset  = true;
+    run_random_mmap_set  = true;
+    run_random_mmap_vset = true;
   }
 
   for (int i = 1000; i < 1'000'001; i *= 1000) {
@@ -222,8 +228,6 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-
 
 #if 0
 /*
@@ -266,7 +270,7 @@ void mmap_vset(int max, std::string_view name) {
 
 	int conta = 0;
 
-  #if 0
+#if 0
 	// counting
 	std::cout << "Counting...  ";
 	for (auto it = set.bucket_begin(), end = set.bucket_end(); it != end; ++it) {
@@ -322,7 +326,7 @@ void mmap_vset(int max, std::string_view name) {
   
   std::cout << "Using iterator to traverse after deletes" << std::endl;
   for (auto it = set.begin(), e = set.end(); it != e; ++it) { std::cout << it.iter_val() << " ";}
-  #endif
+#endif
 
 
   /*
