@@ -9,7 +9,7 @@
 #include <string_view>
 
 #include "mmap_map.hpp"
-//#include "mmap_vector.hpp"
+#include "mmap_vector.hpp"
 
 namespace mmap_lib {
 
@@ -59,9 +59,9 @@ public:
   //static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str_map");
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
-  inline static std::vector<int> string_vector;  // ptr_or_start points here!
+  //inline static std::vector<int> string_vector;  // ptr_or_start points here!
   //inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");
-  //static mmap_lib::vector<int> string_vector;
+  inline static mmap_lib::vector<int> string_vector;
 
   //===========constructor 0 (template obj) ============
   str() : ptr_or_start(0), e{0}, _size(0) {}
@@ -201,7 +201,7 @@ public:
   void print_StrVec() const {
     std::cout << "StrVec{ ";
     for (auto i = string_vector.begin(); i != string_vector.end(); ++i) {
-      std::cout << char(*i) << " ";
+      std::cout << static_cast<char>(*i) << " ";
     }
     std::cout << "}" << std::endl;
   }
