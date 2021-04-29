@@ -472,7 +472,7 @@ public:
           // std::cout << "J is :" << (*this)[j]  << V[k];
           if ((*this)[j] != v[k])
             break;
-          if ((j == (i + v._size - 1)) and (i <= position)) retvalue = i;
+          if ((j == (i + v._size - 1)) and (i <= position)) return i;
         }
       }
     }

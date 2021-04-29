@@ -555,8 +555,8 @@ int main(int argc, char **argv) {
   #endif
 
   #if FIND
-  mmap_lib::str one("uiwjzabcdefl");
-  mmap_lib::str two("efl");
+  mmap_lib::str one("abhimnopq");
+  mmap_lib::str two("hi");
   int result = one.rfind(two);
   printf("The result is %d \n", result);
   #endif 
