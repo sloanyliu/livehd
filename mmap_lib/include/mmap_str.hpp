@@ -442,9 +442,8 @@ public:
   }
 
   std::size_t find(char c, std::size_t pos = 0) const {
-    (void)pos;
-    // FIXME: pos is not used??
-    for (size_t i = 0; i < _size; i++) {
+    if (pos >= _size) return -1;
+    for (size_t i = pos; i < _size; i++) {
       if ((*this)[i] == c)
         return i;
     }
@@ -459,8 +458,8 @@ public:
   // last occurance
   // atatatatatatat at
   std::size_t rfind(const str &v, std::size_t pos = 0) const {
-    (void)pos;
-    // FIXME: pos is not used??
+    int position = _size-1;
+    if(pos != 0) position = pos;
     char   first    = v[0];
     size_t retvalue = -1;
     for (int i = (_size - v._size); i >= 0; i--) {
@@ -473,8 +472,7 @@ public:
           // std::cout << "J is :" << (*this)[j]  << V[k];
           if ((*this)[j] != v[k])
             break;
-          if (j == (i + v._size - 1))
-            retvalue = i;
+          if ((j == (i + v._size - 1)) and (i <= position)) retvalue = i;
         }
       }
     }
@@ -482,14 +480,13 @@ public:
   }
 
   std::size_t rfind(char c, std::size_t pos = 0) const {
-    (void)pos;
-    // FIXME: pos is not used??
-    size_t returnval = -1;
-    for (size_t i = 0; i < _size; i++) {
+    int position = _size-1;
+    if (pos != 0) position = pos;
+    for (int i = position; i >=0; i--) {
       if ((*this)[i] == c)
-        returnval = i;
+        return i;
     }
-    return returnval;
+    return -1;
   }
 
   template <std::size_t N>
