@@ -10,15 +10,6 @@
 
 #include "mmap_map.hpp"
 
-// FIXME: Move this as protected inline methods
-/*
-#define posShifter(s) s < 4 ? (s - 1) : 3
-#define posStopper(s) s < 4 ? s : 4
-#define isol8(pos, s) (pos >> (s * 8)) & 0xff
-#define l8(size, i)   i - (size - 10)
-#define mid(p_o_s, i) p_o_s + (i - 2)
-*/
-
 namespace mmap_lib {
 
 class str {
@@ -227,7 +218,7 @@ public:
     if (_size <= 13) {
       uint8_t mx = posShifter(_size);
       for (uint8_t i = mx; i <= 3u; --i) {
-        std::cout << static_cast<char>((ptr_or_start >> (i * 8)) & 0xff);
+        std::cout << isol8(ptr_or_start,i);
       }
       if (_size > 4) {
         for (uint8_t j = 0; j < e.size(); ++j) {
@@ -344,7 +335,7 @@ public:
       if (pos < 4) {
         uint8_t mx = posShifter(_size);
         mx         = mx - pos;
-        return static_cast<char>(isol8(ptr_or_start, mx));
+        return isol8(ptr_or_start, mx);
       } else {
         return e[pos - 4];
       }
@@ -672,11 +663,11 @@ public:
   }
 
   str get_str_after_last(const char chr) const {
-    // FIXME: What if _size==0??
     size_t      val = rfind(chr);
     std::string out;
-    if (val >= static_cast<size_t>(_size - 1))
-      return str(out);
+    if (_size == 0 || val >= static_cast<size_t>(_size - 1)) {
+      return str();
+    }
     for (size_t i = val + 1; i < _size; i++) {
       out += (*this)[i];
     }
@@ -684,11 +675,11 @@ public:
   }
 
   str get_str_after_first(const char chr) const {
-    // FIXME: What if _size==0??
     size_t      val = find(chr);
     std::string out;
-    if (val >= static_cast<size_t>(_size - 1))
-      return str(out);
+    if (_size == 0 || val >= static_cast<size_t>(_size - 1)) {
+      return str();
+    }
     for (size_t i = val + 1; i < _size; i++) {
       out += (*this)[i];
     }
@@ -698,6 +689,9 @@ public:
   str get_str_before_last(const char chr) const {
     size_t      val = rfind(chr);
     std::string out;
+    if (_size == 0 || val >= static_cast<size_t>(_size)) {
+      return str();
+    }
     for (size_t i = 0; i < val; i++) {
       out += (*this)[i];
     }
@@ -707,6 +701,9 @@ public:
   str get_str_before_first(const char chr) const {
     size_t      val = find(chr);
     std::string out;
+    if (_size == 0 || val >= static_cast<size_t>(_size)) {
+      return str();
+    }
     for (size_t i = 0; i < val; i++) {
       out += (*this)[i];
     }
@@ -727,7 +724,5 @@ public:
     return mmap_lib::str(hold);
   }
 };
-
-mmap_lib::map<std::string_view, uint32_t> str::string_map2;
 
 }  // namespace mmap_lib
