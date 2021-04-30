@@ -500,18 +500,18 @@ public:
     return rfind(str(s), pos);
   }
 
-  static str concat(const str &a, const str &b) { return a.append(b); }
+  static str concat( str &a, const str &b) { return a.append(b); }
 
   static str concat(std::string_view a, const str &b) {
     mmap_lib::str temp(a);
     return temp.append(b);
   }
 
-  static str concat(const str &a, std::string_view b) { return a.append(b); }
+  static str concat( str &a, std::string_view b) { return a.append(b); }
 
-  static str concat(const str &a, int v) { return a.append(v); }
+  static str concat( str &a, int v) { return a.append(v); }
 
-  str append(const str &b) const {
+  str append(const str &b)  {
     // if _size <= 13, not in map yet
     //   now check _size + v._size
     //   if _size + v._size <= 13, change p_o_s and e
@@ -522,7 +522,7 @@ public:
     //   else
     //     DWWDN
 
-#if 0
+#if 1
     if (_size <= 13) { 
       if ((_size + b._size) <= 13) { // size and b size < = 13
         if (_size <= 3) {
@@ -535,7 +535,8 @@ public:
           }
           for (; i < b._size; ++i) { e[i-4] = b[i]; }
         } else {
-          for (auto i = _size-4+1, j = 0; i < e.max_size(), j < b._size; ++i, ++j) {
+          for (auto i = _size-4+1, j = 0; i< 10 ; ++i, ++j) {
+            if (j >= b._size) break;
             e[i] = b[j];
           }
         }
@@ -546,42 +547,57 @@ public:
         for (auto i = 0; i < b._size; ++i) { hold += b[i]; }
         str temp = str(hold);
         ptr_or_start = temp.ptr_or_start;
-        for (auto i = 0; i < e.size(); ++i) { e[i] = temp.e[i]; }
+        for (auto i = 0; i < 10; ++i) { e[i] = temp.e[i]; }
       }
     } else {
       if ((ptr_or_start + _size) == string_vector.size()) {
         // add to vector end, change e
-        for (auto i = 0; i < b._size; ++i) {
+        for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
-            for (auto i = 2; i < 10; ++i) { string_vector.append(e[i]); }
-            for (auto i = 0; i < b._size - 8; ++i) { string_vector.append(b[i]); }
-            for (auto i = b._size - 8, j = 2; i < b._size, j < 10; ++i, ++j) {e[j] = b[i]; } 
+            for (auto i = 2; i < 10; ++i) { string_vector.emplace_back(e[i]); }
+            for (auto i = 0; i < b._size - 8; ++i) { string_vector.emplace_back(b[i]); }
+            for (auto i = b._size - 8, j = 2; i < b._size; ++i, ++j) {
+             if (j == 10) break;
+              e[j] = b[i];
+            } 
           } else { // b._size < 8
-            for (auto i = 2; i < b._size + 2; ++i) { string_vector.append(e[i]); } // put e to vec
+            for (auto i = 2; i < b._size + 2; ++i) { string_vector.emplace_back(e[i]); } // put e to vec
             auto i = 2;
             for (; i < b._size + 2; ++i) { e[i] = e[i+b._size]; } // overwrite e
-            for (auto j = 0; j < b._size, i < 10; ++i, ++j) { e[i] = b[j]; } // put b in e
+            for (auto j = 0; j < b._size; ++i, ++j) { 
+              if (i == 10 ) break;
+              e[i] = b[j]; 
+            } // put b in e
           }
         }
         // TODO: put the new string in map
-
+       //creating the string to put into maps
+        std::string full_str = this->to_s(); // n
+        full_str += b.to_s(); // m
+        const char* full_string = full_str.c_str();
+      //puting the string into maps
+      insertfind(full_string, _size + b._size - 10);
       } else {
         std::string start = this->to_s(); // n
         start += b.to_s(); // m
-        return mmap_lib::str(start); // n + m
+        str temp_str  = str(start); // n + m
+        ptr_or_start = temp_str.ptr_or_start;
+        for (int i = 0; i< 9 ; i++) {e[i] = temp_str.e[i];}
       }
     }
     _size += b._size;
     return *this;
 #endif
+#if 0
     std::string start = to_s();
     start += b.to_s();
     return mmap_lib::str(start);
+#endif
   }
 
-  str append(std::string_view b) const { return append(mmap_lib::str(b)); }
+  str append(std::string_view b)  { return append(mmap_lib::str(b)); }
 
-  str append(int b) const {
+  str append(int b)  {
     std::string hold = std::to_string(b);
     return append(mmap_lib::str(hold));
   }
