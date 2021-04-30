@@ -521,7 +521,6 @@ public:
     //     add to vec and add to  map and change e
     //   else
     //     DWWDN
-
     if (_size <= 13) { 
       if ((_size + b._size) <= 13) { // size and b size < = 13
         if (_size <= 3) {
@@ -592,6 +591,12 @@ public:
   }
 
   str append(std::string_view b)  { return append(mmap_lib::str(b)); }
+
+  str append(char c) {
+    const char* hold = &c; 
+    mmap_lib::str h(hold);
+    return append(h);
+  }
 
   str append(int b)  {
     std::string hold = std::to_string(b);

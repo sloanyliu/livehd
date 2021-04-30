@@ -546,23 +546,25 @@ void pstr_starts_with() {
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t - r, t);
 }
 
-void bench_str_cmp() {
+void bench_str_cmp() { 
   {
     Lbench b("bench_str_cmp");
 
     Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(1, 400);
+    Lrand_range<uint16_t> sz(1, 20);
 
     std::vector<mmap_lib::str> v;
+   
     for (auto i = 0u; i < 1e4; ++i) {
       auto          s = sz.any();
-      mmap_lib::str str;
+      mmap_lib::str tmp;
       for (auto j = 0; j < s; ++j) {
-        str = str.append(ch.any());
+        tmp.append(ch.any());
       }
-      v.emplace_back(str);
+      v.emplace_back(tmp);
     }
 
+   
     int conta = 0;
     for (auto i = 0u; i < 1e4; ++i) {
       for (auto j = 0u; j < 1e4; ++j) {
@@ -572,13 +574,14 @@ void bench_str_cmp() {
     }
 
     fmt::print("bench_str_cmp conta:{}\n", conta);
+    
   }
 
   {
     Lbench b("bench_string_cmp");
 
     Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(1, 400);
+    Lrand_range<uint16_t> sz(1, 20);
 
     std::vector<mmap_lib::str> v;
     for (auto i = 0u; i < 1e4; ++i) {
