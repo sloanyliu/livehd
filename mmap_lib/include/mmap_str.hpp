@@ -230,7 +230,7 @@ public:
     } else {
       std::cout << char(e[0]) << char(e[1]);
       for (auto i = 0; i < _size - 10; ++i) {
-        std::cout << static_cast<char>(string_vector[i + ptr_or_start]);
+        std::cout << static_cast<char>(string_vector.at(i + ptr_or_start));
       }
       for (uint8_t k = 2; k < 10; ++k) {
         std::cout << static_cast<char>(e[k]);
