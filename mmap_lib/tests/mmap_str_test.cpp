@@ -10,8 +10,8 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN   10  // number of rand strings
-#define MaxLen 4   // max len + 1 for rand strings
+#define RNDN   250  // number of rand strings
+#define MaxLen 30   // max len + 1 for rand strings
 #define MaxNum 10
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
@@ -22,9 +22,7 @@
 /* ---------TEST FIXTURES---------
  * Test Name             Status   Description
  * _________             ______   ___________
- * basic_ctor            depr     basic pstr construction
- * random_ctor           pass     randomly generated pstr construction
- * random_comparisons    pass     == and != tested on random pstr's
+ * random_ctor_cmp       pass     == and != tested on random pstr's
  * random_at_operator    pass     [] tested on random pstr's
  * isI_operator          pass     is_i() tested on random number pstr's
  * starts_ends_with      pass     starts_with(str), ends_with(str) tested on random pstr's
@@ -36,8 +34,8 @@
  * get_str_before_after  pass     get_str_before/after_first/last()
  */
 
+
 class Mmap_str_test : public ::testing::Test {
-  // std::vector<std::vector<std::string>> ast_sorted_verification;
   std::vector<std::string> str_bank;
   std::vector<std::string> num_bank;
   std::vector<std::string> no_underscore;
@@ -67,6 +65,7 @@ public:
         ele4 += (('!' + hd) == '-') ? ('-' + 1) : ('!' + hd);
       }
       str_bank.push_back(ele);        // add string to vector
+      //std::cout << ele << std::cout;
       no_underscore.push_back(ele3);  // add to no underscore
       no_dash.push_back(ele4);        // add to no dash
 
@@ -94,34 +93,6 @@ public:
   std::string nd_get(int i) { return no_dash.at(i); }
 };
 
-#if 0
-  static mmap_lib::vector<int> string_vector;
-TEST_F(Mmap_str_test, basic_ctor) {
-  mmap_lib::str a1("hello"), a2("hello");
-  EXPECT_EQ(a1, a2);
-
-  std::string_view b_sv("schizophrenia");
-  std::string      b_st("schizophrenia");
-  mmap_lib::str    b1(b_sv), b2(b_st), b3("schizophrenia");
-  EXPECT_EQ(b3, b1);
-  EXPECT_EQ(b3, b2);
-
-  std::string_view c_sv("neutralization");
-  std::string      c_st("neutralization");
-  mmap_lib::str    c1(c_sv), c2(c_st), c3("neutralization");
-  EXPECT_EQ(c3, c1);
-  EXPECT_EQ(c3, c2);
-
-  std::string_view d_sv("--this_var_will_be_very_longbuzzball");
-  std::string      d_st("--this_var_will_be_very_longbuzzball");
-  mmap_lib::str    d1(d_sv), d2(d_st), d3("--this_var_will_be_very_longbuzzball");
-  EXPECT_EQ(d3, d1);
-  EXPECT_EQ(d3, d2);
-
-  mmap_lib::str empT("");
-  mmap_lib::str empT2("");
-}
-#endif
 
 // random mmap_lib::str creation
 TEST_F(Mmap_str_test, random_ctor_cmp) {
@@ -129,10 +100,12 @@ TEST_F(Mmap_str_test, random_ctor_cmp) {
     std::string      c_st = s_get(i), n_st = s_get((i + 1) % RNDN);
     std::string_view c_sv = c_st, n_sv = n_st;
     mmap_lib::str    c_s1(c_st), n_s1(n_st);
-    mmap_lib::str    c_s2(c_sv), n_s2(c_sv);
+    mmap_lib::str    c_s2(c_sv), n_s2(n_sv);
     mmap_lib::str    c_s3(c_st.c_str()), n_s3(n_st.c_str());
 
-#if 0 
+#if 0
+    std::cout << "str curr: " << c_st << std::endl;
+    std::cout << "str next: " << n_st << std::endl;
     std::cout << "pstr c_s1: ";
     c_s1.print_string();
     std::cout << "\npstr n_s1: ";
@@ -140,9 +113,12 @@ TEST_F(Mmap_str_test, random_ctor_cmp) {
     std::cout << std::endl;
 #endif
 
+    // Testing ctors
     EXPECT_EQ(c_s3, c_s1);
     EXPECT_EQ(c_s3, c_s2);
-
+    EXPECT_EQ(n_s3, n_s1);
+    EXPECT_EQ(n_s3, n_s2);
+ 
     EXPECT_TRUE(c_s1 == c_s2);
     EXPECT_TRUE(c_s1 == c_st);
     EXPECT_TRUE(c_s1 == c_sv);
@@ -178,62 +154,6 @@ TEST_F(Mmap_str_test, random_ctor_cmp) {
 
   }
 }
-
-#if 0
-// testing == and != ops
-// mmap_lib::str vs. mmap_lib::str
-// mmap_lib::str vs. string_view
-// mmap_lib::str vs. std::string
-TEST_F(Mmap_str_test, random_comparisons) {
-  for (auto i = 0; i < RNDN; ++i) {
-    // from the str_bank, get string at current index and next index
-    std::string      c_st = s_get(i), n_st = s_get((i + 1) % RNDN);
-    std::string_view c_sv = c_st, n_sv = n_st;
-    mmap_lib::str    c_s1(c_st), n_s1(n_st), c_s2(c_sv), n_s2(c_sv);
-
-#if 0 
-    std::cout << "pstr c_s1: ";
-    c_s1.print_string();
-    std::cout << "\npstr n_s1: ";
-    n_s1.print_string();
-    std::cout << std::endl;
-#endif
-
-    EXPECT_TRUE(c_s1 == c_s2);
-    EXPECT_TRUE(c_s1 == c_st);
-    EXPECT_TRUE(c_s1 == c_sv);
-    EXPECT_TRUE(c_s1 == c_st.c_str());
-
-    EXPECT_FALSE(c_s1 != c_s2);
-    EXPECT_FALSE(c_s1 != c_st);
-    EXPECT_FALSE(c_s1 != c_sv);
-    EXPECT_FALSE(c_s1 != c_st.c_str());
-
-    // tests for next and curr
-    if (c_st == n_st) {
-      EXPECT_FALSE(c_s1 != n_s1);
-      EXPECT_FALSE(c_s1 != n_st);
-      EXPECT_FALSE(c_s1 != n_sv);
-      EXPECT_FALSE(c_s1 != n_st.c_str());
-
-      EXPECT_TRUE(n_s1 == c_s1);
-      EXPECT_TRUE(n_s1 == c_st);
-      EXPECT_TRUE(n_s1 == c_sv);
-      EXPECT_TRUE(n_s1 == c_st.c_str());
-    } else {
-      EXPECT_TRUE(c_s1 != n_s1);
-      EXPECT_TRUE(c_s1 != n_st);
-      EXPECT_TRUE(c_s1 != n_sv);
-      EXPECT_TRUE(c_s1 != n_st.c_str());
-
-      EXPECT_FALSE(n_s1 == c_s1);
-      EXPECT_FALSE(n_s1 == c_st);
-      EXPECT_FALSE(n_s1 == c_sv);
-      EXPECT_FALSE(n_s1 == c_st.c_str());
-    }
-  }
-}
-#endif
 
 // std::string vs. mmap_lib::str
 TEST_F(Mmap_str_test, random_at_operator) {
@@ -269,14 +189,7 @@ TEST_F(Mmap_str_test, isI_operator) {
   }
 }
 
-// 1) pull a string from the random str_bank
-// 2) take a sub-string of the string
-//    -> randomly generate start and end indx of sub-string
-// 3) turn string and sub-string into mmap_lib::str
-// 4) run string.starts_with(sub-string)
-// 5) if the randomly generated start indx is 0,
-//    -> then starts_with should return true
-//    -> else it is false
+
 TEST_F(Mmap_str_test, starts_ends_with) {
   uint32_t start_sw = 0, end_sw = 0;
   uint32_t start_ew = 0, end_ew = 0;
@@ -406,29 +319,60 @@ TEST_F(Mmap_str_test, concat_append) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string      one = s_get(i), two = s_get((i + 1) % RNDN);
     std::string_view sv1 = one, sv2 = two;
-    mmap_lib::str    sone(one);
-    mmap_lib::str    stwo(two);
-    std::string      three = one + two;
-    mmap_lib::str    ref(three);
-    mmap_lib::str    test  = mmap_lib::str::concat(sone, stwo);
-    mmap_lib::str    test2 = mmap_lib::str::concat(sv1, stwo);
-    mmap_lib::str    test3 = mmap_lib::str::concat(sone, sv2);
-    mmap_lib::str    test4 = sone.append(stwo);
-    mmap_lib::str    test5 = sone.append(sv2);
+    mmap_lib::str    sone(one), stwo(two);
+    std::string      three = one + two, three2 = two + one;
+    mmap_lib::str    ref(three), ref2(three2);
 
-#if 1
-   std::cout << "pstr one is: ";
-   sone.print_string();
-   std::cout << std::endl;
-   std::cout << "pstr two is: ";
-   stwo.print_string();
-   std::cout << std::endl;
-   std::cout << "pstr three is: ";
-   ref.print_string();
-   std::cout << std::endl;
+#if 0
+    std::cout << one << "   " << two << "   " << three << std::endl;
+    std::cout << "pstr one is: ";
+    sone.print_string();
+    std::cout << std::endl;
+    std::cout << "pstr two is: ";
+    stwo.print_string();
+    std::cout << std::endl;
+    std::cout << "pstr ref is: ";
+    ref.print_string();
+    std::cout << std::endl;
 #endif
-   //std::cout << one << "   " << two << "   " << three << std::endl;
 
+#if 0
+    std::cout << two << "   " << one << "   " << three2 << std::endl;
+    std::cout << "pstr one is: ";
+    sone.print_string();
+    std::cout << std::endl;
+    std::cout << "pstr two is: ";
+    stwo.print_string();
+    std::cout << std::endl;
+    std::cout << "pstr ref is: ";
+    ref2.print_string();
+    std::cout << std::endl;
+#endif
+
+    //sone.append(stwo);
+    stwo.append(sone);
+    
+    //mmap_lib::str    test  = mmap_lib::str::concat(sone, stwo);
+    //mmap_lib::str    test2 = mmap_lib::str::concat(sv1, stwo);
+    //mmap_lib::str    test3 = mmap_lib::str::concat(sone, sv2);
+    //mmap_lib::str    test4 = sone.append(sv2);
+    
+#if 0
+    std::cout << "one.append(two): ";
+    sone.print_string();
+    std::cout << std::endl;
+#endif
+
+#if 0
+    std::cout << "two.append(one): ";
+    stwo.print_string();
+    std::cout << std::endl;
+#endif
+
+
+
+    //EXPECT_EQ(ref, sone);
+    EXPECT_EQ(ref2, stwo);
    /*
     EXPECT_EQ(ref, test);
     EXPECT_EQ(ref, test2);
@@ -479,7 +423,7 @@ TEST_F(Mmap_str_test, find_rfind) {
     std::cout << "curr_str: ";
     curr_str.print_string();
     std::cout << "\ncurr_sub: ";
-    curr_sub.print_string();
+   curr_sub.print_string();
     std::cout << "\nChosen char: " << chcurr;
     std::cout << "\nnext_str: ";
     next_str.print_string();

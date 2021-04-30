@@ -522,20 +522,24 @@ public:
     //   else
     //     DWWDN
 
-#if 1
     if (_size <= 13) { 
       if ((_size + b._size) <= 13) { // size and b size < = 13
         if (_size <= 3) {
-          auto i = 0;
+          long unsigned int i = 0; 
+          uint8_t e_ptr = _size <= 4 ? 0 : _size - 4;
           for (; i < b._size; ++i) {
-            if (_size + i <= 4) {
-              // shift
+            if (_size + i < 4) {
+              //std::cout << "adding to p_o_s\n";
               ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
+            } else {
+              //std::cout << "adding to e\n";
+              //std::cout << "e_ptr is: " << static_cast<int>(e_ptr) << std::endl;
+              e[e_ptr++] = b[i];
             }
           }
-          for (; i < b._size; ++i) { e[i-4] = b[i]; }
         } else {
-          for (auto i = _size-4+1, j = 0; i< 10 ; ++i, ++j) {
+          //std::cout << "whoops\n";
+          for (auto i = _size-4, j = 0; i< 10 ; ++i, ++j) {
             if (j >= b._size) break;
             e[i] = b[j];
           }
@@ -550,7 +554,7 @@ public:
         for (auto i = 0; i < 10; ++i) { e[i] = temp.e[i]; }
       }
     } else {
-      if ((ptr_or_start + _size) == string_vector.size()) {
+      if ((ptr_or_start + _size) == string_vector.size()) { // last one inserted
         // add to vector end, change e
         for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
@@ -570,29 +574,21 @@ public:
             } // put b in e
           }
         }
-        // TODO: put the new string in map
-       //creating the string to put into maps
         std::string full_str = this->to_s(); // n
         full_str += b.to_s(); // m
         const char* full_string = full_str.c_str();
-      //puting the string into maps
-      insertfind(full_string, _size + b._size - 10);
+        //puting the string into maps
+        insertfind(full_string, _size + b._size - 10);
       } else {
         std::string start = this->to_s(); // n
         start += b.to_s(); // m
         str temp_str  = str(start); // n + m
         ptr_or_start = temp_str.ptr_or_start;
-        for (int i = 0; i< 9 ; i++) {e[i] = temp_str.e[i];}
+        for (int i = 0; i< 10 ; i++) {e[i] = temp_str.e[i];}
       }
     }
     _size += b._size;
-    return *this;
-#endif
-#if 0
-    std::string start = to_s();
-    start += b.to_s();
-    return mmap_lib::str(start);
-#endif
+    return *this;      
   }
 
   str append(std::string_view b)  { return append(mmap_lib::str(b)); }
