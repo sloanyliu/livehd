@@ -56,12 +56,12 @@ protected:
 public:
   // FIXME: This is a non persistent map. Something like string_map2("lgdb","global_str");
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  //static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str_map");
+  // static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str_map");
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   inline static std::vector<int> string_vector;  // ptr_or_start points here!
-  //inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");
-  //static mmap_lib::vector<int> string_vector;
+  // inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");
+  // static mmap_lib::vector<int> string_vector;
 
   //===========constructor 0 (template obj) ============
   str() : ptr_or_start(0), e{0}, _size(0) {}
@@ -590,16 +590,20 @@ public:
   std::vector<str> split(const char chr) {
     std::vector<str> vec;
     std::string      hold;
+    // std::string_view hold;
 
     if (_size == 0) {
       return vec;
     }
+    uint8_t track = 0;
     for (auto i = 0; i < _size; ++i) {
       if ((*this)[i] == chr) {
         vec.push_back(mmap_lib::str(hold));
         hold.clear();
+        track = 0;
       } else {
         hold += (*this)[i];
+        ++track;
       }
     }
     if (hold.size() != 0) {

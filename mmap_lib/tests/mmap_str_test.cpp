@@ -95,6 +95,7 @@ public:
 };
 
 #if 0
+  static mmap_lib::vector<int> string_vector;
 TEST_F(Mmap_str_test, basic_ctor) {
   mmap_lib::str a1("hello"), a2("hello");
   EXPECT_EQ(a1, a2);
@@ -414,6 +415,19 @@ TEST_F(Mmap_str_test, concat_append) {
     mmap_lib::str    test3 = mmap_lib::str::concat(sone, sv2);
     mmap_lib::str    test4 = sone.append(stwo);
     mmap_lib::str    test5 = sone.append(sv2);
+
+#if 0
+   std::cout << "pstr one is: ";
+   sone.print_string();
+   std::cout << std::endl;
+   std::cout << "pstr two is: ";
+   stwo.print_string();
+   std::cout << std::endl;
+   std::cout << "pstr three is: ";
+   ref.print_string();
+   std::cout << std::endl;
+#endif
+
 
     EXPECT_EQ(ref, test);
     EXPECT_EQ(ref, test2);
