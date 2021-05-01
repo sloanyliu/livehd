@@ -593,7 +593,7 @@ public:
   str append(std::string_view b)  { return append(mmap_lib::str(b)); }
 
   str append(char c) {
-    const char* hold = &c; 
+    const char* hold = static_cast<const char*>(&c); 
     mmap_lib::str h(hold);
     return append(h);
   }
