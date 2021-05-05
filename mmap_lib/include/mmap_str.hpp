@@ -522,24 +522,42 @@ public:
     //   else
     //     DWWDN
     if (_size <= 13) { 
+      std::cout << "_size <= 13 -> ";
+
       if ((_size + b._size) <= 13) { // size and b size < = 13
+        std::cout << "_size + b._size <= 13 -> ";
+
         if (_size <= 3) {
+          std::cout << "_size <= 3 (must add to ptr_or_start)\n";
+
           long unsigned int i = 0; 
           uint8_t e_ptr = _size <= 4 ? 0 : _size - 4;
           for (; i < b._size; ++i) {
             if (_size + i < 4) {
-              //std::cout << "adding to p_o_s\n";
+              
+              std::cout << "adding to p_o_s\n";
+              std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
+              std::cout << "b[" << i << "] to be added is: " << b[i] << std::endl;
+
               ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
+              
+              std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
             } else {
-              //std::cout << "adding to e\n";
-              //std::cout << "e_ptr is: " << static_cast<int>(e_ptr) << std::endl;
+            
+              std::cout << "adding to e\n";
+              std::cout << "e_ptr is: " << static_cast<int>(e_ptr) << std::endl;
+              
               e[e_ptr++] = b[i];
             }
           }
         } else {
+          std::cout << "_size > 3 (must \n";
           //std::cout << "whoops\n";
           for (auto i = _size-4, j = 0; i< 10 ; ++i, ++j) {
             if (j >= b._size) break;
+
+              std::cout << "b[" << j << "] to be added is: " << b[j] << std::endl;
+
             e[i] = b[j];
           }
         }
