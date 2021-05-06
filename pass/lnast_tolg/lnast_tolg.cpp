@@ -751,7 +751,8 @@ void Lnast_tolg::process_ast_tuple_add_op(Lgraph *lg, const Lnast_nid &lnidx_ta)
       auto        tup_name = ta_name[i - 1];
 
       auto tn_dpin = setup_tuple_ref(lg, tup_name);
-      if (!tn_dpin.is_invalid()) {
+      // if (!tn_dpin.is_invalid()) {
+      if (!tn_dpin.is_invalid() && !tn_dpin.get_node().is_type_const()) {
         auto tn_spin  = tup_add.setup_sink_pin("tuple_name");
         lg->add_edge(tn_dpin, tn_spin);
       }
@@ -796,6 +797,7 @@ void Lnast_tolg::process_ast_tuple_add_op(Lgraph *lg, const Lnast_nid &lnidx_ta)
 
 // either tuple root or tuple key(str) fit in this case
 Node_pin Lnast_tolg::setup_tuple_ref(Lgraph *lg, std::string_view ref_name) {
+
   auto it = name2dpin.find(ref_name);
 
   if (it != name2dpin.end()) {
@@ -1798,6 +1800,8 @@ void Lnast_tolg::setup_lgraph_ios_and_final_var_name(Lgraph *lg) {
       if (driver_ntype == Ntype_op::TupAdd) {
         if (wire_node.is_type(Ntype_op::Or)) {
           wire_node.set_type(Ntype_op::TupAdd);  // change wire_node type from Or_Op to dummy TupAdd_Op
+          wire_spin = wire_node.setup_sink_pin("tuple_name");
+        } else if (wire_node.is_type(Ntype_op::TupAdd)) {
           wire_spin = wire_node.setup_sink_pin("tuple_name");
         } else {
           I(wire_node.is_type(Ntype_op::Flop));

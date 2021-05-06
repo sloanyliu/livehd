@@ -526,12 +526,15 @@ void Cprop::try_connect_tuple_to_sub(std::shared_ptr<Lgtuple const> tup, Node &s
     if (tup->has_dpin(it.first->name)) {
       auto sub_spin = sub_node.setup_sink_pin_raw(it.second);
       if (!sub_spin.is_connected()) {
-        auto dpin = tup->get_dpin(it.first->name);
+
+        XEdge_iterator out_edges; // Empty list
+        auto dpin = expand_data_and_attributes(tup_node, it.first->name, out_edges, tup);
+        I(!dpin.is_invalid());
         sub_spin.connect_driver(dpin);
       }
     } else {
       Pass::info("could not find IO {} in graph {}", it.first->name, sub.get_name());
-      tuple_issues = true; // The tup may be fine, maybe it is just the sub which has issues (unclear)
+      //tuple_issues = true; // The tup may be fine, maybe it is just the sub which has issues (unclear)
     }
   }
 
@@ -666,20 +669,47 @@ void Cprop::tuple_mux_mut(Node &node) {
       if (tup_list[i-1])
         continue;
       auto tup = std::make_shared<Lgtuple>(""); // scalar
-      tup->add(scalar_field, inp_edges_ordered[i].driver);
+      if (!tuple_issues)
+        tup->add(scalar_field, inp_edges_ordered[i].driver);
       tup_list[i-1] = tup;
     }
   }
 
   Node_pin &sel_dpin = inp_edges_ordered[0].driver;
 
-  auto tup = Lgtuple::make_mux(node, sel_dpin, tup_list); // it can handle tuples with issues
+  auto [tup, pending_iterations] = Lgtuple::get_mux_tup(tup_list); // it can handle tuples with issues
   if (tup) {
     node2tuple[node.get_compact()] = tup;
+  }
+
+  if (tuple_issues)
+    return;
+
+  if (pending_iterations) {
+    Pass::info("mux:{} has pending iterations to get all inputs as tuple", node.debug_name());
+    if (tup) {
+      tup->dump();
+    }
+    tuple_issues = true;
+    return;
+  }
+
+  if (!tup) {
+    tuple_done.insert(node.get_compact());
+    return;
+  }
+
+  auto cmux_list = tup->make_mux(node, sel_dpin, tup_list);
+  node2tuple[node.get_compact()] = tup;
+  for(auto &cmux:cmux_list) {
+    tuple_done.insert(cmux);
   }
 }
 
 void Cprop::tuple_flop_mut(Node &node) {
+
+  I(!tuple_done.contains(node.get_compact()));
+
   if (!node.has_outputs())
     return;
 
@@ -706,10 +736,31 @@ void Cprop::tuple_flop_mut(Node &node) {
   if (node_it != node2tuple.end())
     return;
 
-  auto flop_tup = din_it->second->make_flop(node);
+  auto [flop_tup,pending_iterations] = din_it->second->get_flop_tup(node);
+  if (!tuple_issues && pending_iterations) {
+    Pass::info("flop:{} has pending iterations to get all inputs as tuple", node.debug_name());
+    if (flop_tup) {
+      flop_tup->dump();
+    }
+    tuple_issues = true;
+  }
+
   if (flop_tup) {
     node2tuple[node.get_compact()] = flop_tup;
   }
+  if (tuple_issues || !flop_tup)
+    return;
+
+  flop_tup = din_it->second->make_flop(node);
+  I(flop_tup);
+  node2tuple[node.get_compact()] = flop_tup;
+
+  for(const auto &e:flop_tup->get_map()) {
+    if (e.second.is_type_flop()) {
+      tuple_done.insert(e.second.get_node().get_compact());
+    }
+  }
+  tuple_issues = true; // FIXME: trigger next iter, no issues
 }
 
 void Cprop::tuple_get_mask_mut(Node &node) {
@@ -735,18 +786,24 @@ void Cprop::tuple_get_mask_mut(Node &node) {
     return;
   }
 
+  if (tuple_issues) { // Any tuple issues could be delayed. This always has trivial output
+    return;
+  }
+
   //---------------------------------------------
   // Figure out "a" sink
 
   if (a_it != node2tuple.end()) {
     auto a_tup = a_it->second;
-    if (!a_tup->is_correct())
-      return;
+    I(a_tup->is_correct());
 
-    auto flat_a_dpin = a_tup->flatten();
-    if (flat_a_dpin.is_invalid()) {
+    if (a_tup->is_empty()) {
       auto zero_dpin = node.create_const(0).setup_driver_pin();
       collapse_forward_for_pin(node, zero_dpin);
+      return;
+    }
+    auto flat_a_dpin = a_tup->flatten();
+    if (flat_a_dpin.is_invalid()) {
       return;
     }
 
@@ -764,6 +821,7 @@ void Cprop::tuple_get_mask_mut(Node &node) {
   if (!mask_tup->is_correct())
     return;
 
+  I(mask_tup->is_correct());
   if (mask_tup->is_empty()) {
     mask_spin.del();
     node.setup_sink_pin("mask").connect_driver(node.create_const(-1));
@@ -1078,9 +1136,11 @@ bool Cprop::tuple_tuple_get(const Node &node) {
         return false;
       }
     }
-    Pass::error("tuple_get {} for tuple {} has no way to find field", node.debug_name(), tup_name);
-    node_tup->set_issue(); // It is not right
-    tuple_issues = true;
+    if (!tuple_issues) {
+      Pass::error("tuple_get {} for tuple {} has no way to find field", node.debug_name(), tup_name);
+      node_tup->set_issue(); // It is not right
+      tuple_issues = true;
+    }
     return false;
   }
 
@@ -1314,7 +1374,7 @@ void Cprop::reconnect_tuple_add(Node &node) {
     }
   }
 
-  if (!node_tup) {
+  if (!node_tup || tuple_issues) {
     return;
   }
 
@@ -1357,6 +1417,7 @@ void Cprop::reconnect_tuple_get(Node &node) {
       node.setup_sink_pin("name").del();
 
       auto out_edges_list = node.out_edges();
+      I(!out_edges_list.empty());
       auto new_dpin = expand_data_and_attributes(node, "", out_edges_list, it->second);
 
       for(auto &e:new_dpin.out_edges()) {
@@ -1373,7 +1434,8 @@ void Cprop::reconnect_tuple_get(Node &node) {
 
   if (it->second->is_trivial_scalar()) {
     auto out_edges_list = node.out_edges();
-    expand_data_and_attributes(node, "", out_edges_list, it->second);
+    if (!out_edges_list.empty())
+      expand_data_and_attributes(node, "", out_edges_list, it->second);
   }
 }
 
@@ -1381,10 +1443,7 @@ Node_pin Cprop::expand_data_and_attributes(Node &node, const std::string &key_na
   I(!hier);
   I(node_tup);
   I(node_tup->is_correct());
-  I(node_tup->is_scalar());
-
-  if (pending_out_edges.empty())
-    return invalid_pin;
+  I(!tuple_issues);
 
   auto value_dpin = node_tup->get_dpin(key_name);
 
@@ -1482,18 +1541,22 @@ void Cprop::scalar_pass(Lgraph *lg) {
 void Cprop::tuple_pass(Lgraph *lg) {
 
   node2tuple.clear();
+  tuple_done.clear();
 
   if (!tuple_found)
     return;
 
-  for(auto iter=0;iter<4;++iter) {
-    tuple_issues = false;
+  for(auto iter=0;iter<6;++iter) {
+    tuple_issues = iter==0; // First iter may not be correct if there are flops or subgraphs
     for (auto node:lg->forward(hier)) {
-      auto op                = node.get_type_op();
+      if (tuple_done.contains(node.get_compact()))
+        continue;
+
+      auto op = node.get_type_op();
       if (op!=Ntype_op::Get_mask && (op<Ntype_op::Mux || op==Ntype_op::Const))
         continue;
 
-      //fmt::print("tuple  node:{}\n", node.debug_name());
+      fmt::print("tuple  node:{}\n", node.debug_name());
 
       I(op!=Ntype_op::IO); // no IOs in fwd iterator
 
@@ -1659,6 +1722,10 @@ void Cprop::do_trans(Lgraph *lg) {
 
   scalar_pass(lg);
   tuple_pass(lg);
+  if (tuple_found && !tuple_issues) {
+    scalar_pass(lg);
+    tuple_pass(lg);
+  }
   // clean_io(lg);
 }
 
