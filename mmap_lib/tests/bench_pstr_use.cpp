@@ -13,7 +13,8 @@
 #define NEEQ_TESTS        0
 #define STARTS_WITH_TESTS 0
 #define FIND              0
-#define BENCH             1
+#define BENCH             0
+#define WHITEBOARD        1
 
 #if 0
 //implicitly changes ts to string_view
@@ -604,6 +605,26 @@ void bench_str_cmp() {
   }
 }
 
+void whtbrd() {
+  {
+    Lbench b("bench_str_cmp");
+
+    Lrand_range<char>     ch(33, 126);
+    Lrand_range<uint16_t> sz(14, 30);
+
+    std::vector<mmap_lib::str> v;
+   
+    for (auto i = 0u; i < 1; ++i) {
+      auto          s = sz.any();
+      mmap_lib::str tmp;
+      for (auto j = 0; j < s; ++j) {
+        tmp.append(ch.any());
+      }
+      v.emplace_back(tmp);
+    } 
+  }
+}
+
 int main(int argc, char** argv) {
 #if BENCH
   bench_str_cmp();
@@ -637,6 +658,10 @@ int main(int argc, char** argv) {
   pstr_starts_with();
 #endif
 
+
+#if WHITEBOARD
+  whtbrd();
+#endif
   /*
    mmap_lib::str ts("hello");
    const char *t2 = "hello";
