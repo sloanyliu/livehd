@@ -13,7 +13,7 @@
 
 namespace mmap_lib {
 
-//template<X>
+// template<X>
 class str {
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
@@ -223,7 +223,7 @@ public:
     std::cout << "}" << std::endl;
   }
 
-  void print_string() {
+  void print_string() const {
     if (_size <= 13) {
       uint8_t mx = posShifter(_size);
       for (uint8_t i = mx; i <= 3u; --i) {
@@ -235,10 +235,21 @@ public:
         }
       }
     } else {
+      
+      std::cout << "e.size() is: " << e.size() << "\n";
+
       std::cout << char(e[0]) << char(e[1]);
+
+      std::cout << "_size - 10 is: " << _size - 10 << std::endl;
+      std::cout << "ptr_or_start is: " << ptr_or_start << std::endl;
+      std::cout << "strVec size is: " << string_vector.size() << std::endl;
+
       for (auto i = 0; i < _size - 10; ++i) {
         std::cout << static_cast<char>(string_vector.at(i + ptr_or_start));
       }
+
+      std::cout << "who\n";
+
       for (uint8_t k = 2; k < 10; ++k) {
         std::cout << static_cast<char>(e[k]);
       }
@@ -507,18 +518,18 @@ public:
     return rfind(str(s), pos);
   }
 
-  static str concat( str &a, const str &b) { return a.append(b); }
+  static str concat(str &a, const str &b) { return a.append(b); }
 
   static str concat(std::string_view a, const str &b) {
     mmap_lib::str temp(a);
     return temp.append(b);
   }
 
-  static str concat( str &a, std::string_view b) { return a.append(b); }
+  static str concat(str &a, std::string_view b) { return a.append(b); }
 
-  static str concat( str &a, int v) { return a.append(v); }
+  static str concat(str &a, int v) { return a.append(v); }
 
-  str append(const str &b)  {
+  str append(const str &b) {
     // if _size <= 13, not in map yet
     //   now check _size + v._size
     //   if _size + v._size <= 13, change p_o_s and e
@@ -529,122 +540,163 @@ public:
     //   else
     //     DWWDN
 
-    std::cout << "_size is: " << _size << "b._size is: " << b._size << std::endl;
+    std::cout << "_size : " << _size << " b._size : " << b._size << std::endl;
+    //std::cout << "this is: ";
+    //print_string();
+    //std::cout << " b is: ";
+    //b.print_string();
+    //std::cout << std::endl;
 
-    if (_size <= 13) { 
+    if (_size <= 13) {
       std::cout << "_size <= 13 -> ";
 
-      if ((_size + b._size) <= 13) { // size and b size < = 13
+      if ((_size + b._size) <= 13) {  // size and b size < = 13
         std::cout << "_size + b._size <= 13 -> ";
 
         if (_size <= 3) {
           std::cout << "_size <= 3 (must add to ptr_or_start)\n";
 
-          long unsigned int i = 0; 
-          uint8_t e_ptr = _size <= 4 ? 0 : _size - 4;
+          long unsigned int i     = 0;
+          uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
           for (; i < b._size; ++i) {
             if (_size + i < 4) {
-              
-              //std::cout << "adding to p_o_s\n";
-              //std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
-              //std::cout << "b[" << i << "] to be added is: " << b[i] << std::endl;
+              // std::cout << "adding to p_o_s\n";
+              // std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
+              // std::cout << "b[" << i << "] to be added is: " << b[i] << std::endl;
 
               ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
-              
-              //std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
+
+              // std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
             } else {
-            
-              //std::cout << "adding to e\n";
-              //std::cout << "e_ptr is: " << static_cast<int>(e_ptr) << std::endl;
-              
+              // std::cout << "adding to e\n";
+              // std::cout << "e_ptr is: " << static_cast<int>(e_ptr) << std::endl;
+
               e[e_ptr++] = b[i];
             }
           }
         } else {
           std::cout << "_size > 3 (must add to e)\n";
-          
-          for (auto i = _size-4, j = 0; i< 10 ; ++i, ++j) {
-            if (j >= b._size) break;
 
-              //std::cout << "b[" << j << "] to be added is: " << b[j] << std::endl;
+          for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
+            if (j >= b._size)
+              break;
+
+            // std::cout << "b[" << j << "] to be added is: " << b[j] << std::endl;
 
             e[i] = b[j];
           }
         }
-      } else { // size and b size > 13
-        
-        std::cout << "_size + b._size > 13 (must remake SHORT str to LONG)";
-        
+      } else {  // size and b size > 13
+
+        std::cout << "_size + b._size > 13 (must remake SHORT str to LONG)\n";
+
+        //FIXME: issue could be here
+
+
         // re make the string to be LONG
         std::string hold;
-        for (auto i = 0; i < _size; ++i) { hold += (*this)[i]; }
-        for (auto i = 0; i < b._size; ++i) { hold += b[i]; }
-        str temp = str(hold);
+        for (auto i = 0; i < _size; ++i) {
+          hold += (*this)[i];
+        }
+        for (auto i = 0; i < b._size; ++i) {
+          hold += b[i];
+        }
+        str temp     = str(hold);
         ptr_or_start = temp.ptr_or_start;
-        for (auto i = 0; i < 10; ++i) { e[i] = temp.e[i]; }
+        for (auto i = 0; i < 10; ++i) {
+          e[i] = temp.e[i];
+        }
+
+        //std::cout << "chkpt\n";
+
       }
     } else {
-
       std::cout << "_size > 13 -> ";
 
-      if ((ptr_or_start + _size) == string_vector.size()) { // last one inserted
+      if ((ptr_or_start + _size) == string_vector.size()) {  // last one inserted
 
         std::cout << "last string created (add to end of strvec)\n";
 
         // add to vector end, change e
         for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
-            for (auto i = 2; i < 10; ++i) { string_vector.emplace_back(e[i]); }
-            for (auto i = 0; i < b._size - 8; ++i) { string_vector.emplace_back(b[i]); }
+            for (auto i = 2; i < 10; ++i) {
+              string_vector.emplace_back(e[i]);
+            }
+            for (auto i = 0; i < b._size - 8; ++i) {
+              string_vector.emplace_back(b[i]);
+            }
             for (auto i = b._size - 8, j = 2; i < b._size; ++i, ++j) {
-             if (j == 10) break;
+              if (j == 10)
+                break;
               e[j] = b[i];
-            } 
-          } else { // b._size < 8
-            for (auto i = 2; i < b._size + 2; ++i) { string_vector.emplace_back(e[i]); } // put e to vec
+            }
+          } else {  // b._size < 8
+            for (auto i = 2; i < b._size + 2; ++i) {
+              string_vector.emplace_back(e[i]);
+            }  // put e to vec
             auto i = 2;
-            for (; i < b._size + 2; ++i) { e[i] = e[i+b._size]; } // overwrite e
-            for (auto j = 0; j < b._size; ++i, ++j) { 
-              if (i == 10 ) break;
-              e[i] = b[j]; 
-            } // put b in e
+            for (; i < b._size + 2; ++i) {
+              e[i] = e[i + b._size];
+            }  // overwrite e
+            for (auto j = 0; j < b._size; ++i, ++j) {
+              if (i == 10)
+                break;
+              e[i] = b[j];
+            }  // put b in e
           }
         }
-        std::string full_str = this->to_s(); // n
-        full_str += b.to_s(); // m
-        const char* full_string = full_str.c_str();
-        //puting the string into maps
+        std::string full_str = this->to_s();  // n
+        full_str += b.to_s();                 // m
+        const char *full_string = full_str.c_str();
+        // puting the string into maps
         insertfind(full_string, _size + b._size - 10);
       } else {
-
-
-        // PROBLEM HERE
         std::cout << "not last one inserted (must make new string)\n";
 
-        std::string start = this->to_s(); // n
-        start += b.to_s(); // m
-        str temp_str  = str(start); // n + m
+        //std::cout << "problem?\n";
+
+        /* FIXME
+         * IT's not going past the line below
+         */
+        print_string();
+        std::string start = this->to_s();  // n 
+        
+        //std::cout << "here 1\n";
+
+        start += b.to_s();  // m
+
+        //std::cout << "here 2\n";
+
+        str temp_str = str(start);  // n + m
+
+        //std::cout << "here 3\n";
+
         ptr_or_start = temp_str.ptr_or_start;
-        for (int i = 0; i< 10 ; i++) {e[i] = temp_str.e[i];}
+
+        //std::cout << "here 4\n";
+
+        for (uint8_t i = 0; i < static_cast<uint8_t>((temp_str.e).size()); i++) {
+          e[i] = temp_str.e[i];
+        }
       }
     }
     _size += b._size;
-    return *this;      
+    return *this;
   }
 
-  str append(std::string_view b)  { return append(mmap_lib::str(b)); }
+  str append(std::string_view b) { return append(mmap_lib::str(b)); }
 
   str append(char c) {
+    // std::cout << "single char append" << std::endl;
 
-    //std::cout << "single char append" << std::endl;
-
-    //printf("Checking c: %c\n", c);
+    // printf("Checking c: %c\n", c);
 
     mmap_lib::str h(c);
     return append(h);
   }
 
-  str append(int b)  {
+  str append(int b) {
     std::string hold = std::to_string(b);
     return append(mmap_lib::str(hold));
   }
@@ -726,9 +778,17 @@ public:
 
   std::string to_s() const {  // convert to string
     std::string out;
+
+    //std::cout << "got here\n";
+    //std::cout << "_size is: " << _size << std::endl;
+
     for (auto i = 0; i < _size; ++i) {
+      //std::cout << "round ";
       out += (*this)[i];
+      //std::cout << "i is: " << i << "char is: " << (*this)[i] << std::endl;
     }
+
+    //std::cout << "got here too\n";
     return out;
   }
 
@@ -795,6 +855,6 @@ public:
   }
 };
 
-//mmap_lib::map<std::string_view, uint32_t> str::string_map2;
+// mmap_lib::map<std::string_view, uint32_t> str::string_map2;
 
 }  // namespace mmap_lib

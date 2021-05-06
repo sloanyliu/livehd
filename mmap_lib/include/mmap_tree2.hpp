@@ -13,23 +13,23 @@
 
 namespace mmap_lib {
 
-using Tree2_index   = uint64_t;
+using Tree2_index = uint64_t;
 
 template <typename X>
 class tree2 {
 protected:
-  const std::string         mmap_name;
-  const std::string         mmap_path;
+  const std::string mmap_name;
+  const std::string mmap_path;
 
-  std::vector<X>            data_stack;
-  std::vector<int16_t>      level_stack;
+  std::vector<X>       data_stack;
+  std::vector<int16_t> level_stack;
 
-  std::vector<X>            overflow_data_stack;
-  std::vector<int16_t>      overflow_level_stack;
+  std::vector<X>       overflow_data_stack;
+  std::vector<int16_t> overflow_level_stack;
 
 public:
   static constexpr Tree2_index invalid_index() { return Tree2_index(0); }
-  static constexpr Tree2_index root_index()    { return Tree2_index(1); }
+  static constexpr Tree2_index root_index() { return Tree2_index(1); }
 
   const Tree2_index get_last_child(const Tree2_index parent_index) const;
   const Tree2_index get_first_child(const Tree2_index parent_index) const;
@@ -120,11 +120,10 @@ public:
     CTree2_sibling_iterator end() const { return CTree2_sibling_iterator(invalid_index(), t); }
   };
 
-  tree2() {
-  };
+  tree2(){};
 
   tree2(std::string_view _path, std::string_view _map_name)
-  : mmap_path(_path.empty() ? "." : _path), mmap_name{std::string(_path) + std::string("/") + std::string(_map_name)} {
+      : mmap_path(_path.empty() ? "." : _path), mmap_name{std::string(_path) + std::string("/") + std::string(_map_name)} {
     if (mmap_path != ".") {
       struct stat sb;
       if (stat(mmap_path.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode)) {
@@ -177,7 +176,7 @@ public:
 
   const Tree2_index get_parent(const Tree2_index index) const;
 
-  void                        set_root(const X &data);
+  void set_root(const X &data);
 
   const Tree2_index get_child(const Tree2_index start_index) const;
 
@@ -186,7 +185,7 @@ public:
     return Tree2_depth_preorder_iterator(start_index, this);
   }
 
-  Tree2_depth_preorder_iterator  depth_preorder() const { return Tree2_depth_preorder_iterator(Tree2_index::root(), this); }
+  Tree2_depth_preorder_iterator depth_preorder() const { return Tree2_depth_preorder_iterator(Tree2_index::root(), this); }
 
   Tree2_sibling_iterator siblings(const Tree2_index &start_index) const { return Tree2_sibling_iterator(start_index, this); }
   Tree2_sibling_iterator children(const Tree2_index &start_index) const {

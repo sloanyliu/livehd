@@ -546,7 +546,7 @@ void pstr_starts_with() {
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t - r, t);
 }
 
-void bench_str_cmp() { 
+void bench_str_cmp() {
   {
     Lbench b("bench_str_cmp");
 
@@ -554,7 +554,7 @@ void bench_str_cmp() {
     Lrand_range<uint16_t> sz(1, 80);
 
     std::vector<mmap_lib::str> v;
-   
+
     for (auto i = 0u; i < 1e4; ++i) {
       auto          s = sz.any();
       mmap_lib::str tmp;
@@ -564,7 +564,6 @@ void bench_str_cmp() {
       v.emplace_back(tmp);
     }
 
-   
     int conta = 0;
     for (auto i = 0u; i < 1e4; ++i) {
       for (auto j = 0u; j < 1e4; ++j) {
@@ -574,7 +573,6 @@ void bench_str_cmp() {
     }
 
     fmt::print("bench_str_cmp conta:{}\n", conta);
-    
   }
 
   {
@@ -607,21 +605,23 @@ void bench_str_cmp() {
 
 void whtbrd() {
   {
-    Lbench b("bench_str_cmp");
-
-    Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(14, 30);
-
-    std::vector<mmap_lib::str> v;
-   
-    for (auto i = 0u; i < 1; ++i) {
-      auto          s = sz.any();
-      mmap_lib::str tmp;
-      for (auto j = 0; j < s; ++j) {
-        tmp.append(ch.any());
-      }
-      v.emplace_back(tmp);
-    } 
+    mmap_lib::str tmp;
+    tmp.append('a');
+    tmp.append('b');
+    tmp.append('c');
+    tmp.append('d');
+    tmp.append('e');
+    tmp.append('f');
+    tmp.append('g');
+    tmp.append('h');
+    tmp.append('i');
+    tmp.append('j');
+    tmp.append('k');
+    tmp.append('l');
+    tmp.append('m');
+    tmp.append('n');
+    tmp.append('o');
+  
   }
 }
 
@@ -657,7 +657,6 @@ int main(int argc, char** argv) {
 #if STARTS_WITH_TESTS
   pstr_starts_with();
 #endif
-
 
 #if WHITEBOARD
   whtbrd();

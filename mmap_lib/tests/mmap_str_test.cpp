@@ -34,7 +34,6 @@
  * get_str_before_after  pass     get_str_before/after_first/last()
  */
 
-
 class Mmap_str_test : public ::testing::Test {
   std::vector<std::string> str_bank;
   std::vector<std::string> num_bank;
@@ -64,8 +63,8 @@ public:
         ele3 += (('!' + hd) == '_') ? ('_' + 1) : ('!' + hd);
         ele4 += (('!' + hd) == '-') ? ('-' + 1) : ('!' + hd);
       }
-      str_bank.push_back(ele);        // add string to vector
-      //std::cout << ele << std::cout;
+      str_bank.push_back(ele);  // add string to vector
+      // std::cout << ele << std::cout;
       no_underscore.push_back(ele3);  // add to no underscore
       no_dash.push_back(ele4);        // add to no dash
 
@@ -93,7 +92,6 @@ public:
   std::string nd_get(int i) { return no_dash.at(i); }
 };
 
-
 // random mmap_lib::str creation
 TEST_F(Mmap_str_test, random_ctor_cmp) {
   for (auto i = 0; i < RNDN; ++i) {
@@ -118,7 +116,7 @@ TEST_F(Mmap_str_test, random_ctor_cmp) {
     EXPECT_EQ(c_s3, c_s2);
     EXPECT_EQ(n_s3, n_s1);
     EXPECT_EQ(n_s3, n_s2);
- 
+
     EXPECT_TRUE(c_s1 == c_s2);
     EXPECT_TRUE(c_s1 == c_st);
     EXPECT_TRUE(c_s1 == c_sv);
@@ -151,7 +149,6 @@ TEST_F(Mmap_str_test, random_ctor_cmp) {
       EXPECT_FALSE(n_s1 == c_sv);
       EXPECT_FALSE(n_s1 == c_st.c_str());
     }
-
   }
 }
 
@@ -188,7 +185,6 @@ TEST_F(Mmap_str_test, isI_operator) {
     }
   }
 }
-
 
 TEST_F(Mmap_str_test, starts_ends_with) {
   uint32_t start_sw = 0, end_sw = 0;
@@ -349,14 +345,14 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-    //sone.append(stwo);
+    // sone.append(stwo);
     stwo.append(sone);
-    
-    //mmap_lib::str    test  = mmap_lib::str::concat(sone, stwo);
-    //mmap_lib::str    test2 = mmap_lib::str::concat(sv1, stwo);
-    //mmap_lib::str    test3 = mmap_lib::str::concat(sone, sv2);
-    //mmap_lib::str    test4 = sone.append(sv2);
-    
+
+    // mmap_lib::str    test  = mmap_lib::str::concat(sone, stwo);
+    // mmap_lib::str    test2 = mmap_lib::str::concat(sv1, stwo);
+    // mmap_lib::str    test3 = mmap_lib::str::concat(sone, sv2);
+    // mmap_lib::str    test4 = sone.append(sv2);
+
 #if 0
     std::cout << "one.append(two): ";
     sone.print_string();
@@ -369,19 +365,16 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-
-
-    //EXPECT_EQ(ref, sone);
+    // EXPECT_EQ(ref, sone);
     EXPECT_EQ(ref2, stwo);
-   /*
-    EXPECT_EQ(ref, test);
-    EXPECT_EQ(ref, test2);
-    EXPECT_EQ(ref, test3);
-    EXPECT_EQ(ref, test4);
-    EXPECT_EQ(ref, test5);
-  */
+    /*
+     EXPECT_EQ(ref, test);
+     EXPECT_EQ(ref, test2);
+     EXPECT_EQ(ref, test3);
+     EXPECT_EQ(ref, test4);
+     EXPECT_EQ(ref, test5);
+   */
   }
-
 }
 
 #if 1
