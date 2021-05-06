@@ -5,7 +5,6 @@
 #define TEMP_PERSIST 1 
 
 #ifdef TEMP_PERSIST
->>>>>>> upstream/master
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2("lgdb","file1");
 #else
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2;
