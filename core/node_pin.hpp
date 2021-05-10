@@ -98,9 +98,9 @@ public:
   };
   class __attribute__((packed)) Compact_flat {
   protected:
-    uint32_t   lgid;
-    uint32_t   idx : Index_bits;
-    uint32_t   sink : 1;
+    uint32_t lgid;
+    uint32_t idx : Index_bits;
+    uint32_t sink : 1;
 
     friend class Lgraph;
     friend class Lgraph_Node_Type;
@@ -132,7 +132,7 @@ public:
     constexpr bool is_invalid() const { return idx == 0; }
 
     constexpr bool operator==(const Compact_flat &other) const {
-      return idx == other.idx && sink == other.sink && (lgid == other.lgid || lgid==0 || other.lgid==0);
+      return idx == other.idx && sink == other.sink && (lgid == other.lgid || lgid == 0 || other.lgid == 0);
     }
     constexpr bool operator!=(const Compact_flat &other) const { return !(*this == other); }
 
@@ -342,7 +342,8 @@ public:
 
   Node              get_driver_node() const;  // common 0 or 1 driver case
   Node_pin          get_driver_pin() const;   // common 0 or 1 driver case
-  Node_pin_iterator inp_driver() const;       // handle 0 to inf driver case
+  Node_pin_iterator inp_drivers() const;
+  Node_pin_iterator out_sinks() const;
 
   void del_driver(Node_pin &dst);
   void del_sink(Node_pin &dst);
@@ -357,8 +358,8 @@ public:
   }
   void del();  // del self and all connections
 
-  Node create(Ntype_op op) const; // create a new node, keep same hierarchy
-  Node create_const(const Lconst &value) const; // create a new node, keep same hierarchy
+  Node create(Ntype_op op) const;                // create a new node, keep same hierarchy
+  Node create_const(const Lconst &value) const;  // create a new node, keep same hierarchy
 
   void connect_sink(const Node_pin &dst) const;
   void connect_sink(const Node &dst) const;
@@ -414,7 +415,7 @@ public:
   float get_delay() const;
   bool  has_delay() const;
 
-  void   set_size(const Node_pin &dpin); // set size and sign
+  void set_size(const Node_pin &dpin);  // set size and sign
 
   Bits_t get_bits() const;
   void   set_bits(Bits_t bits);

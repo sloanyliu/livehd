@@ -102,7 +102,7 @@ Node::Node(Lgraph *_g, const Compact_flat &comp)
     : top_g(nullptr), current_g(nullptr), hidx(Hierarchy_tree::invalid_index()), nid(comp.nid) {
   I(nid);
   auto *lib = _g->ref_library();
-  top_g = lib->try_find_lgraph(comp.lgid);
+  top_g     = lib->try_find_lgraph(comp.lgid);
   I(top_g);
   current_g = top_g;
   I(top_g);
@@ -125,6 +125,8 @@ Node::Compact_flat Node::get_compact_flat() const {
   I(!is_invalid());
   return Compact_flat(current_g->get_lgid(), nid);
 }
+
+Graph_library *Node::ref_library() const { return current_g->ref_library(); }
 
 Node_pin Node::get_driver_pin_raw(Port_ID pid) const {
   I(!is_type_sub());  // Do not setup subs by PID, use name. IF your really need it, use setup_driver_pin_raw
@@ -319,8 +321,10 @@ Node_pin Node::setup_driver_pin_raw(Port_ID pid) const {
   if (is_type_sub()) {
     Lg_type_id  sub_lgid = current_g->get_type_sub(nid);
     const auto &sub      = current_g->get_library().get_sub(sub_lgid);
-    I(sub.has_instance_pin(pid));
-    I(sub.is_output_from_instance_pid(pid), "ERROR: An input can not be a driver pin");
+    if (pid != 0 || sub.get_name().substr(0, 2) != "__") {  // Do no check to pid for __NAME
+      I(sub.has_instance_pin(pid));
+      I(sub.is_output_from_instance_pid(pid), "ERROR: An input can not be a driver pin");
+    }
   } else {
     I(Ntype::has_driver(get_type_op(), pid));
   }
@@ -408,9 +412,7 @@ Node Node::get_up_node() const {
 }
 
 void Node::set_type_sub(Lg_type_id subid) { current_g->set_type_sub(nid, subid); }
-void Node::set_type_const(const Lconst &val) {
-  current_g->set_type_const(nid, val);
-}
+void Node::set_type_const(const Lconst &val) { current_g->set_type_const(nid, val); }
 
 Lg_type_id Node::get_type_sub() const { return current_g->get_type_sub(nid); }
 
@@ -460,6 +462,7 @@ Node_pin_iterator Node::inp_connected_pins() const { return current_g->inp_conne
 Node_pin_iterator Node::out_connected_pins() const { return current_g->out_connected_pins(*this); }
 
 Node_pin_iterator Node::inp_drivers() const { return current_g->inp_drivers(*this); }
+Node_pin_iterator Node::out_sinks() const { return current_g->out_sinks(*this); }
 
 void Node::del_node() {
   current_g->del_node(*this);
@@ -604,13 +607,9 @@ Bits_t Node::get_bits() const {
 bool Node::has_place() const { return Ann_node_place::ref(top_g)->has(get_compact()); }
 
 //----- Subject to changes in the future:
-void Node::set_color(int new_color) {
-  Ann_node_color::ref(current_g)->set(get_compact_class(), new_color);
-}
+void Node::set_color(int new_color) { Ann_node_color::ref(current_g)->set(get_compact_class(), new_color); }
 
-int Node::get_color() const {
-  return Ann_node_color::ref(current_g)->get_val(get_compact_class());
-}
+int Node::get_color() const { return Ann_node_color::ref(current_g)->get_val(get_compact_class()); }
 
 bool Node::has_color() const { return Ann_node_color::ref(current_g)->has_key(get_compact_class()); }
 
@@ -623,7 +622,7 @@ void Node::dump() const {
     fmt::print(" const = {}\n", get_type_const().to_pyrope());
   } else if (get_type_op() == Ntype_op::Sub) {
     Lg_type_id sub_lgid = current_g->get_type_sub(nid);
-    auto sub_name = top_g->get_library().get_name(sub_lgid);
+    auto       sub_name = top_g->get_library().get_name(sub_lgid);
     fmt::print(" sub = {} (lgid:{})\n", sub_name, sub_lgid);
   } else {
     fmt::print("\n");

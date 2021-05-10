@@ -66,8 +66,6 @@ void Graphviz::populate_lg_handle_xedge(const Node &node, const XEdge &out, std:
 
   if (node.get_type_op() == Ntype_op::Const)
     data += fmt::format(" {}->{}[label=<{}b:({},{})>];\n", dn_name, sn_name, dbits, dp_pid, sp_pid);
-  else if (node.get_type_op() == Ntype_op::TupRef)
-    data += fmt::format(" {}->{}[label=<({},{}):<font color=\"#0000ff\">{}</font>>];\n", dn_name, sn_name, dp_pid, sp_pid, dp_name);
   else if (node.get_type_op() == Ntype_op::TupAdd)
     data += fmt::format(" {}->{}[label=<{}b:({},{}):<font color=\"#0000ff\">{}</font>>];\n",
                         dn_name,
@@ -306,7 +304,6 @@ void Graphviz::populate_lg_data(Lgraph *g, std::string_view dot_postfix) {
 }
 
 void Graphviz::do_from_lnast(std::shared_ptr<Lnast> lnast, std::string_view dot_postfix) {
-	(void)dot_postfix;
   std::string data = "digraph {\n";
 
   for (const auto &itr : lnast->depth_preorder()) {
@@ -341,5 +338,9 @@ void Graphviz::do_from_lnast(std::shared_ptr<Lnast> lnast, std::string_view dot_
 
   data += "}\n";
 
-	save_graph(lnast->get_top_module_name(), "lnast", data);
+  if (!dot_postfix.empty()) {
+    save_graph(lnast->get_top_module_name(), absl::StrCat("lnast", ".", dot_postfix), data);
+  } else {
+    save_graph(lnast->get_top_module_name(), "lnast", data);
+  }
 }

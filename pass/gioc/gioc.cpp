@@ -43,8 +43,10 @@ void Gioc::do_trans(Lgraph *lg) {
     I(node.out_edges().size() == 1);
     node.inp_edges().begin()->del_edge();
     auto sub_outsink_ta_node = node.out_edges().begin()->sink.get_node();
+    (void)sub_outsink_ta_node;
     node.out_edges().begin()->del_edge();
-    sub_outsink_ta_node.set_type(Ntype_op::TupRef);  // change type from TA to TRef to have a valid chain
+    I(false); // TupRef is gone
+    // sub_outsink_ta_node.set_type(Ntype_op::TupRef);  // change type from TA to TRef to have a valid chain
 
     subgraph_io_connection(lg, sub, arg_tup_name, ret_name, node);
     reconnect_the_tgs_from_unified_out(ret_name);
@@ -87,11 +89,11 @@ void Gioc::subgraph_io_connection(Lgraph *lg, Sub_node *sub, std::string_view ar
       auto                  hier_inp_subnames = split_name(io_pin->name, ".");
       for (const auto &subname : hier_inp_subnames) {
         auto tup_get    = lg->create_node(Ntype_op::TupGet);
-        auto tn_spin    = tup_get.setup_sink_pin("tuple_name");
+        auto tn_spin    = tup_get.setup_sink_pin("parent");
         I(false); // The "field" is gone in TupGet
         // Do we need the gioc pass??
         auto field_spin = tup_get.setup_sink_pin("field");     // key name
-        auto pos_spin   = tup_get.setup_sink_pin("position");  // key pos
+        auto pos_spin   = tup_get.setup_sink_pin("field");  // key pos
 
         Node_pin tn_dpin;
         if (&subname == &hier_inp_subnames.front()) {
@@ -130,7 +132,7 @@ void Gioc::subgraph_io_connection(Lgraph *lg, Sub_node *sub, std::string_view ar
         auto ta_ret_dpin = ta_ret.setup_driver_pin();
 
         auto ta_ret_tn_dpin = setup_tuple_ref(lg, ret_name);
-        ta_ret_tn_dpin.connect_sink(ta_ret.setup_sink_pin("tuple_name"));
+        ta_ret_tn_dpin.connect_sink(ta_ret.setup_sink_pin("parent"));
 
         auto ta_ret_field_dpin = setup_field_dpin(lg, subname);
         ta_ret_field_dpin.connect_sink(ta_ret.setup_sink_pin("field"));
@@ -148,7 +150,7 @@ void Gioc::subgraph_io_connection(Lgraph *lg, Sub_node *sub, std::string_view ar
           auto ta_subname_dpin = ta_subname.setup_driver_pin();
 
           auto ta_subname_tn_dpin = setup_tuple_ref(lg, subname);
-          ta_subname_tn_dpin.connect_sink(ta_subname.setup_sink_pin("tuple_name"));
+          ta_subname_tn_dpin.connect_sink(ta_subname.setup_sink_pin("parent"));
           // note: we don't know the field and value for ta_subname yet till next subname
 
           ta_subname_dpin.connect_sink(ta_ret.setup_sink_pin("value"));  // connect to parent value_dpin
@@ -172,7 +174,7 @@ void Gioc::subgraph_io_connection(Lgraph *lg, Sub_node *sub, std::string_view ar
         auto parent_field_dpin = setup_field_dpin(lg, subname);
 
         auto ta_subname_tn_dpin = setup_tuple_ref(lg, subname);
-        ta_subname_tn_dpin.connect_sink(ta_subname.setup_sink_pin("tuple_name"));
+        ta_subname_tn_dpin.connect_sink(ta_subname.setup_sink_pin("parent"));
         // note: we don't know the field and value for ta_subname yet till next subname
 
         auto ta_subname_dpin = ta_subname.setup_driver_pin();
@@ -227,7 +229,8 @@ Node_pin Gioc::setup_tuple_ref(Lgraph *lg, std::string_view ref_name) {
     return dpin;
   }
 
-  dpin = lg->create_node(Ntype_op::TupRef).setup_driver_pin();
+  I(false); // TupRef is gone
+  // dpin = lg->create_node(Ntype_op::TupRef).setup_driver_pin();
   dpin.set_name(ref_name);
   name2dpin[ref_name] = dpin;
   return dpin;

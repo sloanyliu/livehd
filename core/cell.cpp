@@ -1,6 +1,7 @@
 //  This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
 #include "cell.hpp"
+
 #include "iassert.hpp"
 
 Ntype::_init Ntype::_static_initializer;
@@ -14,15 +15,23 @@ Ntype::_init::_init() {
       sink_pid2name[i][op] = "invalid";
     }
 
+    int n_sinks = 0;
     for (int pid = 0; pid < 12; ++pid) {
       auto pin_name = Ntype::get_sink_name_slow(static_cast<Ntype_op>(op), pid);
       if (pin_name.empty() || pin_name == "invalid")
         continue;
 
+      ++n_sinks;
+
       assert(is_unlimited_sink(static_cast<Ntype_op>(op)) || pid > 10 || sink_name2pid[pin_name[0]][op] == -1
              || sink_name2pid[pin_name[0]][op] == pid);  // No double assign
 
       sink_pid2name[pid][op] = pin_name;
+
+      auto [it, inserted] = name2pid.insert({std::string(pin_name), pid});
+      if (!inserted) {
+        I(it->second == pid);  // same name should always have same PID
+      }
 
       if (is_unlimited_sink(static_cast<Ntype_op>(op)) && pid >= 10)
         continue;
@@ -30,6 +39,13 @@ Ntype::_init::_init() {
       sink_name2pid[pin_name[0]][op] = pid;
       assert(pid == Ntype::get_sink_pid(static_cast<Ntype_op>(op), pin_name));
       assert(pin_name == Ntype::get_sink_name(static_cast<Ntype_op>(op), pid));
+    }
+
+    if (n_sinks == 1) {
+      ntype2single_input[op] = true;
+      I(sink_pid2name[0][op] != "invalid");
+    } else {
+      ntype2single_input[op] = false;
     }
 
     int pid;
@@ -132,17 +148,17 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
       break;
     case Ntype_op::Memory:
       switch (pid) {
-        case 0: return "addr";
-        case 1: return "bits";
-        case 2: return "clock";
-        case 3: return "data_in";
-        case 4: return "enable";
-        case 5: return "fwd";
-        case 6: return "posclk";
-        case 7: return "latency";
-        case 8: return "wmask";
-        case 9: return "size";
-        case 10: return "mode";
+        case 0: return "addr";    // runtime  x n_ports
+        case 1: return "bits";    // comptime x 1
+        case 2: return "clock";   // runtime  x 1 or n_ports
+        case 3: return "data_in"; // runtime  x n_wr_ports
+        case 4: return "enable";  // runtime  x 1
+        case 5: return "fwd";     // comptime x n_rd_ports
+        case 6: return "posclk";  // comptime x 1
+        case 7: return "latency"; // comptime x n_ports
+        case 8: return "wmask";   // runtime  x n_wr_ports
+        case 9: return "size";    // comptime x 1
+        case 10: return "mode";   // comptime x 1 (1 rd, 0 wr) (0b1101 3 reads/1writes)
         default: return "invalid";
       }
       break;
@@ -161,22 +177,21 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
       break;
     case Ntype_op::Latch:
       switch (pid) {
-        case 0:
-          return "posclk";
           // No 1 to keep din at pos 3 (a,b,c)
         case 3: return "din";
         case 4: return "enable";
+        case 6: return "posclk";
         default: return "invalid";
       }
       break;
     case Ntype_op::Fflop:  // Fluid-flop
       switch (pid) {
-        case 0: return "reset";
+        case 0: return "valid";
         case 1: return "initial";  // reset value
         case 2: return "clock";
         case 3: return "din";
-        case 4: return "valid";
         case 5: return "stop";  // stop from next cycle
+        case 7: return "reset";
         default: return "invalid";
       }
       break;
@@ -197,24 +212,22 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
       break;
     case Ntype_op::TupAdd:
       switch (pid) {
-        case 0: return "tuple_name";  // tuple name
+        case 0: return "parent";  // tuple name
         case 4: return "value";
-        case 5: return "position";    // position of tuple field
+        case 5: return "field";  // position of tuple field
         default: return "invalid";
       }
       break;
     case Ntype_op::TupGet:
       switch (pid) {
-        case 0: return "tuple_name";
-        case 5: return "position";   // SAME as AttrGet field to avoid rewire
+        case 0: return "parent";
+        case 5: return "field";  // SAME as AttrGet field to avoid rewire
         default: return "invalid";
       }
       break;
-    case Ntype_op::TupRef: return "invalid"; break;
     case Ntype_op::AttrSet:
       switch (pid) {
-        case 0: return "name";  // variable name
-        case 2: return "chain";
+        case 0: return "parent";
         case 4: return "value";
         case 5: return "field";
         default: return "invalid";
@@ -222,7 +235,7 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
       break;
     case Ntype_op::AttrGet:
       switch (pid) {
-        case 0: return "name";  // variable name
+        case 0: return "parent";
         case 5: return "field";
         default: return "invalid";
       }
@@ -233,16 +246,16 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
   return "invalid";
 }
 
-bool Ntype::is_valid_sink(Ntype_op op, std::string_view name) {
-
-  I(op<Ntype_op::Last_invalid);
-
-  for (auto i = 0u; i < sink_pid2name.size(); ++i) {
-    if (sink_pid2name[i][static_cast<int>(op)] == name)
+bool Ntype::has_sink(Ntype_op op, std::string_view str) {
+  auto it = name2pid.find(str);
+  if (it == name2pid.end()) {
+    if (std::isdigit(str[0]) && is_unlimited_sink(op))
       return true;
+
+    return false;
   }
 
-  return false;
+  return sink_pid2name[it->second][static_cast<int>(op)] == str;
 }
 
 #ifdef NDEBUG

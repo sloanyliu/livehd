@@ -3,8 +3,11 @@
 
 #include <array>
 #include <cassert>
+#include <charconv>
 #include <cstdint>
 #include <string_view>
+
+#include "lbench.hpp"
 
 #include "absl/container/flat_hash_map.h"
 
@@ -43,7 +46,7 @@ enum class Ntype_op : uint8_t {
   Latch,  // Latch
   Fflop,  // Fluid flop
 
-  Sub,    // Sub module instance
+  Sub,  // Sub module instance
   //------------------END PIPELINED (break LOOPS)
   Const,  // Constant
 
@@ -51,7 +54,6 @@ enum class Ntype_op : uint8_t {
 
   TupAdd,
   TupGet,
-  TupRef,
 
   AttrSet,
   AttrGet,
@@ -63,11 +65,10 @@ enum class Ntype_op : uint8_t {
 
 class Ntype {
 protected:
-  inline static constexpr std::string_view cell_name[]
-      = {"Invalid",  "Sum",      "Mult",   "Div",     "And",     "Or",         "Xor",         "Ror",   "Not",
-         "Get_mask", "Set_mask", "Sext",   "LT",      "GT",      "EQ",         "SHL",         "SRA",   "LUT",
-         "Mux",      "IO",       "Memory", "Flop",    "Latch",   "Fflop",      "Sub",         "Const", "TupAdd",
-         "TupGet",   "TupRef",   "AttrSet", "AttrGet", "CompileErr", "Last_invalid"};
+  inline static constexpr std::string_view cell_name[] = {
+      "invalid", "sum",   "mult", "div",   "and",     "or",      "xor",     "ror",      "not",      "get_mask",    "set_mask",
+      "sext",    "lt",    "gt",   "eq",    "shl",     "sra",     "lut",     "mux",      "io",       "memory",      "flop",
+      "latch",   "fflop", "sub",  "const", "tup_add", "tup_get", "tup_ref", "attr_set", "attr_get", "compile_err", "last_invalid"};
 
   inline static absl::flat_hash_map<std::string, Ntype_op> cell_name_map;
 
@@ -80,13 +81,13 @@ protected:
   // NOTE: order of operands to maximize code gen when "name" is known (typical case)
   inline static std::array<std::array<char, static_cast<std::size_t>(Ntype_op::Last_invalid)>, 256>            sink_name2pid;
   inline static std::array<std::array<std::string_view, static_cast<std::size_t>(Ntype_op::Last_invalid)>, 11> sink_pid2name;
+  inline static std::array<bool, static_cast<std::size_t>(Ntype_op::Last_invalid)>                             ntype2single_input;
+  inline static absl::flat_hash_map<std::string, int>                                                          name2pid;
 
   static constexpr std::string_view get_sink_name_slow(Ntype_op op, int pid);
 
 public:
-  static inline constexpr bool is_loop_first(Ntype_op op) {
-    return op == Ntype_op::Const;
-  }
+  static inline constexpr bool is_loop_first(Ntype_op op) { return op == Ntype_op::Const; }
   static inline constexpr bool is_loop_last(Ntype_op op) {
     return static_cast<int>(op) >= static_cast<int>(Ntype_op::Memory) && static_cast<int>(op) <= static_cast<int>(Ntype_op::Sub);
   }
@@ -97,16 +98,16 @@ public:
   }
 
   static inline constexpr bool is_synthesizable(Ntype_op op) {
-    return op != Ntype_op::Sub && op != Ntype_op::TupAdd && op != Ntype_op::TupGet && op != Ntype_op::TupRef
-           && op != Ntype_op::AttrSet && op != Ntype_op::AttrGet && op != Ntype_op::CompileErr
-           && op != Ntype_op::Invalid && op != Ntype_op::Last_invalid;
+    return op != Ntype_op::Sub && op != Ntype_op::TupAdd && op != Ntype_op::TupGet
+           && op != Ntype_op::AttrSet && op != Ntype_op::AttrGet && op != Ntype_op::CompileErr && op != Ntype_op::Invalid
+           && op != Ntype_op::Last_invalid;
   }
 
   static inline constexpr bool is_unlimited_sink(Ntype_op op) {
     return op == Ntype_op::IO || op == Ntype_op::LUT || op == Ntype_op::Sub || op == Ntype_op::Mux || op == Ntype_op::CompileErr;
   }
-  static inline constexpr bool is_unlimited_driver(Ntype_op op) { return op == Ntype_op::Sub || op == Ntype_op::IO; }
-  static inline constexpr bool is_multi_driver(Ntype_op op) { return op == Ntype_op::AttrSet || is_unlimited_driver(op); }
+  static inline constexpr bool is_unlimited_driver(Ntype_op op) { return op == Ntype_op::Memory || op == Ntype_op::Sub || op == Ntype_op::IO; }
+  static inline constexpr bool is_multi_driver(Ntype_op op) { return is_unlimited_driver(op); }
   static inline constexpr bool is_single_driver_per_pin(Ntype_op op) {
     if (is_unlimited_sink(op))
       return true;
@@ -114,7 +115,6 @@ public:
     return c[0] >= 'a' && c[0] <= 'z';
   }
 
-  // Carefully crafted call so that it is solved at compile time most of the time
   static inline constexpr int get_sink_pid(Ntype_op op, std::string_view str) {
     auto c = str[0];
     // Common case speedup
@@ -160,39 +160,35 @@ public:
     assert(name != "invalid");
     return name;
   }
+
+  static bool                  has_sink(Ntype_op op, std::string_view str);
   static inline constexpr bool has_sink(Ntype_op op, int pid) {
     if (pid > 10)
       return is_unlimited_sink(op);
     return sink_pid2name[pid][static_cast<std::size_t>(op)] != "invalid";
   }
-  static bool is_valid_sink(Ntype_op op, std::string_view name);
 
-  static inline constexpr int get_driver_pid(Ntype_op op, std::string_view str) {
-    if (__builtin_expect(str == "Y", 1)) {  // likely case
+  static int get_driver_pid(Ntype_op op, std::string_view pin_name) {
+    if (likely(!is_multi_driver(op))) {
       return 0;
     }
-    if (op == Ntype_op::AttrSet && str == "chain") {
-      return 1;
-    }
-    return -1;
+    assert(std::isdigit(pin_name[0]));
+    int x;
+    std::from_chars(pin_name.data(), pin_name.data() + pin_name.size(), x);
+    return x;
   }
 
-  static inline constexpr std::string_view get_driver_name(Ntype_op op, int pid) {
-    if (pid == 0)
-      return "Y";
-    if (pid == 1 && op == Ntype_op::AttrSet) {
-      return "chain";
-    }
-    return "invalid";
+  static inline constexpr std::string_view get_driver_name(Ntype_op op) {
+    return is_multi_driver(op)?"invalid":"Y";
   }
+
   static inline constexpr bool has_driver(Ntype_op op, int pid) {
     if (pid == 0)
       return true;
-    if (pid == 1 && op == Ntype_op::AttrSet) {
-      return true;
-    }
     return is_unlimited_driver(op);
   }
+
+  static inline constexpr bool is_single_sink(Ntype_op op) { return ntype2single_input[static_cast<int>(op)]; }
 
   static std::string_view get_name(Ntype_op op) { return cell_name[static_cast<size_t>(op)]; }
 
