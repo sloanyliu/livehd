@@ -9,7 +9,6 @@
 #include <string_view>
 
 #include "mmap_map.hpp"
-//#include "mmap_vector.hpp"
 
 namespace mmap_lib {
 
@@ -26,17 +25,9 @@ protected:
   // https://github.com/tonypilz/ConstexprString
   //
   // 16 bytes data structure:
-  //
-  // ptr_or_start:
-  // 10 "special" character (allow to encode 2 digits as 1 character when (c&0x80) is true)
-  // _size is the str _size (original not compressed)
-  //
-  // NOTE: Maybe it is faster/easier to have this instead:
-  //
-  // ptr_or_start
-  // 12 special characters
-  // if e[11]&0x80 || e[12]==0 -> overflow (ptr not start)
-  // end of string is first zero (or last e[11]&0x80)
+  // ptr_or_start: 4 bytes
+  // e:            10 bytes
+  // _size:        2 bytes 
   //
   // This avoid having a "size" in the costly str in-place data. The overflow
   // can have a string size like a string_view does
@@ -44,8 +35,8 @@ protected:
   // The only drawback is that to compute size, it needs to iterate over the e
   // field, but asking size is not a common operation in LiveHD
 
-  uint32_t             ptr_or_start;  // 4 chars if _size < 14, is a ptr to string_map2 otherwise
-  std::array<char, 10> e;             // last 10 "special <128" characters ending the string
+  uint32_t             ptr_or_start;  // 4 chars if _size < 14, is a ptr to string_vector otherwise
+  std::array<char, 10> e;             // last 10 chars ending the string, or first 2 + last 8 chars of string
   uint16_t             _size;         // 2 bytes
   constexpr bool       is_digit(char c) const { return c >= '0' && c <= '9'; }
   constexpr uint8_t    posShifter(uint8_t s) const { return s < 4 ? (s - 1) : 3; }
@@ -55,14 +46,11 @@ protected:
   constexpr uint32_t   mid(uint32_t ps, uint8_t i) const { return ps + (i - 2); }
 
 public:
-  // FIXME: This is a non persistent map. Something like string_map2("lgdb","global_str");
+  // TODO: Make vector of persistent maps
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  // static mmap_lib::map<std::string_view, uint32_t> string_map2("lgdb", "global_str_map");
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   inline static std::vector<int> string_vector;  // ptr_or_start points here!
-  // inline static mmap_lib::vector<int> string_vector("lgdb", "global_str_vector");
-  // static mmap_lib::vector<int> string_vector;
 
   //===========constructor 0 (empty obj) ============
   str() : ptr_or_start(0), e{0}, _size(0) {}
