@@ -13,8 +13,8 @@
 #define NEEQ_TESTS        0
 #define STARTS_WITH_TESTS 0
 #define FIND              0
-#define BENCH             0
-#define WHITEBOARD        1
+#define BENCH             1
+#define WHITEBOARD        0
 
 #if 0
 //implicitly changes ts to string_view
@@ -571,6 +571,7 @@ void bench_str_cmp() {
           conta++;
       }
     }
+    mmap_lib::str::clear_map();
 
     fmt::print("bench_str_cmp conta:{}\n", conta);
   }
@@ -606,6 +607,8 @@ void bench_str_cmp() {
 void whtbrd() {
   {
     mmap_lib::str tmp;
+    mmap_lib::str::clear_map(); 
+    //tmp.clear_vector(); 
     tmp.append('a');
     tmp.append('b');
     tmp.append('c');
@@ -621,7 +624,35 @@ void whtbrd() {
     tmp.append('m');
     tmp.append('n');
     tmp.append('o');
-  
+    tmp.append('p');
+    tmp.append('q');
+    tmp.append('r');
+
+    mmap_lib::str tmp2;
+    tmp2.append('1');
+    tmp2.append('2');
+    tmp2.append('3');
+    tmp2.append('4');
+    tmp2.append('5');
+    tmp2.append('6');
+    tmp2.append('7');
+    tmp2.append('8');
+    tmp2.append('9');
+    tmp2.append('0');
+    tmp2.append('9');
+    tmp2.append('8');
+    tmp2.append('7');
+    tmp2.append('6');
+    tmp2.append('5');
+    tmp2.append('4');
+    tmp2.append('3');
+    tmp2.append('2');
+
+    tmp.append('s');
+    tmp.append('t');
+    tmp.append('u');
+    tmp.append('v');
+    tmp.append('x');
   }
 }
 

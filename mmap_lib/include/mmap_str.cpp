@@ -5,9 +5,13 @@
 #define TEMP_PERSIST 1
 
 #ifdef TEMP_PERSIST
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2("lgdb", "file1");
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2("lgdb", "strMap");
+//mmap_lib::vector<int> mmap_lib::str::string_vector("lgdb", "global_str_vector");
+
 #else
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2;
+//mmap_lib::vector<int> mmap_lib::str::string_vector
+
 #endif
 
 #if 0

@@ -9,6 +9,7 @@
 #include <string_view>
 
 #include "mmap_map.hpp"
+//#include "mmap_vector.hpp"
 
 namespace mmap_lib {
 
@@ -50,7 +51,9 @@ public:
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
-  inline static std::vector<int> string_vector;  // ptr_or_start points here!
+  //static mmap_lib::vector<int> string_vector;  // ptr_or_start points here!
+  inline static std::vector<int> string_vector;
+
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
   str(char c) : ptr_or_start(0), e{0}, _size(1) {   // constructor 0.5 (single char)
@@ -82,10 +85,10 @@ public:
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     auto it = string_map2.find(sv.substr(0, size)); 
-    if (it == string_map2.end()) {  
+    if (it == string_map2.end()) { 
       //<std::string_view, uint32_t(position in vec)> string_map2
       string_map2.set(sv.substr(0, size), string_vector.size());
-      return std::make_pair(0, 0);
+      return std::make_pair(0, -1);
     } else {
       return std::make_pair(string_map2.get(it), size); 
       // pair is (ptr_or_start, size of string)
@@ -109,7 +112,7 @@ public:
     // pair is (ptr_or_start, size of string)
     std::pair<int, int> pair = insertfind(long_str, _size - 10);
 
-    if (pair.second) {
+    if (pair.second != -1) {
       ptr_or_start = pair.first;
     } else {
       for (int i = 0; i < _size - 10; i++) {
@@ -123,6 +126,10 @@ public:
   // const char* and std::string will go through this one
   // implicit conversion from const char* --> string_view
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
+
+    //std::cout << "present\n";
+
+
     if (_size < 14) {  // constructor 1 logic
       auto stop = posStopper(_size);
       for (auto i = 0; i < stop; ++i) {
@@ -135,17 +142,36 @@ public:
         ++e_pos;
       }
     } else {  // constructor 2 logic
+      
+      //std::cout << "here\n";
+
+      //std::cout << sv << std::endl;
+
       e[0] = sv.at(0);
       e[1] = sv.at(1);
+      
+      
       for (int i = 0; i < 8; i++) {
         e[9 - i] = sv.at(_size - 1 - i);
       }
+
+
+      //for (auto i = 0; i < 10; ++i) {
+      //  std::cout << e[i];
+      //}
+      //std::cout << std::endl;
+
+
       char long_str[_size - 10];
       for (int i = 0; i < _size - 10; i++) {
         long_str[i] = sv.at(i + 2);
       }
+
+      //printf("long_str is: %s\n", long_str);
+
+
       std::pair<int, int> pair = insertfind(long_str, _size - 10);
-      if (pair.second) {
+      if (pair.second != -1) {
         ptr_or_start = pair.first;
       } else {
         for (int i = 0; i < _size - 10; i++) {
@@ -154,6 +180,9 @@ public:
         ptr_or_start = string_vector.size() - (_size - 10);
       }
     }
+    
+    //print_string();
+
   }
 
   //=========Printing==============
@@ -210,19 +239,19 @@ public:
       }
     } else {
       
-      std::cout << "e.size() is: " << e.size() << "\n";
+      //std::cout << "e.size() is: " << e.size() << "\n";
 
-      std::cout << char(e[0]) << char(e[1]);
+      //std::cout << char(e[0]) << char(e[1]);
 
-      std::cout << "_size - 10 is: " << _size - 10 << std::endl;
-      std::cout << "ptr_or_start is: " << ptr_or_start << std::endl;
-      std::cout << "strVec size is: " << string_vector.size() << std::endl;
+      //std::cout << "_size - 10 is: " << _size - 10 << std::endl;
+      //std::cout << "ptr_or_start is: " << ptr_or_start << std::endl;
+      //std::cout << "strVec size is: " << string_vector.size() << std::endl;
 
       for (auto i = 0; i < _size - 10; ++i) {
         std::cout << static_cast<char>(string_vector.at(i + ptr_or_start));
       }
 
-      std::cout << "who\n";
+      //std::cout << "who\n";
 
       for (uint8_t k = 2; k < 10; ++k) {
         std::cout << static_cast<char>(e[k]);
@@ -232,6 +261,9 @@ public:
 
   //=================================
 
+  static void clear_map() { string_map2.clear(); }
+  //void clear_vector() { string_vector.clear(); }
+  
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
   [[nodiscard]] constexpr std::size_t max_size() const { return 65535; }
@@ -503,7 +535,8 @@ public:
     //   else
     //     DWWDN
 
-    std::cout << "_size : " << _size << " b._size : " << b._size << std::endl;
+    //std::cout << "_size : " << _size << " b._size : " << b._size << std::endl;
+    
     //std::cout << "this is: ";
     //print_string();
     //std::cout << " b is: ";
@@ -511,13 +544,13 @@ public:
     //std::cout << std::endl;
 
     if (_size <= 13) {
-      std::cout << "_size <= 13 -> ";
+      //std::cout << "_size <= 13 -> ";
 
       if ((_size + b._size) <= 13) {  // size and b size < = 13
-        std::cout << "_size + b._size <= 13 -> ";
+        //std::cout << "_size + b._size <= 13 -> ";
 
         if (_size <= 3) {
-          std::cout << "_size <= 3 (must add to ptr_or_start)\n";
+          //std::cout << "_size <= 3 (must add to ptr_or_start)\n";
 
           long unsigned int i     = 0;
           uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
@@ -538,7 +571,7 @@ public:
             }
           }
         } else {
-          std::cout << "_size > 3 (must add to e)\n";
+          //std::cout << "_size > 3 (must add to e)\n";
 
           for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
             if (j >= b._size)
@@ -551,34 +584,37 @@ public:
         }
       } else {  // size and b size > 13
 
-        std::cout << "_size + b._size > 13 (must remake SHORT str to LONG)\n";
+        //std::cout << "_size + b._size > 13 (must remake SHORT str to LONG)\n";
 
-        //FIXME: issue could be here
+        std::string full_str = this->to_s();  // n
+        full_str += b.to_s();                 // m
+        const char *full_string = (full_str.substr(2,_size + b._size -10)).c_str();
+        // putting the string into maps
+        std::pair<int, int> ret = insertfind(full_string, _size + b._size - 10);  
+       
+        if (ret.second != -1) {
+          ptr_or_start = ret.first;
+        } else {
+          for (int i = 0; i < _size + b._size - 10; i++) {
+            string_vector.emplace_back(full_string[i]);
+          }
+          ptr_or_start = string_vector.size() - (_size + b._size - 10);
+        }        
 
-
-        // re make the string to be LONG
-        std::string hold;
-        for (auto i = 0; i < _size; ++i) {
-          hold += (*this)[i];
+        e[0] = full_str[0];
+        e[1] = full_str[1];
+        for (auto i = _size + b._size - 8, j = 2; i < _size + b._size; ++i, ++j) {
+          e[j] = full_str[i];
         }
-        for (auto i = 0; i < b._size; ++i) {
-          hold += b[i];
-        }
-        str temp     = str(hold);
-        ptr_or_start = temp.ptr_or_start;
-        for (auto i = 0; i < 10; ++i) {
-          e[i] = temp.e[i];
-        }
-
         //std::cout << "chkpt\n";
 
       }
     } else {
-      std::cout << "_size > 13 -> ";
+      //std::cout << "_size > 13 -> ";
 
-      if ((ptr_or_start + _size) == string_vector.size()) {  // last one inserted
+      if ((ptr_or_start + (_size-10)) == string_vector.size()) {  // last one inserted
 
-        std::cout << "last string created (add to end of strvec)\n";
+        //std::cout << "last string created (add to end of strvec)\n";
 
         // add to vector end, change e
         for (auto k = 0; k < b._size; ++k) {
@@ -611,34 +647,15 @@ public:
         }
         std::string full_str = this->to_s();  // n
         full_str += b.to_s();                 // m
-        const char *full_string = full_str.c_str();
-        // putting the string into maps
+        const char *full_string = (full_str.substr(2,_size + b._size -10)).c_str();
         insertfind(full_string, _size + b._size - 10);
       } else {
-        std::cout << "not last one inserted (must make new string)\n";
+        //std::cout << "not last one inserted (must make new string)\n";
 
-        //std::cout << "problem?\n";
-
-        /* FIXME
-         * IT's not going past the line below
-         */
-        print_string();
         std::string start = this->to_s();  // n 
-        
-        //std::cout << "here 1\n";
-
         start += b.to_s();  // m
-
-        //std::cout << "here 2\n";
-
         str temp_str = str(start);  // n + m
-
-        //std::cout << "here 3\n";
-
         ptr_or_start = temp_str.ptr_or_start;
-
-        //std::cout << "here 4\n";
-
         for (uint8_t i = 0; i < static_cast<uint8_t>((temp_str.e).size()); i++) {
           e[i] = temp_str.e[i];
         }
