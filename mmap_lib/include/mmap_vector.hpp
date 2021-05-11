@@ -289,6 +289,12 @@ public:
     return base[idx];
   }
 
+//  [[nodiscard]] const T &at(const size_t idx) const {
+//    return (*this)[idx];
+//  }
+
+
+
   T *      begin() { return ref_base(); }
   const T *cbegin() const { return ref_base(); }
   const T *begin() const { return ref_base(); }
