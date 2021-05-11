@@ -11,7 +11,7 @@
 #include "mmap_map.hpp"
 #include "mmap_vector.hpp"
 
-#define append_debug 0
+#define append_debug 1
 
 namespace mmap_lib {
 
@@ -268,7 +268,7 @@ public:
       
       //std::cout << "e.size() is: " << e.size() << "\n";
 
-      //std::cout << char(e[0]) << char(e[1]);
+      std::cout << char(e[0]) << char(e[1]);
 
       //std::cout << "_size - 10 is: " << _size - 10 << std::endl;
       //std::cout << "ptr_or_start is: " << ptr_or_start << std::endl;
@@ -611,6 +611,7 @@ public:
           for (; i < _size + b._size - 2; ++i) {
             e[e_indx++] = b[b_indx++];
           }
+          
         } else if (b._size < 8) {
           #if append_debug
           printf("b._size < 8\n");
