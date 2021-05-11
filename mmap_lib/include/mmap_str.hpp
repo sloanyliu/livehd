@@ -51,7 +51,7 @@ public:
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
-  //static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
+  //static mmap_lib::vector<int> string_vector;  // ptr_or_start points here!
   inline static std::vector<int> string_vector;
 
 

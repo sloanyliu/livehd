@@ -112,7 +112,7 @@ void random_mmap_vset(int max, std::string_view name) {
   Lbench                             b(type_test);
   mmap_lib::vset<uint32_t, uint32_t> set("lgdb_bench", name);
 
-  set.clear();
+  //set.clear();
   int hitconta = 0, missconta = 0, cntconta = 0;  // reset
 #if IED
   // INSERT/ERASE DENSE TEST

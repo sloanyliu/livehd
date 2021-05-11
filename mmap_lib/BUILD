@@ -110,7 +110,6 @@ cc_test(
     ],
 )
 
-# FIXME:sh -> please don't leave it test failed more than a week
 cc_test(
     name = "bench_pstr_use",
     srcs = ["tests/bench_pstr_use.cpp"],
@@ -125,7 +124,6 @@ cc_test(
         "@fmt",
     ],
 )
-
 
 cc_test(
     name = "mmap_map_test",

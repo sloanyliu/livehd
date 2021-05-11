@@ -574,6 +574,7 @@ void bench_str_cmp() {
     mmap_lib::str::clear_map();
 
     fmt::print("bench_str_cmp conta:{}\n", conta);
+    mmap_lib::str::clear_map();    
   }
 
   {
