@@ -525,98 +525,78 @@ public:
   static str concat(str &a, int v) { return a.append(v); }
 
   str append(const str &b) {
-    // if _size <= 13, not in map yet
-    //   now check _size + v._size
-    //   if _size + v._size <= 13, change p_o_s and e
-    //   else we add it to vec and map (new string)
-    // else if _size > 13
-    //   if the string is the last in the vec
-    //     add to vec and add to  map and change e
-    //   else
-    //     DWWDN
-
-    //std::cout << "_size : " << _size << " b._size : " << b._size << std::endl;
-    
-    //std::cout << "this is: ";
-    //print_string();
-    //std::cout << " b is: ";
-    //b.print_string();
-    //std::cout << std::endl;
-
     if (_size <= 13) {
-      //std::cout << "_size <= 13 -> ";
-
       if ((_size + b._size) <= 13) {  // size and b size < = 13
-        //std::cout << "_size + b._size <= 13 -> ";
-
         if (_size <= 3) {
-          //std::cout << "_size <= 3 (must add to ptr_or_start)\n";
-
           long unsigned int i     = 0;
           uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
           for (; i < b._size; ++i) {
             if (_size + i < 4) {
-              // std::cout << "adding to p_o_s\n";
-              // std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
-              // std::cout << "b[" << i << "] to be added is: " << b[i] << std::endl;
-
               ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
-
-              // std::cout << "ptr_or_start is :" << ptr_or_start << std::endl;
             } else {
-              // std::cout << "adding to e\n";
-              // std::cout << "e_ptr is: " << static_cast<int>(e_ptr) << std::endl;
-
               e[e_ptr++] = b[i];
             }
           }
         } else {
-          //std::cout << "_size > 3 (must add to e)\n";
-
           for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
             if (j >= b._size)
               break;
-
-            // std::cout << "b[" << j << "] to be added is: " << b[j] << std::endl;
-
             e[i] = b[j];
           }
         }
       } else {  // size and b size > 13
+        char full[_size + b._size - 10];
+        uint8_t indx = 2, b_indx = 0, e_indx = 2;
+        
+        if (b._size > 8) {
+          auto i = 0;
+          for (; i < _size + b._size - 10; ++i) {
+            if (indx <= _size - 1) {
+              full[i] = (*this)[indx++];
+            } else {
+              full[i] = b[b_indx++];
+            }
+          }
+          for (; i < _size + b._size - 2; ++i) {
+            e[e_indx++] = b[b_indx++];
+          }
+        } else if (b._size < 8) {
+          auto i = 0;
+          for (; i < _size + b._size - 10; ++i) {
+            full[i] = (*this)[indx++];
+          }
+          for (; i < _size + b._size - 2; ++i) {
+            if (indx <= _size - 1) {
+              e[e_indx++] = (*this)[indx++];
+            } else {
+              e[e_indx++] = b[b_indx++];
+            }
+          }
+        } else if (b._size == 8) {
+          auto i = 0;
+          for (; i < _size + b._size - 10; ++i) {
+            full[i] = (*this)[indx++];
+          }
+          for (; i < _size + b._size - 2; ++i) {
+            e[e_indx++] = b[b_indx++];
+          }
+        }
 
-        //std::cout << "_size + b._size > 13 (must remake SHORT str to LONG)\n";
-
-        std::string full_str = this->to_s();  // n
-        full_str += b.to_s();                 // m
-        const char *full_string = (full_str.substr(2,_size + b._size -10)).c_str();
-        // putting the string into maps
-        std::pair<int, int> ret = insertfind(full_string, _size + b._size - 10);  
-       
+        std::pair<int, int> ret = insertfind(full, _size + b._size - 10);  
         if (ret.second != -1) {
           ptr_or_start = ret.first;
         } else {
           for (int i = 0; i < _size + b._size - 10; i++) {
-            string_vector.emplace_back(full_string[i]);
+            string_vector.emplace_back(full[i]);
           }
           ptr_or_start = string_vector.size() - (_size + b._size - 10);
         }        
 
-        e[0] = full_str[0];
-        e[1] = full_str[1];
-        for (auto i = _size + b._size - 8, j = 2; i < _size + b._size; ++i, ++j) {
-          e[j] = full_str[i];
-        }
-        //std::cout << "chkpt\n";
-
+        e[0] = (*this)[0];
+        e[1] = (*this)[1];
       }
     } else {
-      //std::cout << "_size > 13 -> ";
-
       if ((ptr_or_start + (_size-10)) == string_vector.size()) {  // last one inserted
-
-        //std::cout << "last string created (add to end of strvec)\n";
-
-        // add to vector end, change e
         for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
             for (auto i = 2; i < 10; ++i) {
@@ -650,8 +630,6 @@ public:
         const char *full_string = (full_str.substr(2,_size + b._size -10)).c_str();
         insertfind(full_string, _size + b._size - 10);
       } else {
-        //std::cout << "not last one inserted (must make new string)\n";
-
         std::string start = this->to_s();  // n 
         start += b.to_s();  // m
         str temp_str = str(start);  // n + m
