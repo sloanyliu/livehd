@@ -90,14 +90,16 @@ public:
     
     //--------------
     auto it_pst = string_deck[0].find(sv.substr(0, size));
-    
+    //--------------
+
     if (it == string_map2.end()) { 
       //<std::string_view, uint32_t(position in vec)> string_map2
-      string_map2.set(sv.substr(0, size), string_vector.size());
+      string_map2.set(sv.substr(0, size), string_vector2.size());
       
       //-------------
-      string_deck[0].set(sv.substr(0, size), string_vector.size());
-     
+      string_deck[0].set(sv.substr(0, size), string_vector2.size());
+      //-------------
+
       return std::make_pair(0, -1);
     } else {
       
@@ -107,9 +109,10 @@ public:
       //--------------
       std::pair<int, int> bar;
       bar = std::make_pair(string_deck[0].get(it_pst), size);
-      
+      //-------------
+
       return foo;
-        // pair is (ptr_or_start, size of string)
+      // pair is (ptr_or_start, size of string)
     }
     return std::make_pair(string_map2.get(it), size);
   }
@@ -134,9 +137,9 @@ public:
       ptr_or_start = pair.first;
     } else {
       for (int i = 0; i < _size - 10; i++) {
-        string_vector.emplace_back(long_str[i]);
+        string_vector2.emplace_back(long_str[i]);
       }
-      ptr_or_start = string_vector.size() - (_size - 10);
+      ptr_or_start = string_vector2.size() - (_size - 10);
     }
   }
 
@@ -193,9 +196,9 @@ public:
         ptr_or_start = pair.first;
       } else {
         for (int i = 0; i < _size - 10; i++) {
-          string_vector.emplace_back(long_str[i]);
+          string_vector2.emplace_back(long_str[i]);
         }
-        ptr_or_start = string_vector.size() - (_size - 10);
+        ptr_or_start = string_vector2.size() - (_size - 10);
       }
     }
   }
@@ -234,7 +237,7 @@ public:
 
   void print_StrVec() const {
     std::cout << "StrVec{ ";
-    for (auto i = string_vector.begin(); i != string_vector.end(); ++i) {
+    for (auto i = string_vector2.begin(); i != string_vector2.end(); ++i) {
       std::cout << static_cast<char>(*i) << " ";
     }
     std::cout << "}" << std::endl;
@@ -272,7 +275,7 @@ public:
       //std::cout << "strVec size is: " << string_vector.size() << std::endl;
 
       for (auto i = 0; i < _size - 10; ++i) {
-        std::cout << static_cast<char>(string_vector.at(i + ptr_or_start));
+        std::cout << static_cast<char>(string_vector2[i + ptr_or_start]);
       }
 
       //std::cout << "who\n";
@@ -315,7 +318,7 @@ public:
       auto j = 2;  // rhs[2 .. _size - 8] --> the long part
       // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10)
       for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {
-        if (string_vector[i] != rhs[j]) {
+        if (string_vector2[i] != rhs[j]) {
           return false;
         }
         j = j < _size - 8 ? j + 1 : j;
@@ -392,7 +395,7 @@ public:
       } else if (pos >= static_cast<size_t>(_size - 8)) {
         return e[l8(_size, pos)];
       } else {
-        return string_vector[mid(ptr_or_start, pos)];
+        return string_vector2[mid(ptr_or_start, pos)];
       }
     }
   }
@@ -643,9 +646,9 @@ public:
           ptr_or_start = ret.first;
         } else {
           for (int i = 0; i < _size + b._size - 10; i++) {
-            string_vector.emplace_back(full[i]);
+            string_vector2.emplace_back(full[i]);
           }
-          ptr_or_start = string_vector.size() - (_size + b._size - 10);
+          ptr_or_start = string_vector2.size() - (_size + b._size - 10);
         }        
 
         e[0] = (*this)[0];
@@ -656,7 +659,7 @@ public:
       printf("_size > 13 -> ");
       #endif
       
-      if ((ptr_or_start + (_size-10)) == string_vector.size()) {  // last one inserted
+      if ((ptr_or_start + (_size-10)) == string_vector2.size()) {  // last one inserted
         #if append_debug
         printf("last string inserted into vec, append to vec\n");
         #endif
@@ -664,10 +667,10 @@ public:
         for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
             for (auto i = 2; i < 10; ++i) {
-              string_vector.emplace_back(e[i]);
+              string_vector2.emplace_back(e[i]);
             }
             for (auto i = 0; i < b._size - 8; ++i) {
-              string_vector.emplace_back(b[i]);
+              string_vector2.emplace_back(b[i]);
             }
             for (auto i = b._size - 8, j = 2; i < b._size; ++i, ++j) {
               if (j == 10)
@@ -676,7 +679,7 @@ public:
             }
           } else {  // b._size < 8
             for (auto i = 2; i < b._size + 2; ++i) {
-              string_vector.emplace_back(e[i]);
+              string_vector2.emplace_back(e[i]);
             }  // put e to vec
             auto i = 2;
             for (; i < b._size + 2; ++i) {
@@ -782,7 +785,7 @@ public:
         }
       }
       for (int i = ptr_or_start; i < _size - 10; i++) {
-        switch (static_cast<int>(string_vector[i])) {
+        switch (static_cast<int>(string_vector2[i])) {
           case '0' ... '9': break;
           default: return false; break;
         }
