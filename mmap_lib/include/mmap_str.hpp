@@ -11,7 +11,7 @@
 #include "mmap_map.hpp"
 #include "mmap_vector.hpp"
 
-#define append_debug 1
+#define append_debug 0
 
 namespace mmap_lib {
 
@@ -55,7 +55,6 @@ public:
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   inline static std::vector<int> string_vector;
-
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
@@ -201,7 +200,7 @@ public:
     }
   }
 
-#if 0
+#if 1
   void test_svec2() { 
     string_vector2.emplace_back(22);
     //std::cout << "strVec2 size: " << string_vector2.size() << std::endl; 
@@ -692,8 +691,7 @@ public:
         }
         std::string full_str = this->to_s();  // n
         full_str += b.to_s();                 // m
-        const char *full_string = (full_str.substr(2,_size + b._size -10)).c_str();
-        insertfind(full_string, _size + b._size - 10);
+        insertfind((full_str.substr(2,_size + b._size -10)).data(), _size + b._size - 10);
       } else {
         #if append_debug
         printf("not last one inserted into vec, make new string\n");

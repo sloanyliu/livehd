@@ -609,7 +609,7 @@ void whtbrd() {
   {
     mmap_lib::str tmp;
     mmap_lib::str::clear_map(); 
-    //mmap_lib::str::clear_vector(); 
+    mmap_lib::str::clear_vector(); 
     //tmp.clear_vector(); 
     tmp.append('a');
     tmp.append('b');
