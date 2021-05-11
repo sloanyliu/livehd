@@ -150,6 +150,23 @@ protected:
   const std::string mmap_path;
   const std::string mmap_name;
 
+
+#if FIX
+  bool gc_done(void *base) const {
+    assert(base == mmap_base);
+
+    if (mmap_fd >= 0 && *entries_size == 0) {
+      unlink(mmap_name.c_str());
+    }
+
+    mmap_base    = nullptr;
+    entries_size = nullptr;
+    mmap_fd      = -1;
+    // entries_capacity = 0;
+
+    return false;
+  }
+#else
   bool gc_done(void *base, bool force_recycle) const {
     assert(base == mmap_base);
 
@@ -164,7 +181,7 @@ protected:
 
     return false;
   }
-
+#endif
   size_t calc_min_mmap_size() const { return sizeof(T) * MMAPA_MIN_ENTRIES + 4096; }
 
   T *ref_base() const {
@@ -289,12 +306,6 @@ public:
     assert(idx < size());
     return base[idx];
   }
-
-//  [[nodiscard]] const T &at(const size_t idx) const {
-//    return (*this)[idx];
-//  }
-
-
 
   T *      begin() { return ref_base(); }
   const T *cbegin() const { return ref_base(); }

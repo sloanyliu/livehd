@@ -17,7 +17,7 @@
 #define IED     1
 #define TS      1
 #define TD      1
-#define PROBLEM 0
+#define PROBLEM 1
 
 void random_mmap_set(int max, std::string_view name) {
   Lrand<int>  rng;

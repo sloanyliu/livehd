@@ -9,7 +9,7 @@
 #include <string_view>
 
 #include "mmap_map.hpp"
-//#include "mmap_vector.hpp"
+#include "mmap_vector.hpp"
 
 namespace mmap_lib {
 
@@ -36,9 +36,9 @@ protected:
   // The only drawback is that to compute size, it needs to iterate over the e
   // field, but asking size is not a common operation in LiveHD
 
-  uint32_t             ptr_or_start;  // 4 chars if _size < 14, is a ptr to string_vector otherwise
-  std::array<char, 10> e;             // last 10 chars ending the string, or first 2 + last 8 chars of string
-  uint16_t             _size;         // 2 bytes
+  uint32_t             ptr_or_start;  // 4 chars if _size < 14, ptr to string_vector otherwise
+  std::array<char, 10> e;             // last 10 chars of string, or first 2 + last 8 of string
+  uint16_t             _size;         // string length
   constexpr bool       is_digit(char c) const { return c >= '0' && c <= '9'; }
   constexpr uint8_t    posShifter(uint8_t s) const { return s < 4 ? (s - 1) : 3; }
   constexpr uint8_t    posStopper(uint8_t s) const { return s < 4 ? s : 4; }
@@ -51,9 +51,10 @@ public:
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
-  //static mmap_lib::vector<int> string_vector;  // ptr_or_start points here!
   inline static std::vector<int> string_vector;
 
+  static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
+  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
   str(char c) : ptr_or_start(0), e{0}, _size(1) {   // constructor 0.5 (single char)
@@ -180,10 +181,16 @@ public:
         ptr_or_start = string_vector.size() - (_size - 10);
       }
     }
-    
-    //print_string();
-
   }
+
+#if 0
+  void test_svec2() { 
+    string_vector2.emplace_back(22);
+    //std::cout << "strVec2 size: " << string_vector2.size() << std::endl; 
+  }
+#endif 
+
+
 
   //=========Printing==============
   void print_PoS() const {
@@ -211,7 +218,7 @@ public:
   void print_StrVec() const {
     std::cout << "StrVec{ ";
     for (auto i = string_vector.begin(); i != string_vector.end(); ++i) {
-      std::cout << char(*i) << " ";
+      std::cout << static_cast<char>(*i) << " ";
     }
     std::cout << "}" << std::endl;
   }
@@ -262,7 +269,7 @@ public:
   //=================================
 
   static void clear_map() { string_map2.clear(); }
-  //void clear_vector() { string_vector.clear(); }
+  static void clear_vector() { string_vector2.clear(); }
   
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
