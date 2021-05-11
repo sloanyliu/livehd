@@ -11,6 +11,8 @@
 #include "mmap_map.hpp"
 #include "mmap_vector.hpp"
 
+#define append_debug 1
+
 namespace mmap_lib {
 
 // template<X>
@@ -49,12 +51,12 @@ protected:
 public:
   // TODO: Make vector of persistent maps
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
+  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   inline static std::vector<int> string_vector;
 
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
-  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
   str(char c) : ptr_or_start(0), e{0}, _size(1) {   // constructor 0.5 (single char)
@@ -86,13 +88,29 @@ public:
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     auto it = string_map2.find(sv.substr(0, size)); 
+    
+    //--------------
+    auto it_pst = string_deck[0].find(sv.substr(0, size));
+    
     if (it == string_map2.end()) { 
       //<std::string_view, uint32_t(position in vec)> string_map2
       string_map2.set(sv.substr(0, size), string_vector.size());
+      
+      //-------------
+      string_deck[0].set(sv.substr(0, size), string_vector.size());
+     
       return std::make_pair(0, -1);
     } else {
-      return std::make_pair(string_map2.get(it), size); 
-      // pair is (ptr_or_start, size of string)
+      
+      std::pair<int, int> foo;
+      foo = std::make_pair(string_map2.get(it), size); 
+      
+      //--------------
+      std::pair<int, int> bar;
+      bar = std::make_pair(string_deck[0].get(it_pst), size);
+      
+      return foo;
+        // pair is (ptr_or_start, size of string)
     }
     return std::make_pair(string_map2.get(it), size);
   }
@@ -188,7 +206,7 @@ public:
     string_vector2.emplace_back(22);
     //std::cout << "strVec2 size: " << string_vector2.size() << std::endl; 
   }
-#endif 
+#endif
 
 
 
@@ -533,8 +551,20 @@ public:
 
   str append(const str &b) {
     if (_size <= 13) {
+      #if append_debug
+      printf("_size <= 13 -> ");
+      #endif
+
       if ((_size + b._size) <= 13) {  // size and b size < = 13
+        #if append_debug
+        printf("_size + b._size <= 13 -> ");
+        #endif
+        
         if (_size <= 3) {
+          #if append_debug
+          printf("_size <= 3\n");
+          #endif
+          
           long unsigned int i     = 0;
           uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
           for (; i < b._size; ++i) {
@@ -545,6 +575,10 @@ public:
             }
           }
         } else {
+          #if append_debug
+          printf("_size > 3\n");
+          #endif
+          
           for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
             if (j >= b._size)
               break;
@@ -552,10 +586,18 @@ public:
           }
         }
       } else {  // size and b size > 13
+        #if append_debug
+        printf("_size + b._size > 13(SHORT->LONG) -> ");
+        #endif
+        
         char full[_size + b._size - 10];
         uint8_t indx = 2, b_indx = 0, e_indx = 2;
         
         if (b._size > 8) {
+          #if append_debug
+          printf("b._size > 8\n");
+          #endif
+          
           auto i = 0;
           for (; i < _size + b._size - 10; ++i) {
             if (indx <= _size - 1) {
@@ -568,6 +610,10 @@ public:
             e[e_indx++] = b[b_indx++];
           }
         } else if (b._size < 8) {
+          #if append_debug
+          printf("b._size < 8\n");
+          #endif
+          
           auto i = 0;
           for (; i < _size + b._size - 10; ++i) {
             full[i] = (*this)[indx++];
@@ -580,6 +626,10 @@ public:
             }
           }
         } else if (b._size == 8) {
+          #if append_debug
+          printf("b._size == 8\n");
+          #endif
+          
           auto i = 0;
           for (; i < _size + b._size - 10; ++i) {
             full[i] = (*this)[indx++];
@@ -603,7 +653,15 @@ public:
         e[1] = (*this)[1];
       }
     } else {
+      #if append_debug
+      printf("_size > 13 -> ");
+      #endif
+      
       if ((ptr_or_start + (_size-10)) == string_vector.size()) {  // last one inserted
+        #if append_debug
+        printf("last string inserted into vec, append to vec\n");
+        #endif
+        
         for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
             for (auto i = 2; i < 10; ++i) {
@@ -637,6 +695,10 @@ public:
         const char *full_string = (full_str.substr(2,_size + b._size -10)).c_str();
         insertfind(full_string, _size + b._size - 10);
       } else {
+        #if append_debug
+        printf("not last one inserted into vec, make new string\n");
+        #endif
+        
         std::string start = this->to_s();  // n 
         start += b.to_s();  // m
         str temp_str = str(start);  // n + m

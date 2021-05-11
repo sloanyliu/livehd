@@ -10,7 +10,7 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN   250  // number of rand strings
+#define RNDN   10  // number of rand strings
 #define MaxLen 30   // max len + 1 for rand strings
 #define MaxNum 10
 #define MinLen 2  // min len for rand strings
@@ -332,13 +332,13 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-#if 0
+#if 1
     std::cout << two << "   " << one << "   " << three2 << std::endl;
-    std::cout << "pstr one is: ";
-    sone.print_string();
-    std::cout << std::endl;
     std::cout << "pstr two is: ";
     stwo.print_string();
+    std::cout << std::endl;
+    std::cout << "pstr one is: ";
+    sone.print_string();
     std::cout << std::endl;
     std::cout << "pstr ref is: ";
     ref2.print_string();
@@ -359,7 +359,7 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-#if 0
+#if 1
     std::cout << "two.append(one): ";
     stwo.print_string();
     std::cout << std::endl;
