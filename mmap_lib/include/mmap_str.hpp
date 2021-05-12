@@ -721,10 +721,6 @@ public:
   str append(std::string_view b) { return append(mmap_lib::str(b)); }
 
   str append(char c) {
-    // std::cout << "single char append" << std::endl;
-
-    // printf("Checking c: %c\n", c);
-
     mmap_lib::str h(c);
     return append(h);
   }
