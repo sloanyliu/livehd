@@ -14,9 +14,8 @@
 #define append_debug 0
 
 namespace mmap_lib {
-
-//template<uint8_t x>
-class str {
+// template<X>
+class __attribute__((packed)) str {
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
   // Some references:
@@ -353,6 +352,15 @@ public:
   }
 
   constexpr bool operator==(const str &rhs) const {
+#if 1
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+    const uint64_t *a = (const uint64_t *)(this);
+    const uint64_t *b = (const uint64_t *)(&rhs);
+#pragma GCC diagnostic pop
+    return a[0] == b[0] && a[1] == b[1]; // 16byte compare
+    //return memcmp(static_cast<const void *>(this), static_cast<const void *>(&rhs), sizeof(rhs))==0;
+#else
     if (_size == 0 && rhs._size == 0) {
       return true;
     }
@@ -365,6 +373,7 @@ public:
       }
     }
     return (ptr_or_start == rhs.ptr_or_start);  // p_o_s
+#endif
   }
 
   constexpr bool operator!=(const str &rhs) const { return !(*this == rhs); }
@@ -693,7 +702,7 @@ public:
               if (i == 10)
                 break;
               e[i] = b[j];
-            }  // put b in e
+            } 
           }
         }
         std::string full_str = this->to_s();  // n
