@@ -11,7 +11,7 @@
 #include "mmap_map.hpp"
 #include "mmap_vector.hpp"
 
-#define append_debug 1
+#define append_debug 0
 
 namespace mmap_lib {
 
@@ -54,7 +54,7 @@ public:
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
   // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
-  inline static std::vector<int> string_vector;
+  //inline static std::vector<int> string_vector;
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
@@ -599,7 +599,6 @@ public:
           #if append_debug
           printf("b._size > 8\n");
           #endif
-          
           auto i = 0;
           for (; i < _size + b._size - 10; ++i) {
             if (indx <= _size - 1) {
@@ -611,6 +610,9 @@ public:
           for (; i < _size + b._size - 2; ++i) {
             e[e_indx++] = b[b_indx++];
           }
+
+          e[0] = (*this)[0];
+          e[1] = (*this)[1];
           
         } else if (b._size < 8) {
           #if append_debug
@@ -618,7 +620,7 @@ public:
           #endif
           
           auto i = 0;
-          for (; i < _size + b._size - 10; ++i) {
+          for (; i < _size + b._size - 10; ++i) { 
             full[i] = (*this)[indx++];
           }
           for (; i < _size + b._size - 2; ++i) {
@@ -628,6 +630,9 @@ public:
               e[e_indx++] = b[b_indx++];
             }
           }
+          e[0] = (*this)[0];
+          e[1] = (*this)[1];
+        
         } else if (b._size == 8) {
           #if append_debug
           printf("b._size == 8\n");
@@ -640,6 +645,8 @@ public:
           for (; i < _size + b._size - 2; ++i) {
             e[e_indx++] = b[b_indx++];
           }
+          e[0] = (*this)[0];
+          e[1] = (*this)[1];
         }
 
         std::pair<int, int> ret = insertfind(full, _size + b._size - 10);  
@@ -651,9 +658,6 @@ public:
           }
           ptr_or_start = string_vector2.size() - (_size + b._size - 10);
         }        
-
-        e[0] = (*this)[0];
-        e[1] = (*this)[1];
       }
     } else {
       #if append_debug

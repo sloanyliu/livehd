@@ -10,8 +10,8 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
-#define RNDN   10  // number of rand strings
-#define MaxLen 30   // max len + 1 for rand strings
+#define RNDN   150  // number of rand strings
+#define MaxLen 40   // max len + 1 for rand strings
 #define MaxNum 10
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
@@ -83,6 +83,11 @@ public:
       }
       num_bank.push_back(ele2);
     }
+  }
+
+  void TearDown() override {
+    mmap_lib::str::clear_map();
+    mmap_lib::str::clear_vector();
   }
 
   // wrapper for .at() since vectors are private
@@ -332,7 +337,7 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-#if 1
+#if 0
     std::cout << two << "   " << one << "   " << three2 << std::endl;
     std::cout << "pstr two is: ";
     stwo.print_string();
@@ -345,8 +350,8 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-    // sone.append(stwo);
-    stwo.append(sone);
+    sone.append(stwo);
+    //stwo.append(sone);
 
     // mmap_lib::str    test  = mmap_lib::str::concat(sone, stwo);
     // mmap_lib::str    test2 = mmap_lib::str::concat(sv1, stwo);
@@ -359,14 +364,14 @@ TEST_F(Mmap_str_test, concat_append) {
     std::cout << std::endl;
 #endif
 
-#if 1
+#if 0
     std::cout << "two.append(one): ";
     stwo.print_string();
     std::cout << std::endl;
 #endif
 
-    // EXPECT_EQ(ref, sone);
-    EXPECT_EQ(ref2, stwo);
+    EXPECT_EQ(ref, sone);
+    //EXPECT_EQ(ref2, stwo);
     /*
      EXPECT_EQ(ref, test);
      EXPECT_EQ(ref, test2);
