@@ -555,7 +555,6 @@ void bench_str_cmp() {
     Lrand_range<uint16_t> sz(1, 30);
 
     std::vector<mmap_lib::str> v;
-
     for (auto i = 0u; i < STR_SIZE; ++i) {
       auto          s = sz.any();
       mmap_lib::str tmp;
@@ -577,7 +576,6 @@ void bench_str_cmp() {
     mmap_lib::str::clear_map();
     mmap_lib::str::clear_vector();
   }
-
   return;
 
   {

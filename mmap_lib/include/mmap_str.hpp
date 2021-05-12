@@ -352,7 +352,7 @@ public:
   }
 
   constexpr bool operator==(const str &rhs) const {
-#if 1
+#if 0
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
     const uint64_t *a = (const uint64_t *)(this);
