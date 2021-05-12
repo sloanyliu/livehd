@@ -15,7 +15,7 @@
 
 namespace mmap_lib {
 
-// template<X>
+//template<uint8_t x>
 class str {
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
@@ -53,7 +53,6 @@ public:
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
-  // FIXME: Change this for a mmap_lib::vector<int> string_vector("lgdb","global_str_vector");
   //inline static std::vector<int> string_vector;
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
