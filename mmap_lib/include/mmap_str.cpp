@@ -8,7 +8,7 @@ static_assert(sizeof(mmap_lib::str)==16);
 
 #ifdef TEMP_PERSIST
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2("lgdb", "strMap");
-mmap_lib::vector<int> mmap_lib::str::string_vector2("lgdb", "global_str_vector");
+mmap_lib::vector<int> mmap_lib::str::string_vector2("lgdb/mmap_vector", "global_str_vector");
 
 #else
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2;

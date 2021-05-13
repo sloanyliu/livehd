@@ -14,7 +14,7 @@
 #define append_debug 0
 
 namespace mmap_lib {
-// template<X>
+//template<size_t x>
 class __attribute__((packed)) str {
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
@@ -50,6 +50,7 @@ protected:
 public:
   // TODO: Make vector of persistent maps
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
+
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
   //inline static std::vector<int> string_vector;
@@ -295,7 +296,10 @@ public:
   [[nodiscard]] constexpr bool        empty() const { return 0 == _size; }
 
   template <std::size_t N>
-  constexpr bool operator==(const char (&rhs)[N]) const {
+  bool operator==(const char (&rhs)[N]) const {
+#if 1
+    return (*this == str(rhs));
+#else
     auto rhs_size = N - 1;
     if (_size != rhs_size) {
       return false;
@@ -324,11 +328,15 @@ public:
       return true;
     }
     return false;
+#endif
   }
 
   // const char* and std::string will go through this one
   // implicit conversion from const char* --> string_view
-  constexpr bool operator==(std::string_view rhs) const {
+  bool operator==(std::string_view rhs) const {
+#if 1
+    return (*this == str(rhs));
+#else
     auto rhs_size = rhs.size();
     if (_size != rhs_size) {
       return false;
@@ -349,6 +357,7 @@ public:
       return !(string_map2.find(rhs.substr(2, rhs_size - 10)) == string_map2.end());
     }
     return false;
+#endif
   }
 
   constexpr bool operator==(const str &rhs) const {

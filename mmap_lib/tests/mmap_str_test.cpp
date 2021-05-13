@@ -11,7 +11,7 @@
 #include "gtest/gtest.h"
 
 #define RNDN   150  // number of rand strings
-#define MaxLen 40   // max len + 1 for rand strings
+#define MaxLen 30   // max len + 1 for rand strings
 #define MaxNum 10
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
