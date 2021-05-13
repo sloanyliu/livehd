@@ -29,7 +29,7 @@ protected:
   // 16 bytes data structure:
   // ptr_or_start: 4 bytes
   // e:            10 bytes
-  // _size:        2 bytes 
+  // _size:        2 bytes
   //
   // This avoid having a "size" in the costly str in-place data. The overflow
   // can have a string size like a string_view does
@@ -62,7 +62,7 @@ public:
     ptr_or_start |= static_cast<uint8_t>(c);
   }
 
-  // constructor 1 (_size <= 13) 
+  // constructor 1 (_size <= 13)
   template <std::size_t N, typename = std::enable_if_t<(N - 1) < 14>>
   constexpr str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
     auto stop = posStopper(_size);// if _size < 4, whole string is in ptr_or_start
@@ -85,26 +85,26 @@ public:
   // If the string being searched does not exist, then the function inserts string into map
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
-    auto it = string_map2.find(sv.substr(0, size)); 
-    
+    auto it = string_map2.find(sv.substr(0, size));
+
     //--------------
     auto it_pst = string_deck[0].find(sv.substr(0, size));
     //--------------
 
-    if (it == string_map2.end()) { 
+    if (it == string_map2.end()) {
       //<std::string_view, uint32_t(position in vec)> string_map2
       string_map2.set(sv.substr(0, size), string_vector2.size());
-      
+
       //-------------
       string_deck[0].set(sv.substr(0, size), string_vector2.size());
       //-------------
 
       return std::make_pair(0, -1);
     } else {
-      
+
       std::pair<int, int> foo;
-      foo = std::make_pair(string_map2.get(it), size); 
-      
+      foo = std::make_pair(string_map2.get(it), size);
+
       //--------------
       std::pair<int, int> bar;
       bar = std::make_pair(string_deck[0].get(it_pst), size);
@@ -125,7 +125,7 @@ public:
       e[9 - i] = s[_size - 1 - i];
     }
 
-    char long_str[_size - 10];  
+    char long_str[_size - 10];
     for (int i = 0; i < (_size - 10); ++i) {
       long_str[i] = s[i + 2];
     }
@@ -162,15 +162,15 @@ public:
         ++e_pos;
       }
     } else {  // constructor 2 logic
-      
+
       //std::cout << "here\n";
 
       //std::cout << sv << std::endl;
 
       e[0] = sv.at(0);
       e[1] = sv.at(1);
-      
-      
+
+
       for (int i = 0; i < 8; i++) {
         e[9 - i] = sv.at(_size - 1 - i);
       }
@@ -203,9 +203,9 @@ public:
   }
 
 #if 1
-  void test_svec2() { 
+  void test_svec2() {
     string_vector2.emplace_back(22);
-    //std::cout << "strVec2 size: " << string_vector2.size() << std::endl; 
+    //std::cout << "strVec2 size: " << string_vector2.size() << std::endl;
   }
 #endif
 
@@ -264,7 +264,7 @@ public:
         }
       }
     } else {
-      
+
       //std::cout << "e.size() is: " << e.size() << "\n";
 
       std::cout << char(e[0]) << char(e[1]);
@@ -289,7 +289,7 @@ public:
 
   static void clear_map() { string_map2.clear(); }
   static void clear_vector() { string_vector2.clear(); }
-  
+
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
   [[nodiscard]] constexpr std::size_t max_size() const { return 65535; }
@@ -297,67 +297,13 @@ public:
 
   template <std::size_t N>
   bool operator==(const char (&rhs)[N]) const {
-#if 1
     return (*this == str(rhs));
-#else
-    auto rhs_size = N - 1;
-    if (_size != rhs_size) {
-      return false;
-    } 
-    if (_size < 14) { // SHORT
-      return str(rhs) == *this;
-    } else if (_size >= 14) { // LONG
-      if (e[0] != rhs[0] || e[1] != rhs[1]) {
-        return false;
-      } 
-      uint8_t idx = 8;
-      for (auto i = 2; i < 10; ++i) {
-        if (e[i] != rhs[rhs_size - idx--]) {
-          return false;
-        } 
-      }
-
-      auto j = 2;  // rhs[2 .. _size - 8] --> the long part
-      // for loop range: (ptr_or_start) .. (ptr_or_start + _size-10)
-      for (auto i = ptr_or_start; i < (ptr_or_start + _size - 10); ++i) {
-        if (string_vector2[i] != rhs[j]) {
-          return false;
-        }
-        j = j < _size - 8 ? j + 1 : j;
-      }
-      return true;
-    }
-    return false;
-#endif
   }
 
   // const char* and std::string will go through this one
   // implicit conversion from const char* --> string_view
   bool operator==(std::string_view rhs) const {
-#if 1
     return (*this == str(rhs));
-#else
-    auto rhs_size = rhs.size();
-    if (_size != rhs_size) {
-      return false;
-    }
-    if (_size < 14) { // SHORT
-      return str(rhs) == *this;
-    } else if (_size >= 14) {  // LONG
-      if (e[0] != rhs.at(0) || e[1] != rhs.at(1)) {
-        return false;
-      } 
-      uint8_t idx = 8;
-      for (auto i = 2; i < 10; ++i) {
-        if (e[i] != rhs.at(rhs_size - idx--)) {
-          return false;
-        } 
-      }
-      // return if rhs w/out first two and last eight is in string_map2
-      return !(string_map2.find(rhs.substr(2, rhs_size - 10)) == string_map2.end());
-    }
-    return false;
-#endif
   }
 
   constexpr bool operator==(const str &rhs) const {
@@ -376,7 +322,7 @@ public:
     return !(*this == rhs);
   }
 
-  constexpr bool operator!=(std::string_view rhs) const { return !(*this == rhs); }
+  bool operator!=(std::string_view rhs) const { return !(*this == rhs); }
 
   constexpr char operator[](std::size_t pos) const {
     if (pos >= _size) {
@@ -554,19 +500,10 @@ public:
 
   str append(const str &b) {
     if (_size <= 13) {
-      #if append_debug
-      printf("_size <= 13 -> ");
-      #endif
 
       if ((_size + b._size) <= 13) {  // size and b size < = 13
-        #if append_debug
-        printf("_size + b._size <= 13 -> ");
-        #endif
         
         if (_size <= 3) {
-          #if append_debug
-          printf("_size <= 3\n");
-          #endif
           
           long unsigned int i     = 0;
           uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
@@ -578,9 +515,6 @@ public:
             }
           }
         } else {
-          #if append_debug
-          printf("_size > 3\n");
-          #endif
           
           for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
             if (j >= b._size)
@@ -589,17 +523,11 @@ public:
           }
         }
       } else {  // size and b size > 13
-        #if append_debug
-        printf("_size + b._size > 13(SHORT->LONG) -> ");
-        #endif
         
         char full[_size + b._size - 10];
         uint8_t indx = 2, b_indx = 0, e_indx = 2;
-        
+
         if (b._size > 8) {
-          #if append_debug
-          printf("b._size > 8\n");
-          #endif
           auto i = 0;
           for (; i < _size + b._size - 10; ++i) {
             if (indx <= _size - 1) {
@@ -614,14 +542,10 @@ public:
 
           e[0] = (*this)[0];
           e[1] = (*this)[1];
-          
+
         } else if (b._size < 8) {
-          #if append_debug
-          printf("b._size < 8\n");
-          #endif
-          
           auto i = 0;
-          for (; i < _size + b._size - 10; ++i) { 
+          for (; i < _size + b._size - 10; ++i) {
             full[i] = (*this)[indx++];
           }
           for (; i < _size + b._size - 2; ++i) {
@@ -633,11 +557,8 @@ public:
           }
           e[0] = (*this)[0];
           e[1] = (*this)[1];
-        
+
         } else if (b._size == 8) {
-          #if append_debug
-          printf("b._size == 8\n");
-          #endif
           
           auto i = 0;
           for (; i < _size + b._size - 10; ++i) {
@@ -650,7 +571,7 @@ public:
           e[1] = (*this)[1];
         }
 
-        std::pair<int, int> ret = insertfind(full, _size + b._size - 10);  
+        std::pair<int, int> ret = insertfind(full, _size + b._size - 10);
         if (ret.second != -1) {
           ptr_or_start = ret.first;
         } else {
@@ -658,18 +579,10 @@ public:
             string_vector2.emplace_back(full[i]);
           }
           ptr_or_start = string_vector2.size() - (_size + b._size - 10);
-        }        
+        }
       }
     } else {
-      #if append_debug
-      printf("_size > 13 -> ");
-      #endif
-      
       if ((ptr_or_start + (_size-10)) == string_vector2.size()) {  // last one inserted
-        #if append_debug
-        printf("last string inserted into vec, append to vec\n");
-        #endif
-        
         for (auto k = 0; k < b._size; ++k) {
           if (b._size >= 8) {
             for (auto i = 2; i < 10; ++i) {
@@ -686,7 +599,7 @@ public:
           } else {  // b._size < 8
             for (auto i = 2; i < b._size + 2; ++i) {
               string_vector2.emplace_back(e[i]);
-            }  // put e to vec
+            }
             auto i = 2;
             for (; i < b._size + 2; ++i) {
               e[i] = e[i + b._size];
@@ -695,18 +608,14 @@ public:
               if (i == 10)
                 break;
               e[i] = b[j];
-            } 
+            }
           }
         }
         std::string full_str = this->to_s();  // n
         full_str += b.to_s();                 // m
         insertfind((full_str.substr(2,_size + b._size -10)).data(), _size + b._size - 10);
       } else {
-        #if append_debug
-        printf("not last one inserted into vec, make new string\n");
-        #endif
-        
-        std::string start = this->to_s();  // n 
+        std::string start = this->to_s();  // n
         start += b.to_s();  // m
         str temp_str = str(start);  // n + m
         ptr_or_start = temp_str.ptr_or_start;
@@ -878,3 +787,4 @@ public:
 
 
 }  // namespace mmap_lib
+
