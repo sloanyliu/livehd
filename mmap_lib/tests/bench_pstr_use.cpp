@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
   printf("Hello World!\n");
   return 0;
 }
-#if 0
+#if 1
 //implicitly changes ts to string_view
 void test_sview(const char * ts) {
   std::cout << "> Test Case: str(\"" << ts << "\")" << std::endl;

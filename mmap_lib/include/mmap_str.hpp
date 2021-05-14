@@ -13,9 +13,11 @@
 
 #define append_debug 0
 
+
+
 namespace mmap_lib {
 
-template<size_t x>
+template<size_t map_id>
 class __attribute__((packed)) str {
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
@@ -60,9 +62,13 @@ protected:
 
 public:
   // TODO: Make vector of persistent maps
-  static mmap_lib::map<std::string_view, uint32_t> string_map2;
+  static mmap_lib::map<std::string_view, uint32_t> map_one;
+  static mmap_lib::map<std::string_view, uint32_t> map_two;
+  static mmap_lib::map<std::string_view, uint32_t> map_three;
+  static mmap_lib::map<std::string_view, uint32_t> map_four;
 
-  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
+
+  //static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
 
   //inline static std::vector<int> string_vector;
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
@@ -90,6 +96,9 @@ public:
       ++e_pos;
     }
   }
+
+  
+
 
 #if 0 
   //=====helper function to check if a string exists in string_vector=====
