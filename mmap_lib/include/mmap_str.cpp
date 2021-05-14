@@ -2,7 +2,7 @@
 
 #include "mmap_str.hpp"
 
-static_assert(sizeof(mmap_lib::str)==16);
+//static_assert(sizeof(mmap_lib::str)==16);
 
 #define TEMP_PERSIST 1
 

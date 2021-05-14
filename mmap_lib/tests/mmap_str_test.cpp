@@ -15,7 +15,12 @@
 #define MaxNum 10
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
-#define RUN    1
+
+//Set RUN to 1 when you want to run the tests
+#define RUN    0
+
+
+#if 0
 
 // TODO: Unify test fixtures to reduce setup() and teardown() runs
 
@@ -600,3 +605,7 @@ int main(int argc, char **argv) {
   return RUN_ALL_TESTS();
 }
 #endif
+
+#endif
+
+

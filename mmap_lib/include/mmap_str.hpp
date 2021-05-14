@@ -14,7 +14,8 @@
 #define append_debug 0
 
 namespace mmap_lib {
-//template<size_t x>
+
+template<size_t x>
 class __attribute__((packed)) str {
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
@@ -36,6 +37,16 @@ protected:
   //
   // The only drawback is that to compute size, it needs to iterate over the e
   // field, but asking size is not a common operation in LiveHD
+
+
+  //TODO: There is problem wrong with having templates with string class.
+  //      A string class with a template means we must have template every time
+  //      BUT, what if we do template constructors???
+  //      Or just add it as an argument, but then that would change the size of the string data type
+  //      Can we do it without changing the size?
+  //      Can we limit the size??
+  //        2 bytes for size -> max size attainable: 2^16 - 1 = 65535
+  //        Maybe, take top/bottom two bits of size to use for saving to the map we want
 
   uint32_t             ptr_or_start;  // 4 chars if _size < 14, ptr to string_vector otherwise
   std::array<char, 10> e;             // last 10 chars of string, or first 2 + last 8 of string
@@ -80,6 +91,7 @@ public:
     }
   }
 
+#if 0 
   //=====helper function to check if a string exists in string_vector=====
   // If the string being searched exists inside the map, then return info about string
   // If the string being searched does not exist, then the function inserts string into map
@@ -783,6 +795,9 @@ public:
     }
     return mmap_lib::str(hold);
   }
+
+#endif
+
 };
 
 

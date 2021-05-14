@@ -13,9 +13,14 @@
 #define NEEQ_TESTS        0
 #define STARTS_WITH_TESTS 0
 #define FIND              0
-#define BENCH             1
+#define BENCH             0
 #define WHITEBOARD        0
 
+
+int main(int argc, char** argv) {
+  printf("Hello World!\n");
+  return 0;
+}
 #if 0
 //implicitly changes ts to string_view
 void test_sview(const char * ts) {
@@ -29,6 +34,9 @@ void test_sview(const char * ts) {
 }
 #endif
 
+#if 0 
+
+#if CTOR_TESTS
 void test_ctor(mmap_lib::str ts, const char* rs) {
   std::cout << "> Test Case: str(\"" << rs << "\")" << std::endl;
   std::cout << "  ";
@@ -106,6 +114,10 @@ void mmap_pstr_ctor_tests() {
   test17("lonng_andalsjdfkajsdkfljkalsjdfkljaskldjfklajdkslfjalsdjfllaskdfjklajskdlfjklasjdfljasdklfjklasjdflasjdflkajsdflkjakljdfkljaldjfkjakldsjfjaklsjdfjklajsdfjaklsfasjdklfjklajskdljfkljlaksjdklfjlkajsdklfjkla01words23456789");
   */
 }
+#endif
+
+
+#if NEEQ_TESTS
 
 template <std::size_t N>
 bool test_eq(mmap_lib::str ts, const char (&rs)[N], bool ans) {
@@ -134,10 +146,6 @@ bool test_neq(mmap_lib::str ls, const char* rs, bool ans) {
 bool test_eq(mmap_lib::str ls, std::string_view rs, bool ans) { return (ls == rs) == ans; }
 
 bool test_neq(mmap_lib::str ls, std::string_view rs, bool ans) { return (ls != rs) == ans; }
-
-bool test_starts_with(mmap_lib::str ls, mmap_lib::str rs, bool ans) { return ls.starts_with(rs) == ans; }
-
-bool test_starts_with(mmap_lib::str ls, std::string_view rs, bool ans) { return ls.starts_with(rs) == ans; }
 
 void pstrVchar_eqeq_tests() {
   std::cout << "pstr vs. char Operator == Tests: ";
@@ -390,6 +398,12 @@ void pstr_isI() {
   (num_float.is_i() == false) ? p++ : f++;
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", p, p + f, f, p + f);
 }
+#endif
+
+#if STARTS_WITH_TESTS
+bool test_starts_with(mmap_lib::str ls, mmap_lib::str rs, bool ans) { return ls.starts_with(rs) == ans; }
+
+bool test_starts_with(mmap_lib::str ls, std::string_view rs, bool ans) { return ls.starts_with(rs) == ans; }
 
 void pstr_starts_with() {
   uint8_t t = 0u, r = 0u;
@@ -545,7 +559,9 @@ void pstr_starts_with() {
 #endif
   printf("passed(%02d/%02d), failed(%02d/%02d)\n", r, t, t - r, t);
 }
+#endif
 
+#if BENCH
 #define STR_SIZE 1e5
 void bench_str_cmp() {
   {
@@ -605,7 +621,10 @@ void bench_str_cmp() {
     fmt::print("bench_string_cmp conta:{}\n", conta);
   }
 }
+#endif
 
+
+#if WHITEBOARD
 void whtbrd() {
   {
     mmap_lib::str tmp;
@@ -658,6 +677,9 @@ void whtbrd() {
     tmp.append('x');
   }
 }
+#endif
+
+
 
 int main(int argc, char** argv) {
 #if BENCH
@@ -708,3 +730,4 @@ int main(int argc, char** argv) {
    */
   return 0;
 }
+#endif
