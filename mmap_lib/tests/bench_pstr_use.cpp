@@ -19,9 +19,13 @@
 
 int main(int argc, char** argv) {
   printf("Hello World!\n");
+
+  mmap_lib::str<0> foo("hello\n");
+
   return 0;
 }
-#if 1
+
+#if 0
 //implicitly changes ts to string_view
 void test_sview(const char * ts) {
   std::cout << "> Test Case: str(\"" << ts << "\")" << std::endl;

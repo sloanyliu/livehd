@@ -4,24 +4,34 @@
 
 //static_assert(sizeof(mmap_lib::str)==16);
 
-#define TEMP_PERSIST 1
 
-#ifdef TEMP_PERSIST
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2("lgdb", "strMap");
-mmap_lib::vector<int> mmap_lib::str::string_vector2("lgdb/mmap_vector", "global_str_vector");
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::string_map2("lgdb/str_use", "strMap");
 
-#else
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::string_map2;
-mmap_lib::vector<int> mmap_lib::str::string_vector2;
+template<size_t map_id>
+mmap_lib::vector<int> mmap_lib::str<map_id>::string_vector2("lgdb/str_use", "strVector");
 
-#endif
-
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::map_one();
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::map_two("lgdb/mmap_strMap1", "lnast_strMap");
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::map_three("lgdb/mmap_strMap2", "lgraph_strMap"); 
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str::map_four("lgdb/mmap_strMap3", "other_strMap"); 
+template<size_t map_id>
+std::array<mmap_lib::map<std::string_view, uint32_t>,4> mmap_lib::str<map_id>::string_deck = {
+  mmap_lib::map<std::string_view, uint32_t>(),
+  mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strMap2"),
+  mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strMap3"),
+  mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strMap4")
+};
 
 #if 0
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_one;
+
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_two("lgdb/str_use", "strMap1");
+
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_three("lgdb/str_use", "strMap2"); 
+
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_four("lgdb/str_use", "strMap3"); 
+
 std::array<mmap_lib::map<std::string_view, uint32_t>,4> mmap_lib::str::string_map2;
 
 string_map2[0] is no disk saved (same as now)

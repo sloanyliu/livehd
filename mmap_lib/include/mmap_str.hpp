@@ -18,7 +18,11 @@
 namespace mmap_lib {
 
 template<size_t map_id>
+#if 0
+class str {
+#else
 class __attribute__((packed)) str {
+#endif
 protected:
   // Keeping the code constexpr for small strings (not long) requires templates (A challenge but reasonable).
   // Some references:
@@ -62,15 +66,13 @@ protected:
 
 public:
   // TODO: Make vector of persistent maps
-  static mmap_lib::map<std::string_view, uint32_t> map_one;
-  static mmap_lib::map<std::string_view, uint32_t> map_two;
-  static mmap_lib::map<std::string_view, uint32_t> map_three;
-  static mmap_lib::map<std::string_view, uint32_t> map_four;
-
-
-  //static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
-
-  //inline static std::vector<int> string_vector;
+  //static mmap_lib::map<std::string_view, uint32_t> map_one;
+  //static mmap_lib::map<std::string_view, uint32_t> map_two;
+  //static mmap_lib::map<std::string_view, uint32_t> map_three;
+  //static mmap_lib::map<std::string_view, uint32_t> map_four;
+  
+  static mmap_lib::map<std::string_view, uint32_t> string_map2;
+  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
@@ -97,40 +99,40 @@ public:
     }
   }
 
-  
+
+  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
+    std::string_view sv(string_to_check);
+    auto it = string_deck[map_id].find(sv.substr(0, size));
+    if (it == string_deck[map_id].end()) {
+      //<std::string_view, uint32_t(position in vec)> string_map2
+      string_deck[map_id].set(sv.substr(0, size), string_vector2.size());
+      return std::make_pair(0, -1);
+    } else {
+
+      std::pair<int, int> foo;
+      foo = std::make_pair(string_deck[map_id].get(it), size);
+      return foo;
+      // pair is (ptr_or_start, size of string)
+    }
+    return std::make_pair(string_deck[map_id].get(it), size);
+  }
 
 
-#if 0 
+#if 0
   //=====helper function to check if a string exists in string_vector=====
   // If the string being searched exists inside the map, then return info about string
   // If the string being searched does not exist, then the function inserts string into map
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     auto it = string_map2.find(sv.substr(0, size));
-
-    //--------------
-    auto it_pst = string_deck[0].find(sv.substr(0, size));
-    //--------------
-
     if (it == string_map2.end()) {
       //<std::string_view, uint32_t(position in vec)> string_map2
       string_map2.set(sv.substr(0, size), string_vector2.size());
-
-      //-------------
-      string_deck[0].set(sv.substr(0, size), string_vector2.size());
-      //-------------
-
       return std::make_pair(0, -1);
     } else {
 
       std::pair<int, int> foo;
       foo = std::make_pair(string_map2.get(it), size);
-
-      //--------------
-      std::pair<int, int> bar;
-      bar = std::make_pair(string_deck[0].get(it_pst), size);
-      //-------------
-
       return foo;
       // pair is (ptr_or_start, size of string)
     }
