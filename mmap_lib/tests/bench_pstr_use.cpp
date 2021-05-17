@@ -20,8 +20,22 @@
 int main(int argc, char** argv) {
   printf("Hello World!\n");
 
-  mmap_lib::str<0> foo("hello");
-  //mmap_lib::str<0> bar("microarchitecture");
+  mmap_lib::str<0> baa("hello");
+  mmap_lib::str<0> bab("microarchitecture");
+  mmap_lib::str<0> bac("12-Andy-34567890");
+  mmap_lib::str<0> bad("12-Gorgon-34567890");
+  mmap_lib::str<0> bae("12-micro-34567890");
+  mmap_lib::str<0> baf("12-roach-34567890");
+  mmap_lib::str<0> bag("12-Base-34567890");
+  mmap_lib::str<0> bah("12-drums-34567890");
+  mmap_lib::str<1> doi("flower");
+  mmap_lib::str<1> baj("abcdefghijklmnop");
+  mmap_lib::str<1> bak("12-Reed-34567890");
+  mmap_lib::str<1> bal("12-Johnathan-34567890");
+  mmap_lib::str<1> bam("--foobarbazball!");
+  mmap_lib::str<1> ban("--Joker-34567890");
+  mmap_lib::str<1> bao("zyxwvutsrqponmlk");
+  
   return 0;
 }
 

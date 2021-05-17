@@ -17,7 +17,7 @@
 
 namespace mmap_lib {
 
-template<size_t map_id>
+template<int map_id>
 #if 0
 class str {
 #else
@@ -67,17 +67,18 @@ protected:
 public:
   // TODO: Make vector of persistent maps 
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
+  static mmap_lib::map<std::string_view, uint32_t> string_map3;
+  static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
-  #if 1
+  #if 0
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
-  #else 
+  #elif 0 
+  static mmap_lib::map<std::string_view, uint32_t> map0;
   static mmap_lib::map<std::string_view, uint32_t> map1;
   static mmap_lib::map<std::string_view, uint32_t> map2;
   static mmap_lib::map<std::string_view, uint32_t> map3;
-  static mmap_lib::map<std::string_view, uint32_t> map4;
   #endif
 
-  static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
   str(char c) : ptr_or_start(0), e{0}, _size(1) {   // constructor 0.5 (single char)
@@ -124,13 +125,13 @@ public:
     }
     return std::make_pair(string_deck[map_id].get(it), size);
   }
-#else
+#elif 0
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     auto it = string_map2.find(sv.substr(0, size));
     if (it == string_map2.end()) {
       //<std::string_view, uint32_t(position in vec)> string_map2
-      string_mpa2.set(sv.substr(0, size), string_vector2.size());
+      string_map2.set(sv.substr(0, size), string_vector2.size());
       return std::make_pair(0, -1);
     } else {
 
@@ -140,6 +141,37 @@ public:
       // pair is (ptr_or_start, size of string)
     }
     return std::make_pair(string_map2.get(it), size);
+  }
+#else
+  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
+    std::string_view sv(string_to_check);
+    if (map_id == 0) {
+      auto it = string_map2.find(sv.substr(0, size));
+      if (it == string_map2.end()) {
+        //<std::string_view, uint32_t(position in vec)> string_map2
+        string_map2.set(sv.substr(0, size), string_vector2.size());
+        return std::make_pair(0, -1);
+      } else {
+        std::pair<int, int> foo;
+        foo = std::make_pair(string_map2.get(it), size);
+        return foo;
+        // pair is (ptr_or_start, size of string)
+      }
+      return std::make_pair(string_map2.get(it), size);
+    } else {
+      auto it = string_map3.find(sv.substr(0, size)); 
+      if (it == string_map3.end()) {
+        //<std::string_view, uint32_t(position in vec)> string_map2
+        string_map3.set(sv.substr(0, size), string_vector2.size());
+        return std::make_pair(0, -1);
+      } else {
+        std::pair<int, int> foo;
+        foo = std::make_pair(string_map3.get(it), size);
+        return foo;
+        // pair is (ptr_or_start, size of string)
+      }
+      return std::make_pair(string_map3.get(it), size);
+    }
   }
 #endif
 
@@ -785,7 +817,6 @@ public:
 #endif
 
 };
-
 
 }  // namespace mmap_lib
 
