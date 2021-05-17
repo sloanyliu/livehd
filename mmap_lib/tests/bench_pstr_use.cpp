@@ -20,8 +20,8 @@
 int main(int argc, char** argv) {
   printf("Hello World!\n");
 
-  mmap_lib::str<0> foo("hello\n");
-
+  mmap_lib::str<0> foo("hello");
+  //mmap_lib::str<0> bar("microarchitecture");
   return 0;
 }
 

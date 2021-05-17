@@ -65,12 +65,7 @@ protected:
   constexpr uint32_t   mid(uint32_t ps, uint8_t i) const { return ps + (i - 2); }
 
 public:
-  // TODO: Make vector of persistent maps
-  //static mmap_lib::map<std::string_view, uint32_t> map_one;
-  //static mmap_lib::map<std::string_view, uint32_t> map_two;
-  //static mmap_lib::map<std::string_view, uint32_t> map_three;
-  //static mmap_lib::map<std::string_view, uint32_t> map_four;
-  
+  // TODO: Make vector of persistent maps 
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
@@ -100,6 +95,9 @@ public:
   }
 
 
+  //=====helper function to check if a string exists in string_vector=====
+  // If the string being searched exists inside the map, then return info about string
+  // If the string being searched does not exist, then the function inserts string into map
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     auto it = string_deck[map_id].find(sv.substr(0, size));
@@ -117,27 +115,6 @@ public:
     return std::make_pair(string_deck[map_id].get(it), size);
   }
 
-
-#if 0
-  //=====helper function to check if a string exists in string_vector=====
-  // If the string being searched exists inside the map, then return info about string
-  // If the string being searched does not exist, then the function inserts string into map
-  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
-    std::string_view sv(string_to_check);
-    auto it = string_map2.find(sv.substr(0, size));
-    if (it == string_map2.end()) {
-      //<std::string_view, uint32_t(position in vec)> string_map2
-      string_map2.set(sv.substr(0, size), string_vector2.size());
-      return std::make_pair(0, -1);
-    } else {
-
-      std::pair<int, int> foo;
-      foo = std::make_pair(string_map2.get(it), size);
-      return foo;
-      // pair is (ptr_or_start, size of string)
-    }
-    return std::make_pair(string_map2.get(it), size);
-  }
 
   //==========constructor 2 (_size >= 14) ==========
   template <std::size_t N, typename = std::enable_if_t<(N - 1) >= 14>, typename = void>
@@ -169,10 +146,6 @@ public:
   // const char* and std::string will go through this one
   // implicit conversion from const char* --> string_view
   str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
-
-    //std::cout << "present\n";
-
-
     if (_size < 14) {  // constructor 1 logic
       auto stop = posStopper(_size);
       for (auto i = 0; i < stop; ++i) {
@@ -185,34 +158,15 @@ public:
         ++e_pos;
       }
     } else {  // constructor 2 logic
-
-      //std::cout << "here\n";
-
-      //std::cout << sv << std::endl;
-
       e[0] = sv.at(0);
       e[1] = sv.at(1);
-
-
       for (int i = 0; i < 8; i++) {
         e[9 - i] = sv.at(_size - 1 - i);
       }
-
-
-      //for (auto i = 0; i < 10; ++i) {
-      //  std::cout << e[i];
-      //}
-      //std::cout << std::endl;
-
-
       char long_str[_size - 10];
       for (int i = 0; i < _size - 10; i++) {
         long_str[i] = sv.at(i + 2);
       }
-
-      //printf("long_str is: %s\n", long_str);
-
-
       std::pair<int, int> pair = insertfind(long_str, _size - 10);
       if (pair.second != -1) {
         ptr_or_start = pair.first;
@@ -225,14 +179,8 @@ public:
     }
   }
 
-#if 1
-  void test_svec2() {
-    string_vector2.emplace_back(22);
-    //std::cout << "strVec2 size: " << string_vector2.size() << std::endl;
-  }
-#endif
 
-
+#if 0
 
   //=========Printing==============
   void print_PoS() const {
