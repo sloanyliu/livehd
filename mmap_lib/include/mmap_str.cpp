@@ -11,6 +11,9 @@ mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::string_map2("lg
 template<size_t map_id>
 mmap_lib::vector<int> mmap_lib::str<map_id>::string_vector2("lgdb/str_use", "strVector");
 
+
+#if 1
+
 template<size_t map_id>
 std::array<mmap_lib::map<std::string_view, uint32_t>,4> mmap_lib::str<map_id>::string_deck = {
   mmap_lib::map<std::string_view, uint32_t>(),
@@ -19,19 +22,21 @@ std::array<mmap_lib::map<std::string_view, uint32_t>,4> mmap_lib::str<map_id>::s
   mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strMap4")
 };
 
+#else
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map1;
+
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map2("lgdb/str_use", "strMap1");
+
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map3("lgdb/str_use", "strMap2"); 
+
+template<size_t map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map4("lgdb/str_use", "strMap3"); 
+#endif
+
 #if 0
-template<size_t map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_one;
-
-template<size_t map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_two("lgdb/str_use", "strMap1");
-
-template<size_t map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_three("lgdb/str_use", "strMap2"); 
-
-template<size_t map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map_four("lgdb/str_use", "strMap3"); 
-
 std::array<mmap_lib::map<std::string_view, uint32_t>,4> mmap_lib::str::string_map2;
 
 string_map2[0] is no disk saved (same as now)

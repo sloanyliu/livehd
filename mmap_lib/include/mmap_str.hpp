@@ -67,7 +67,16 @@ protected:
 public:
   // TODO: Make vector of persistent maps 
   static mmap_lib::map<std::string_view, uint32_t> string_map2;
+
+  #if 1
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
+  #else 
+  static mmap_lib::map<std::string_view, uint32_t> map1;
+  static mmap_lib::map<std::string_view, uint32_t> map2;
+  static mmap_lib::map<std::string_view, uint32_t> map3;
+  static mmap_lib::map<std::string_view, uint32_t> map4;
+  #endif
+
   static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
@@ -98,6 +107,7 @@ public:
   //=====helper function to check if a string exists in string_vector=====
   // If the string being searched exists inside the map, then return info about string
   // If the string being searched does not exist, then the function inserts string into map
+#if 0
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     auto it = string_deck[map_id].find(sv.substr(0, size));
@@ -114,7 +124,24 @@ public:
     }
     return std::make_pair(string_deck[map_id].get(it), size);
   }
+#else
+  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
+    std::string_view sv(string_to_check);
+    auto it = string_map2.find(sv.substr(0, size));
+    if (it == string_map2.end()) {
+      //<std::string_view, uint32_t(position in vec)> string_map2
+      string_mpa2.set(sv.substr(0, size), string_vector2.size());
+      return std::make_pair(0, -1);
+    } else {
 
+      std::pair<int, int> foo;
+      foo = std::make_pair(string_map2.get(it), size);
+      return foo;
+      // pair is (ptr_or_start, size of string)
+    }
+    return std::make_pair(string_map2.get(it), size);
+  }
+#endif
 
   //==========constructor 2 (_size >= 14) ==========
   template <std::size_t N, typename = std::enable_if_t<(N - 1) >= 14>, typename = void>
