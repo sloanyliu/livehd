@@ -66,13 +66,22 @@ protected:
 
 public:
   // TODO: Make vector of persistent maps 
-  static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  static mmap_lib::map<std::string_view, uint32_t> string_map3;
-  static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
+  //static mmap_lib::map<std::string_view, uint32_t> string_map2;
+  //static mmap_lib::map<std::string_view, uint32_t> string_map3;
+  
 
   #if 0
-  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> string_deck;
-  #elif 0 
+  static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
+  #else
+  
+  #endif
+  static mmap_lib::vector<int> vec0;
+  static mmap_lib::vector<int> vec1;
+  static mmap_lib::vector<int> vec2;
+  static mmap_lib::vector<int> vec3;
+  #if 0
+  static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> maps;
+  #elif 1 
   static mmap_lib::map<std::string_view, uint32_t> map0;
   static mmap_lib::map<std::string_view, uint32_t> map1;
   static mmap_lib::map<std::string_view, uint32_t> map2;
@@ -105,25 +114,36 @@ public:
   }
 
 
+  mmap_lib::map<std::string_view, uint32_t> &base() {
+    return map_id==1 ? map1 : map_id==2 ? map2 : map_id==3 ? map3 : map0;
+  }
+  
+  mmap_lib::vector<int> &vec_base() {
+    return map_id==1 ? vec1 : map_id==2 ? vec2 : map_id==3 ? vec3 : vec0;
+  }
+
+  static void clear_map() { map1.clear(); map2.clear(); map3.clear(); }
+  static void clear_vec() { vec1.clear(); vec2.clear(); vec3.clear(); }
+
   //=====helper function to check if a string exists in string_vector=====
   // If the string being searched exists inside the map, then return info about string
   // If the string being searched does not exist, then the function inserts string into map
 #if 0
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
-    auto it = string_deck[map_id].find(sv.substr(0, size));
-    if (it == string_deck[map_id].end()) {
+    auto it = maps[map_id].find(sv.substr(0, size));
+    if (it == maps[map_id].end()) {
       //<std::string_view, uint32_t(position in vec)> string_map2
-      string_deck[map_id].set(sv.substr(0, size), string_vector2.size());
+      maps[map_id].set(sv.substr(0, size), string_vector2.size());
       return std::make_pair(0, -1);
     } else {
 
       std::pair<int, int> foo;
-      foo = std::make_pair(string_deck[map_id].get(it), size);
+      foo = std::make_pair(maps[map_id].get(it), size);
       return foo;
       // pair is (ptr_or_start, size of string)
     }
-    return std::make_pair(string_deck[map_id].get(it), size);
+    return std::make_pair(maps[map_id].get(it), size);
   }
 #elif 0
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
@@ -142,7 +162,7 @@ public:
     }
     return std::make_pair(string_map2.get(it), size);
   }
-#else
+#elif 0
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
     if (map_id == 0) {
@@ -173,8 +193,28 @@ public:
       return std::make_pair(string_map3.get(it), size);
     }
   }
+
+#else
+  std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
+    std::string_view sv(string_to_check);
+    auto it = base().find(sv.substr(0, size));
+    if (it == base().end()) {
+      //<std::string_view, uint32_t(position in vec)> string_map2
+      base().set(sv.substr(0, size), vec_base().size());
+      return std::make_pair(0, -1);
+    } else {
+
+      std::pair<int, int> foo;
+      foo = std::make_pair(base().get(it), size);
+      return foo;
+      // pair is (ptr_or_start, size of string)
+    }
+    return std::make_pair(base().get(it), size);
+  }
 #endif
 
+
+#if 0
   //==========constructor 2 (_size >= 14) ==========
   template <std::size_t N, typename = std::enable_if_t<(N - 1) >= 14>, typename = void>
   str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
@@ -237,6 +277,72 @@ public:
       }
     }
   }
+
+#else 
+  //==========constructor 2 (_size >= 14) ==========
+  template <std::size_t N, typename = std::enable_if_t<(N - 1) >= 14>, typename = void>
+  str(const char (&s)[N]) : ptr_or_start(0), e{0}, _size(N - 1) {
+    e[0] = s[0];
+    e[1] = s[1];
+    for (int i = 0; i < 8; i++) {
+      e[9 - i] = s[_size - 1 - i];
+    }
+
+    char long_str[_size - 10];
+    for (int i = 0; i < (_size - 10); ++i) {
+      long_str[i] = s[i + 2];
+    }
+    // pair is (ptr_or_start, size of string)
+    std::pair<int, int> pair = insertfind(long_str, _size - 10);
+
+    if (pair.second != -1) {
+      ptr_or_start = pair.first;
+    } else {
+      for (int i = 0; i < _size - 10; i++) {
+        vec_base().emplace_back(long_str[i]);
+      }
+      ptr_or_start = vec_base().size() - (_size - 10);
+    }
+  }
+
+  //============constructor 3=============
+  // const char* and std::string will go through this one
+  // implicit conversion from const char* --> string_view
+  str(std::string_view sv) : ptr_or_start(0), e{0}, _size(sv.size()) {
+    if (_size < 14) {  // constructor 1 logic
+      auto stop = posStopper(_size);
+      for (auto i = 0; i < stop; ++i) {
+        ptr_or_start <<= 8;
+        ptr_or_start |= sv.at(i);
+      }
+      auto e_pos = 0u;
+      for (auto i = stop; i < _size; ++i) {
+        e[e_pos] = sv.at(i);
+        ++e_pos;
+      }
+    } else {  // constructor 2 logic
+      e[0] = sv.at(0);
+      e[1] = sv.at(1);
+      for (int i = 0; i < 8; i++) {
+        e[9 - i] = sv.at(_size - 1 - i);
+      }
+      char long_str[_size - 10];
+      for (int i = 0; i < _size - 10; i++) {
+        long_str[i] = sv.at(i + 2);
+      }
+      std::pair<int, int> pair = insertfind(long_str, _size - 10);
+      if (pair.second != -1) {
+        ptr_or_start = pair.first;
+      } else {
+        for (int i = 0; i < _size - 10; i++) {
+          vec_base().emplace_back(long_str[i]);
+        }
+        ptr_or_start = vec_base().size() - (_size - 10);
+      }
+    }
+  }
+
+#endif
 
 
 #if 0
@@ -317,8 +423,6 @@ public:
 
   //=================================
 
-  static void clear_map() { string_map2.clear(); }
-  static void clear_vector() { string_vector2.clear(); }
 
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }

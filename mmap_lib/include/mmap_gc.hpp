@@ -288,6 +288,7 @@ public:
       for (const auto &e : mmap_gc_pool) {
         if (e.second.fd < 0)
           continue;
+        std::cout << e.second.name << "  " << name << std::endl;
         assert(e.second.name != name);  // No name duplicate (may be OK for multithreaded access)
       }
 #endif

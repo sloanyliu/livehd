@@ -3,14 +3,51 @@
 #include "mmap_str.hpp"
 
 template<int map_id> 
-mmap_lib::vector<int> mmap_lib::str<map_id>::string_vector2("lgdb/str_use", "strVector");
+mmap_lib::vector<int> mmap_lib::str<map_id>::vec0;
 
+template<int map_id> 
+mmap_lib::vector<int> mmap_lib::str<map_id>::vec1("lgdb/str_use", "strV2");
+
+template<int map_id> 
+mmap_lib::vector<int> mmap_lib::str<map_id>::vec2("lgdb/str_use", "strV2");
+
+template<int map_id> 
+mmap_lib::vector<int> mmap_lib::str<map_id>::vec3("lgdb/str_use", "strV3");
+
+#if 0
 template<int map_id>
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::string_map2("lgdb/str_use", "strMap");
 
 template<int map_id>
 mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::string_map3("lgdb/str_use", "strMap2");
 
+#elif 0
+template<int map_id>
+std::array<mmap_lib::map<std::string_view, uint32_t>,4> mmap_lib::str<map_id>::maps = {
+  mmap_lib::map<std::string_view, uint32_t>(),
+  mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strM1"),
+  mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strM2"),
+  mmap_lib::map<std::string_view, uint32_t>("lgdb/str_use", "strM3")
+  };
+#else
+template<int map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map0;
+  
+template<int map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map1("lgdb/str_use", "strM1");
+  
+template<int map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map2("lgdb/str_use", "strM2");
+  
+template<int map_id>
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map3("lgdb/str_use", "strM3");
+
+#endif
+
+template class mmap_lib::str<0>;
+template class mmap_lib::str<1>;
+template class mmap_lib::str<2>;
+template class mmap_lib::str<3>;
 
 //static_assert(sizeof(mmap_lib::str)==16);
 
