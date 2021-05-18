@@ -20,10 +20,6 @@
 #define RUN    0
 
 
-#if 0
-
-// TODO: Unify test fixtures to reduce setup() and teardown() runs
-
 /* ---------TEST FIXTURES---------
  * Test Name             Status   Description
  * _________             ______   ___________
@@ -38,6 +34,7 @@
  * split                 pass     split(chr) tested on random pstr's
  * get_str_before_after  pass     get_str_before/after_first/last()
  */
+
 
 class Mmap_str_test : public ::testing::Test {
   std::vector<std::string> str_bank;
@@ -91,8 +88,12 @@ public:
   }
 
   void TearDown() override {
-    mmap_lib::str::clear_map();
-    mmap_lib::str::clear_vector();
+    mmap_lib::str<1>::clear_map();
+    mmap_lib::str<1>::clear_vec();
+    mmap_lib::str<2>::clear_map();
+    mmap_lib::str<2>::clear_vec();
+    mmap_lib::str<3>::clear_map();
+    mmap_lib::str<3>::clear_vec();
   }
 
   // wrapper for .at() since vectors are private
@@ -102,14 +103,15 @@ public:
   std::string nd_get(int i) { return no_dash.at(i); }
 };
 
+#if 0
 // random mmap_lib::str creation
 TEST_F(Mmap_str_test, random_ctor_cmp) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string      c_st = s_get(i), n_st = s_get((i + 1) % RNDN);
     std::string_view c_sv = c_st, n_sv = n_st;
-    mmap_lib::str    c_s1(c_st), n_s1(n_st);
-    mmap_lib::str    c_s2(c_sv), n_s2(n_sv);
-    mmap_lib::str    c_s3(c_st.c_str()), n_s3(n_st.c_str());
+    mmap_lib::str<1>    c_s1(c_st), n_s1(n_st);
+    mmap_lib::str<1>    c_s2(c_sv), n_s2(n_sv);
+    mmap_lib::str<1>    c_s3(c_st.c_str()), n_s3(n_st.c_str());
 
 #if 0
     std::cout << "str curr: " << c_st << std::endl;

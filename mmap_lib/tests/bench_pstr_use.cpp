@@ -20,8 +20,12 @@
 int main(int argc, char** argv) {
   printf("Hello World!\n");
 
-  mmap_lib::str<0>::clear_map();
-  mmap_lib::str<0>::clear_vec();
+  mmap_lib::str<1>::clear_map();
+  mmap_lib::str<1>::clear_vec();
+  mmap_lib::str<2>::clear_map();
+  mmap_lib::str<2>::clear_vec();
+  mmap_lib::str<3>::clear_map();
+  mmap_lib::str<3>::clear_vec();
 
   mmap_lib::str<0> baa("hello");
   mmap_lib::str<1> bab("microarchitecture");
@@ -39,7 +43,13 @@ int main(int argc, char** argv) {
   mmap_lib::str<1> ban("--Joker-34567890");
   mmap_lib::str<2> bao("zyxwvutsrqponmlk");
   mmap_lib::str<3> bap("zyxwvutsrqponmlk");
-  
+ 
+  if (baa == bab) {
+    std::cout << "neq\n";
+  } else {
+    std::cout << "eeq\n";
+  }
+
   return 0;
 }
 
