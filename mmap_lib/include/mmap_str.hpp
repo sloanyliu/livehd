@@ -285,6 +285,7 @@ public:
     return (*this == str<map_id>(rhs));
   }
 
+  
   constexpr bool operator==(const str<map_id> &rhs) const {
     if (get_map_id() == rhs.get_map_id() || (_size < 14 && rhs._size < 14)) {
 #pragma GCC diagnostic push

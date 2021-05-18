@@ -44,10 +44,10 @@ int main(int argc, char** argv) {
   mmap_lib::str<2> bao("zyxwvutsrqponmlk");
   mmap_lib::str<3> bap("zyxwvutsrqponmlk");
  
-  if (baa == bab) {
-    std::cout << "neq\n";
-  } else {
+  if (bab == baf) {
     std::cout << "eeq\n";
+  } else {
+    std::cout << "neq\n";
   }
 
   return 0;
