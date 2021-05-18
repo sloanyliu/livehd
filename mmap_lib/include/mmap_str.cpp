@@ -3,16 +3,18 @@
 #include "mmap_str.hpp"
 
 template<int map_id> 
-mmap_lib::vector<int> mmap_lib::str<map_id>::vec0;
+mmap_lib::vector<int> mmap_lib::str<map_id>::vec0("lgdb/str_use", "strVec");
 
+/*
 template<int map_id> 
-mmap_lib::vector<int> mmap_lib::str<map_id>::vec1("lgdb/str_use", "strV2");
+mmap_lib::vector<int> mmap_lib::str<map_id>::vec1("lgdb/str_use", "strV1");
 
 template<int map_id> 
 mmap_lib::vector<int> mmap_lib::str<map_id>::vec2("lgdb/str_use", "strV2");
 
 template<int map_id> 
 mmap_lib::vector<int> mmap_lib::str<map_id>::vec3("lgdb/str_use", "strV3");
+*/
 
 #if 0
 template<int map_id>

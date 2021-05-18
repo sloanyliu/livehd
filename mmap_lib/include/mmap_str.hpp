@@ -45,15 +45,6 @@ protected:
   // field, but asking size is not a common operation in LiveHD
 
 
-  //TODO: There is problem wrong with having templates with string class.
-  //      A string class with a template means we must have template every time
-  //      BUT, what if we do template constructors???
-  //      Or just add it as an argument, but then that would change the size of the string data type
-  //      Can we do it without changing the size?
-  //      Can we limit the size??
-  //        2 bytes for size -> max size attainable: 2^16 - 1 = 65535
-  //        Maybe, take top/bottom two bits of size to use for saving to the map we want
-
   uint32_t             ptr_or_start;  // 4 chars if _size < 14, ptr to string_vector otherwise
   std::array<char, 10> e;             // last 10 chars of string, or first 2 + last 8 of string
   uint16_t             _size;         // string length
@@ -64,21 +55,18 @@ protected:
   constexpr uint32_t   l8(uint32_t size, uint8_t i) const { return i - (size - 10); }
   constexpr uint32_t   mid(uint32_t ps, uint8_t i) const { return ps + (i - 2); }
 
-public:
-  // TODO: Make vector of persistent maps 
-  //static mmap_lib::map<std::string_view, uint32_t> string_map2;
-  //static mmap_lib::map<std::string_view, uint32_t> string_map3;
+  
+  
   
 
-  #if 0
-  static mmap_lib::vector<int> string_vector2;  // ptr_or_start points here!
-  #else
-  
-  #endif
+public:
+
+
   static mmap_lib::vector<int> vec0;
-  static mmap_lib::vector<int> vec1;
-  static mmap_lib::vector<int> vec2;
-  static mmap_lib::vector<int> vec3;
+  //static mmap_lib::vector<int> vec1;
+  //static mmap_lib::vector<int> vec2;
+  //static mmap_lib::vector<int> vec3;
+
   #if 0
   static std::array<mmap_lib::map<std::string_view, uint32_t>, 4> maps;
   #elif 1 
@@ -87,7 +75,6 @@ public:
   static mmap_lib::map<std::string_view, uint32_t> map2;
   static mmap_lib::map<std::string_view, uint32_t> map3;
   #endif
-
 
   str() : ptr_or_start(0), e{0}, _size(0) {}        // constructor 0 (empty obj)
   str(char c) : ptr_or_start(0), e{0}, _size(1) {   // constructor 0.5 (single char)
@@ -114,16 +101,18 @@ public:
   }
 
 
-  mmap_lib::map<std::string_view, uint32_t> &base() {
+  mmap_lib::map<std::string_view, uint32_t> &map_ref() {
     return map_id==1 ? map1 : map_id==2 ? map2 : map_id==3 ? map3 : map0;
   }
   
-  mmap_lib::vector<int> &vec_base() {
-    return map_id==1 ? vec1 : map_id==2 ? vec2 : map_id==3 ? vec3 : vec0;
+  mmap_lib::vector<int> &vec_ref() {
+    return vec0;
+    //return map_id==1 ? vec1 : map_id==2 ? vec2 : map_id==3 ? vec3 : vec0;
   }
 
+
   static void clear_map() { map1.clear(); map2.clear(); map3.clear(); }
-  static void clear_vec() { vec1.clear(); vec2.clear(); vec3.clear(); }
+  static void clear_vec() { vec0.clear(); }
 
   //=====helper function to check if a string exists in string_vector=====
   // If the string being searched exists inside the map, then return info about string
@@ -197,19 +186,19 @@ public:
 #else
   std::pair<int, int> insertfind(const char *string_to_check, uint32_t size) {
     std::string_view sv(string_to_check);
-    auto it = base().find(sv.substr(0, size));
-    if (it == base().end()) {
+    auto it = map_ref().find(sv.substr(0, size));
+    if (it == map_ref().end()) {
       //<std::string_view, uint32_t(position in vec)> string_map2
-      base().set(sv.substr(0, size), vec_base().size());
+      map_ref().set(sv.substr(0, size), vec_ref().size());
       return std::make_pair(0, -1);
     } else {
 
       std::pair<int, int> foo;
-      foo = std::make_pair(base().get(it), size);
+      foo = std::make_pair(map_ref().get(it), size);
       return foo;
       // pair is (ptr_or_start, size of string)
     }
-    return std::make_pair(base().get(it), size);
+    return std::make_pair(map_ref().get(it), size);
   }
 #endif
 
@@ -299,9 +288,9 @@ public:
       ptr_or_start = pair.first;
     } else {
       for (int i = 0; i < _size - 10; i++) {
-        vec_base().emplace_back(long_str[i]);
+        vec_ref().emplace_back(long_str[i]);
       }
-      ptr_or_start = vec_base().size() - (_size - 10);
+      ptr_or_start = vec_ref().size() - (_size - 10);
     }
   }
 
@@ -335,18 +324,16 @@ public:
         ptr_or_start = pair.first;
       } else {
         for (int i = 0; i < _size - 10; i++) {
-          vec_base().emplace_back(long_str[i]);
+          vec_ref().emplace_back(long_str[i]);
         }
-        ptr_or_start = vec_base().size() - (_size - 10);
+        ptr_or_start = vec_ref().size() - (_size - 10);
       }
     }
   }
 
 #endif
 
-
-#if 0
-
+#if 0 
   //=========Printing==============
   void print_PoS() const {
     std::cout << "ptr_or_start is";
@@ -372,7 +359,7 @@ public:
 
   void print_StrVec() const {
     std::cout << "StrVec{ ";
-    for (auto i = string_vector2.begin(); i != string_vector2.end(); ++i) {
+    for (auto i = vec_ref().begin(); i != vec_ref().end(); ++i) {
       std::cout << static_cast<char>(*i) << " ";
     }
     std::cout << "}" << std::endl;
@@ -380,9 +367,9 @@ public:
 
   void print_StrMap() const {
     std::cout << "StrMap{ ";
-    for (auto it = string_map2.begin(), end = string_map2.end(); it != end; ++it) {
-      std::string key   = std::string(string_map2.get_key(it));
-      uint32_t    value = string_map2.get(it);
+    for (auto it = map_ref().begin(), end = map_ref().end(); it != end; ++it) {
+      std::string key   = std::string(map_ref().get_key(it));
+      uint32_t    value = map_ref().get(it);
       std::cout << "<" << key << ", " << value << "> ";
     }
     std::cout << "}" << std::endl;
@@ -400,17 +387,9 @@ public:
         }
       }
     } else {
-
-      //std::cout << "e.size() is: " << e.size() << "\n";
-
       std::cout << char(e[0]) << char(e[1]);
-
-      //std::cout << "_size - 10 is: " << _size - 10 << std::endl;
-      //std::cout << "ptr_or_start is: " << ptr_or_start << std::endl;
-      //std::cout << "strVec size is: " << string_vector.size() << std::endl;
-
       for (auto i = 0; i < _size - 10; ++i) {
-        std::cout << static_cast<char>(string_vector2[i + ptr_or_start]);
+        std::cout << static_cast<char>(vec_ref()[i + ptr_or_start]);
       }
 
       //std::cout << "who\n";
@@ -422,7 +401,6 @@ public:
   }
 
   //=================================
-
 
   [[nodiscard]] constexpr std::size_t size() const { return _size; }
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
