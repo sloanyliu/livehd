@@ -273,6 +273,9 @@ public:
   [[nodiscard]] constexpr std::size_t length() const { return _size; }
   [[nodiscard]] constexpr std::size_t max_size() const { return 65535; }
   [[nodiscard]] constexpr bool        empty() const { return 0 == _size; }
+  [[nodiscard]] constexpr uint32_t    pors() const { return ptr_or_start; }
+  [[nodiscard]] constexpr char        e_get(uint8_t i) const { return e[i]; }
+
 
   template <std::size_t N>
   bool operator==(const char (&rhs)[N]) const {
@@ -285,9 +288,10 @@ public:
     return (*this == str<map_id>(rhs));
   }
 
-  
-  constexpr bool operator==(const str<map_id> &rhs) const {
-    if (get_map_id() == rhs.get_map_id() || (_size < 14 && rhs._size < 14)) {
+ 
+  template<int m_id> 
+  constexpr bool operator==(const str<m_id> &rhs) const {
+    if (get_map_id() == rhs.get_map_id() || (_size < 14 && rhs.size() < 14)) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
       const uint64_t *a = (const uint64_t *)(this);
@@ -295,12 +299,31 @@ public:
 #pragma GCC diagnostic pop
       return a[0] == b[0] && a[1] == b[1]; // 16byte compare
     } else {
-      //TODO: compare sviews
-      std::string_view yala = map_cref().get_sview(ptr_or_start);
-      std::string_view yalb = rhs.map_cref().get_sview(ptr_or_start);
+      //TODO: get_key does not work, need to ask about which function to use
+      //      get_sview is also weird, seems to not be getting the correct thing
+      //      Ask Prof Tomorrow
+#if 0
+      if (_size != rhs.size()) {
+        std::cout << "1" << std::endl;
+        return false;
+      }
+      
+      if (map_cref().get_sview(ptr_or_start) != rhs.map_cref().get_sview(rhs.pors())) {
+        std::cout << "2" << std::endl;
+        return false;
+      }
+      for (int i = 0; i < 10; ++i) {
+        if (e_get(i) != rhs.e_get(i)) {
+          std::cout << "3" << std::endl;
+          return false;
+        }
+      }
+      return true;
+#endif
       return false;
     }    
   }
+  
 
   constexpr bool operator!=(const str &rhs) const { return !(*this == rhs); }
 

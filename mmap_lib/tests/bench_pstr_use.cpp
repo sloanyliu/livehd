@@ -28,23 +28,24 @@ int main(int argc, char** argv) {
   mmap_lib::str<3>::clear_vec();
 
   mmap_lib::str<0> baa("hello");
-  mmap_lib::str<1> bab("microarchitecture");
-  mmap_lib::str<2> bac("12-Andy-34567890");
-  mmap_lib::str<3> bad("12-Gorgon-34567890");
-  mmap_lib::str<0> bae("12-micro-34567890");
+  mmap_lib::str<0> bab("12-micro-34567890");
+  mmap_lib::str<0> bac("flower");
+  mmap_lib::str<0> bad("--foobarbazball!");
+  mmap_lib::str<1> bae("microarchitecture");
   mmap_lib::str<1> baf("12-roach-34567890");
-  mmap_lib::str<2> bag("12-Base-34567890");
-  mmap_lib::str<3> bah("12-drums-34567890");
-  mmap_lib::str<0> doi("flower");
-  mmap_lib::str<1> baj("abcdefghijklmnop");
-  mmap_lib::str<2> bak("12-Reed-34567890");
-  mmap_lib::str<3> bal("12-Johnathan-34567890");
-  mmap_lib::str<0> bam("--foobarbazball!");
-  mmap_lib::str<1> ban("--Joker-34567890");
-  mmap_lib::str<2> bao("zyxwvutsrqponmlk");
-  mmap_lib::str<3> bap("zyxwvutsrqponmlk");
+  mmap_lib::str<1> bag("abcdefghijklmnop");
+  mmap_lib::str<1> bah("--Joker-34567890");
+  mmap_lib::str<1> bai("12-micro-34567890");
+  mmap_lib::str<2> baj("12-Andy-34567890");
+  mmap_lib::str<2> bak("12-Base-34567890");
+  mmap_lib::str<2> bal("12-Reed-34567890");
+  mmap_lib::str<2> bam("zyxwvutsrqponmlk");
+  mmap_lib::str<3> ban("12-Gorgon-34567890");
+  mmap_lib::str<3> bao("12-drums-34567890");
+  mmap_lib::str<3> bap("12-Johnathan-34567890");
+  mmap_lib::str<3> baq("zyxwvutsrqponmlk");
  
-  if (bab == baf) {
+  if (bab == bai) {
     std::cout << "eeq\n";
   } else {
     std::cout << "neq\n";
