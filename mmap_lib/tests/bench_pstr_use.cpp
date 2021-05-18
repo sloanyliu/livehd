@@ -49,6 +49,12 @@ int main(int argc, char** argv) {
   } else {
     std::cout << "neq\n";
   }
+  
+  if (baa == bab) {
+    std::cout << "eeq\n";
+  } else {
+    std::cout << "neq\n";
+  }
 
   return 0;
 }
