@@ -166,7 +166,7 @@ protected:
 
     return false;
   }
-  
+
   size_t calc_min_mmap_size() const { return sizeof(T) * MMAPA_MIN_ENTRIES + 4096; }
 
   T *ref_base() const {

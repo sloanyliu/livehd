@@ -17,10 +17,22 @@ Label_synth::Label_synth(bool _verbose, bool _hier, std::string_view alg) : verb
 	}
 }
 
+// This function just increments the last_free_id variable
+// since a free id would be one more than the last id that was free
 int Label_synth::get_free_id() {
   return last_free_id++;
 }
 
+// Adds the nodes of LGraph into flat_merges[]  
+//
+// Packs the parameter node, and inserts into flat_node2id<> with n_id id
+// insert returns [iterator of node inserted, does node already exist]
+// If the [node has already been inserted before] or [the id has already been used]
+// return, no duplicates allowed
+// 
+// Otherwise, look for the n_id just inserted into flat_node2id<id>, in flat_merges[]
+// If we can't find it, then add the n_id to flat_merges[id]
+// If we can find it, then re-save the found node into flat_merges[id]
 void Label_synth::set_id(const Node &node, int id) {
   auto [it, inserted] = flat_node2id.insert({node.get_compact_flat(), id});
   if (inserted || id == it->second)
@@ -159,7 +171,7 @@ void Label_synth::label(Lgraph *g) {
 
   last_free_id = 1;
 
-  mark_ids(g);
+  mark_ids(g); // 
   merge_ids();
 
   if (hier) {

@@ -16,9 +16,8 @@
 #define MinLen 2  // min len for rand strings
 #define MinNum 1
 
-//Set RUN to 1 when you want to run the tests
-#define RUN    0
-
+// Set RUN to 1 when you want to run the tests
+#define RUN 0
 
 /* ---------TEST FIXTURES---------
  * Test Name             Status   Description
@@ -34,7 +33,6 @@
  * split                 pass     split(chr) tested on random pstr's
  * get_str_before_after  pass     get_str_before/after_first/last()
  */
-
 
 class Mmap_str_test : public ::testing::Test {
   std::vector<std::string> str_bank;
@@ -609,5 +607,3 @@ int main(int argc, char **argv) {
 #endif
 
 #endif
-
-

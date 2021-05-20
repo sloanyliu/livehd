@@ -16,7 +16,6 @@
 #define BENCH             0
 #define WHITEBOARD        0
 
-
 int main(int argc, char** argv) {
   printf("Hello World!\n");
 
@@ -44,13 +43,12 @@ int main(int argc, char** argv) {
   mmap_lib::str<3> bao("12-drums-34567890");
   mmap_lib::str<3> bap("12-Johnathan-34567890");
   mmap_lib::str<3> baq("zyxwvutsrqponmlk");
- 
+
   if (bab == bai) {
     std::cout << "eeq\n";
   } else {
     std::cout << "neq\n";
   }
-  
 }
 
 #if 0
@@ -66,7 +64,7 @@ void test_sview(const char * ts) {
 }
 #endif
 
-#if 0 
+#if 0
 
 #if CTOR_TESTS
 void test_ctor(mmap_lib::str ts, const char* rs) {
@@ -147,7 +145,6 @@ void mmap_pstr_ctor_tests() {
   */
 }
 #endif
-
 
 #if NEEQ_TESTS
 
@@ -654,7 +651,6 @@ void bench_str_cmp() {
   }
 }
 #endif
-
 
 #if WHITEBOARD
 void whtbrd() {
