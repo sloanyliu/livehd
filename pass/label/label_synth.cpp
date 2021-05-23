@@ -45,8 +45,14 @@ void Label_synth::set_id(const Node &node, int id) {
     flat_merges[id] = it2->second;
 }
 
+// Forward Hier Traverse
+// first look for node in flat_node2id
+// if found, set id to found node's node_id
+// else not found, get a free id
+//
+// Iterate over out Edges of current traverse node
+// set_id() for all of them
 void Label_synth::mark_ids(Lgraph *g) {
-
 #if 1
   // Do we cluster inputs? (FIXME: option)
   g->each_graph_input([&](const Node_pin &pin) {
@@ -58,8 +64,9 @@ void Label_synth::mark_ids(Lgraph *g) {
     }
   });
 #endif
-
   for (auto node : g->forward(hier)) {
+    
+    // node skipping
     if (node.is_type_loop_last())
       continue;
     if (node.is_type_const())
@@ -171,7 +178,7 @@ void Label_synth::label(Lgraph *g) {
 
   last_free_id = 1;
 
-  mark_ids(g); // 
+  mark_ids(g); // marking ID's by FIB?? or by FlipFlop/BigModule 
   merge_ids();
 
   if (hier) {
