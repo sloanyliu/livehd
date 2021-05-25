@@ -352,8 +352,13 @@ void Lgtuple::add_int(const std::string &key, std::shared_ptr<Lgtuple const> tup
     return;
   }
 
+  bool root = is_root_attribute(key);
   for (auto &ent : tup->key_map) {
-    key_map.emplace_back(absl::StrCat(key, ".", ent.first), ent.second);
+    if (root) {
+      key_map.emplace_back(absl::StrCat(ent.first, ".", key), ent.second);
+    }else{
+      key_map.emplace_back(absl::StrCat(key, ".", ent.first), ent.second);
+    }
   }
 }
 
@@ -563,14 +568,16 @@ std::shared_ptr<Lgtuple> Lgtuple::get_sub_tuple(std::shared_ptr<Lgtuple const> t
 }
 
 void Lgtuple::del(std::string_view key) {
-  if (is_root_attribute(key)) {
-    return;
-  }
-
   if (key.empty()) {
     key_map.clear();
     return;
   }
+
+#if 0
+  if (is_root_attribute(key)) {
+    return;
+  }
+#endif
 
   Key_map_type new_map;
 
@@ -595,7 +602,8 @@ void Lgtuple::del(std::string_view key) {
 
     I(entry[e_pos] != '.');  // not . included
 
-    if (is_root_attribute(entry.substr(e_pos))) {
+    auto sub_name = entry.substr(e_pos);
+    if (sub_name.substr(0, 2) == "__" && sub_name[3] != '_') {
       new_map.emplace_back(std::move(key_map[i]));
       continue;  // Keep the attributes
     }
@@ -609,6 +617,8 @@ void Lgtuple::add(std::string_view key, std::shared_ptr<Lgtuple const> tup) {
 
   correct = correct && tup->correct;
 
+  bool root_key = is_root_attribute(key);
+
   for (const auto &it : tup->key_map) {
     if (it.first.empty()) {
       add(key, it.second);
@@ -620,10 +630,15 @@ void Lgtuple::add(std::string_view key, std::shared_ptr<Lgtuple const> tup) {
 
       std::string key2{get_canonical_name(it.first)};  // Remove 0.0.0.xxxx and xxx.0.0.0 if it exists
 
-      if (key2.empty())
+      if (key2.empty()) {
         key2 = key;
-      else
-        key2 = absl::StrCat(key, ".", key2);
+      }else{
+        if (root_key) {
+          key2 = absl::StrCat(key2, ".", key);
+        }else{
+          key2 = absl::StrCat(key, ".", key2);
+        }
+      }
 
       add(key2, it.second);
     }
@@ -649,8 +664,6 @@ void Lgtuple::add(std::string_view key, const Node_pin &dpin) {
   }
 #endif
 
-  // bool ordered = is_ordered();
-
   std::string uncanonical_key{key};
 	bool pending_adjust = false;
   if (is_scalar()) {
@@ -658,6 +671,8 @@ void Lgtuple::add(std::string_view key, const Node_pin &dpin) {
       uncanonical_key = "0";
     } else if (key.substr(0, 2) == "__" && key[3] != '_') { // is_root_attribute BUT not with 0.__xxx
       uncanonical_key = absl::StrCat("0.", key);
+    } else {
+      pending_adjust = true;
     }
 	}else{
 		pending_adjust = true;
@@ -666,7 +681,7 @@ void Lgtuple::add(std::string_view key, const Node_pin &dpin) {
   // fixed_key can have name too like :0:foo.__max while uncanonical_key is 0.__max
   auto fixed_key = learn_fix(uncanonical_key);
 
-  del(key);
+  del(fixed_key);
 
 	if (pending_adjust) {
 		// NOTE: If the tuple had something like:
@@ -697,7 +712,7 @@ void Lgtuple::add(std::string_view key, const Node_pin &dpin) {
 			if (fpart.size() >= key_part.size())
 				continue;
 
-			// NOTE: full match foo.bar == foo not foo.bar == fo match
+			// NOTE: full match foo.bar == foo not foo.bar == foo match
 			if (key_part[fpart.size()] == '.' && fpart == key_part.substr(0,fpart.size())) {
 				if (lpart.empty())
 					e.first = absl::StrCat(fpart, ".0");
@@ -711,9 +726,27 @@ void Lgtuple::add(std::string_view key, const Node_pin &dpin) {
 		}
 	}
 
+  I(!has_dpin(fixed_key));
   key_map.emplace_back(fixed_key, dpin);
 
-	dump();
+#ifndef NDEBUG
+  for(const auto &e:key_map) {
+    auto lower = get_all_but_last_level(e.first);
+    if (is_attribute(e.first)) {
+      lower = get_all_but_last_level(lower);
+    }
+    while (!lower.empty()) {
+      I(!is_attribute(lower));
+      if (has_dpin(lower)) {
+        dump();
+        fmt::print("OOPPPS (tuple is corrupted). Time to debug!!! {} {}\n", e.first, lower);
+        exit(-3);
+        return;
+      }
+      lower = get_all_but_last_level(lower);
+    }
+  }
+#endif
 }
 
 bool Lgtuple::concat(std::shared_ptr<Lgtuple const> tup) {
@@ -1050,7 +1083,8 @@ std::vector<Node::Compact> Lgtuple::make_mux(Node &mux_node, Node_pin &sel_dpin,
 
             auto attr_node = dpin.create(Ntype_op::AttrSet);
             {
-              auto key_dpin = dpin.create_const(Lconst::string(attr_it.first)).setup_driver_pin();
+              auto attr = get_last_level(attr_it.first);
+              auto key_dpin = dpin.create_const(Lconst::string(attr)).setup_driver_pin();
               attr_node.setup_sink_pin("field").connect_driver(key_dpin);
             }
             { attr_node.setup_sink_pin("value").connect_driver(attr_it.second); }
@@ -1169,17 +1203,15 @@ std::shared_ptr<Lgtuple> Lgtuple::make_flop(Node &flop) const {
     else
       new_flop_name = absl::StrCat(flop_root_name, ".", cname);
 
-    if (is_attribute(cname)) {
+    auto attr = get_attribute(cname);
+    if (!attr.empty()) {
       // key_map is sorted. The field before the tuple must be created (or it
       // does not exist, in which case, nothing to do)
 
-      auto attr = get_last_level(cname);
+      I(is_root_attribute(get_last_level(attr))); // Anything like __initial.3 should become 3.__initial
       if (Ntype::has_sink(Ntype_op::Flop, attr.substr(2))) {
-        if (!is_root_attribute(cname)) {
-          dump();
-          Lgraph::info("found attribute:{} which is not root for a flop:{}\n", attr, new_flop_name);
-        }
         auto pin_name = get_all_but_last_level(cname);
+
         if (pin_name == "0") {
           auto dpin = get_dpin(pin_name);
           if (!dpin.is_invalid() && dpin.get_node().is_type_flop()) {
@@ -1218,7 +1250,7 @@ std::shared_ptr<Lgtuple> Lgtuple::make_flop(Node &flop) const {
 
       auto attr_node = flop_node.create(Ntype_op::AttrSet);
       {
-        auto key_dpin = flop_node.create_const(Lconst::string(attr)).setup_driver_pin();
+        auto key_dpin = flop_node.create_const(Lconst::string(get_last_level(attr))).setup_driver_pin();
         attr_node.setup_sink_pin("field").connect_driver(key_dpin);
       }
       { attr_node.setup_sink_pin("value").connect_driver(e.second); }

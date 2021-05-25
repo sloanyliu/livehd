@@ -135,7 +135,7 @@ public:
       return 1;
     }
 
-    if (__builtin_expect(is_unlimited_sink(op) && str.size() > 1 && std::isdigit(str[0]), 0)) {  // unlikely case
+    if (__builtin_expect(is_unlimited_sink(op) && str.size() > 1 && str[0]>='0' && str[0]<='9', 0)) {  // unlikely case
       int pid = 0;
       for (auto ch : str) {
         assert(ch >= '0' && ch <= '9');
@@ -173,7 +173,7 @@ public:
       return 0;
     }
     assert(std::isdigit(pin_name[0]));
-    int x;
+    int x=0;
     std::from_chars(pin_name.data(), pin_name.data() + pin_name.size(), x);
     return x;
   }

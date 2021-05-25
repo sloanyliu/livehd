@@ -13,7 +13,6 @@
 #include <string_view>
 #include <vector>
 
-#include "absl/container/btree_map.h"
 #include "absl/container/flat_hash_map.h"
 #include "lconst.hpp"
 #include "node.hpp"
@@ -82,8 +81,8 @@ public:
   static bool is_root_attribute(std::string_view key) {
     if (key.substr(0, 2) == "__" && key[3] != '_')
       return true;
-    if (key.substr(0, 4) == "0.__" && key[5] != '_')
-      return true;
+//    if (key.substr(0, 4) == "0.__" && key[5] != '_')
+//      return true;
 
     return false;
   }
@@ -105,6 +104,25 @@ public:
     }
 
     return false;
+  }
+
+  static std::string_view get_attribute(std::string_view key) {
+    if (is_root_attribute(key))
+      return key;
+
+    auto it = key.find(".__");
+    if (it != std::string::npos) {
+      if (key[it + 3] != '_')
+        return key.substr(it+1);
+    }
+
+    auto it2 = key.find(":__");
+    if (it2 != std::string::npos) {
+      if (key[it2 + 3] != '_')
+        return key.substr(it2+1);
+    }
+
+    return "";
   }
 
   std::string learn_fix(std::string_view key);

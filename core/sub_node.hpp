@@ -96,8 +96,9 @@ public:
     name.clear();
     expunge();
   }
-  // Sub_node(const Sub_node &s) = delete;
+  Sub_node(const Sub_node &s) = default;
   Sub_node &operator=(const Sub_node &) = delete;
+
   void      copy_from(std::string_view new_name, Lg_type_id new_lgid, const Sub_node &sub);
 
   void to_json(rapidjson::PrettyWriter<rapidjson::StringBuffer> &writer) const;
@@ -211,7 +212,11 @@ public:
 
   bool has_pin(std::string_view io_name) const {
     I(lgid);
-    return name2id.find(io_name) != name2id.end();
+    const auto it = name2id.find(io_name);
+    if (it == name2id.end())
+      return false;
+
+    return !io_pins[it->second].is_invalid(); // It could be deleted and name preserved to remap to the same pin again in the future
   }
   bool has_graph_pos_pin(Port_ID graph_pos) const {
     I(lgid);
