@@ -9,7 +9,7 @@
 #include "mmap_map.hpp"
 #include "mmap_str.hpp"
 
-#define CTOR_TESTS        0
+#define CTOR_TESTS        1
 #define NEEQ_TESTS        0
 #define STARTS_WITH_TESTS 0
 #define FIND              0
@@ -51,23 +51,9 @@ int main(int argc, char** argv) {
   }
 }
 
-#if 0
-//implicitly changes ts to string_view
-void test_sview(const char * ts) {
-  std::cout << "> Test Case: str(\"" << ts << "\")" << std::endl;
-  mmap_lib::str test11(ts);
-  std::cout << "  "; test11.print_PoS();
-  std::cout << "  "; test11.print_e();
-  std::cout << "  "; test11.print_StrMap();
-  std::cout << "  "; test11.print_StrVec();
-  std::cout << std::endl;
-}
-#endif
-
-#if 0
-
 #if CTOR_TESTS
-void test_ctor(mmap_lib::str ts, const char* rs) {
+template<int m_id>
+void test_ctor(mmap_lib::str<m_id> ts, const char* rs) {
   std::cout << "> Test Case: str(\"" << rs << "\")" << std::endl;
   std::cout << "  ";
   ts.print_PoS();
@@ -85,36 +71,36 @@ void mmap_pstr_ctor_tests() {
   std::cout << "Constructor 1 (size < 14) Tests: " << std::endl;
   std::cout << "================================ " << std::endl;
 
-  test_ctor(mmap_lib::str("hello"), "hello");
-  test_ctor(mmap_lib::str("cat"), "cat");
-  test_ctor(mmap_lib::str("four"), "four");
-  test_ctor(mmap_lib::str("feedback"), "feedback");
-  test_ctor(mmap_lib::str("natural_fries"), "natural_fries");
+  test_ctor(mmap_lib::str<0>("hello"), "hello");
+  test_ctor(mmap_lib::str<1>("cat"), "cat");
+  test_ctor(mmap_lib::str<2>("four"), "four");
+  test_ctor(mmap_lib::str<3>("feedback"), "feedback");
+  test_ctor(mmap_lib::str<1>("natural_fries"), "natural_fries");
 
   std::cout << "================================ " << std::endl;
   std::cout << "Constructor 2 (size >=14) Tests: " << std::endl;
   std::cout << "================================ " << std::endl;
 
-  test_ctor(mmap_lib::str("0_words_1234567"), "0_words_1234567");
-  test_ctor(mmap_lib::str("7_words_6543210"), "7_words_6543210");
-  test_ctor(mmap_lib::str("0_sloan_1234567"), "0_sloan_1234567");
-  test_ctor(mmap_lib::str("0_tang_1234567"), "0_tang_1234567");
-  test_ctor(mmap_lib::str("hisloanbuzzball"), "hisloanbuzzball");
-  test_ctor(mmap_lib::str("--this_var_will_bee_very_longbuzzball"), "--this_var_will_bee_very_longbuzzball");
-  test_ctor(mmap_lib::str("hidifferentbuzzball"), "hidifferentbuzzball");
+  test_ctor(mmap_lib::str<0>("0_words_1234567"), "0_words_1234567");
+  test_ctor(mmap_lib::str<1>("7_words_6543210"), "7_words_6543210");
+  test_ctor(mmap_lib::str<2>("0_sloan_1234567"), "0_sloan_1234567");
+  test_ctor(mmap_lib::str<3>("0_tang_1234567"), "0_tang_1234567");
+  test_ctor(mmap_lib::str<0>("hisloanbuzzball"), "hisloanbuzzball");
+  test_ctor(mmap_lib::str<1>("--this_var_will_bee_very_longbuzzball"), "--this_var_will_bee_very_longbuzzball");
+  test_ctor(mmap_lib::str<2>("hidifferentbuzzball"), "hidifferentbuzzball");
 
   std::cout << "================================ " << std::endl;
   std::cout << "Constructor 3 (string_view) Tests: " << std::endl;
   std::cout << "================================ " << std::endl;
 
-  test_ctor(mmap_lib::str(std::string_view("hello")), "hello");
-  test_ctor(mmap_lib::str(std::string_view("cat")), "cat");
-  test_ctor(mmap_lib::str(std::string_view("abcd")), "abcd");
-  test_ctor(mmap_lib::str(std::string_view("feedback")), "feedback");
-  test_ctor(mmap_lib::str(std::string_view("neutralizatio")), "neutralizatio");
-  test_ctor(mmap_lib::str(std::string_view("neutralization")), "neutralization");
-  test_ctor(mmap_lib::str(std::string_view("01andy23456789")), "01andy23456789");
-  test_ctor(mmap_lib::str(std::string_view("--this_var_will_bee_very_longbuzzball")), "--this_var_will_bee_very_longbuzzball");
+  test_ctor(mmap_lib::str<3>(std::string_view("hello")), "hello");
+  test_ctor(mmap_lib::str<0>(std::string_view("cat")), "cat");
+  test_ctor(mmap_lib::str<1>(std::string_view("abcd")), "abcd");
+  test_ctor(mmap_lib::str<2>(std::string_view("feedback")), "feedback");
+  test_ctor(mmap_lib::str<3>(std::string_view("neutralizatio")), "neutralizatio");
+  test_ctor(mmap_lib::str<0>(std::string_view("neutralization")), "neutralization");
+  test_ctor(mmap_lib::str<1>(std::string_view("01andy23456789")), "01andy23456789");
+  test_ctor(mmap_lib::str<2>(std::string_view("--this_var_will_bee_very_longbuzzball")), "--this_var_will_bee_very_longbuzzball");
 
   std::cout << "================================== " << std::endl;
   std::cout << "Constructor 3 (const char *) Tests: " << std::endl;
@@ -129,14 +115,14 @@ void mmap_pstr_ctor_tests() {
   const char* andy     = "01andy23456789";
   const char* lvar     = "--this_var_will_bee_very_longbuzzball";
 
-  test_ctor(mmap_lib::str(hello), "hello");
-  test_ctor(mmap_lib::str(cat), "cat");
-  test_ctor(mmap_lib::str(abcd), "abcd");
-  test_ctor(mmap_lib::str(feedback), "feedback");
-  test_ctor(mmap_lib::str(n13), "neutralizatio");
-  test_ctor(mmap_lib::str(n14), "neutralization");
-  test_ctor(mmap_lib::str(andy), "01andy23456789");
-  test_ctor(mmap_lib::str(lvar), "--this_var_will_bee_very_longbuzzball");
+  test_ctor(mmap_lib::str<3>(hello), "hello");
+  test_ctor(mmap_lib::str<0>(cat), "cat");
+  test_ctor(mmap_lib::str<1>(abcd), "abcd");
+  test_ctor(mmap_lib::str<2>(feedback), "feedback");
+  test_ctor(mmap_lib::str<3>(n13), "neutralizatio");
+  test_ctor(mmap_lib::str<0>(n14), "neutralization");
+  test_ctor(mmap_lib::str<1>(andy), "01andy23456789");
+  test_ctor(mmap_lib::str<2>(lvar), "--this_var_will_bee_very_longbuzzball");
   /*
   std::cout << "> Test 17:
   str(\"lonng_andalsjdfkajsdkfljkalsjdfkljaskldjfklajdkslfjalsdjfllaskdfjklajskdlfjklasjdfljasdklfjklasjdflasjdflkajsdflkjakljdfkljaldjfkjakldsjfjaklsjdfjklajsdfjaklsfasjdklfjklajskdljfkljlaksjdklfjlkajsdklfjkla01words23456789\")
@@ -145,6 +131,8 @@ void mmap_pstr_ctor_tests() {
   */
 }
 #endif
+
+#if 0
 
 #if NEEQ_TESTS
 

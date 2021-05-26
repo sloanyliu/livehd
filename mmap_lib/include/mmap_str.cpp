@@ -15,16 +15,16 @@ template <int map_id>
 mmap_lib::vector<int> mmap_lib::str<map_id>::vec3("lgdb/str_use", "strV3");
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map0;
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m0;
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map1("lgdb/str_use", "strM1");
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m1("lgdb/str_use", "strMap1");
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map2("lgdb/str_use", "strM2");
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m2("lgdb/str_use", "strMap2");
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::map3("lgdb/str_use", "strM3");
+mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m3("lgdb/str_use", "strMap3");
 
 template class mmap_lib::str<0>;
 template class mmap_lib::str<1>;
