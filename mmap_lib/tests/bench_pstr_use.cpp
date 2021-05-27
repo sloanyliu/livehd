@@ -10,9 +10,9 @@
 #include "mmap_str.hpp"
 
 #define CTOR_TESTS        0
-#define NEEQ_TESTS        1
-#define AT_ISI            1
-#define STARTS_WITH       1
+#define NEEQ_TESTS        0
+#define AT_ISI            0
+#define STARTS_WITH       0
 #define BENCH             1
 #define WHITEBOARD        0
 
@@ -468,13 +468,13 @@ void pstr_starts_with() {
 #endif
 
 #if BENCH
-#define STR_SIZE 1e4
+#define STR_SIZE 1e5
 void bench_str_cmp() {
   {
     Lbench b("bench_str_cmp");
 
     Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(1, 30);
+    Lrand_range<uint16_t> sz(1, 50);
 
     std::vector<mmap_lib::str<2>> v;
     for (auto i = 0u; i < STR_SIZE; ++i) {
@@ -502,7 +502,7 @@ void bench_str_cmp() {
     Lbench b("bench_string_cmp");
 
     Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(1, 30);
+    Lrand_range<uint16_t> sz(1, 50);
 
     std::vector<std::string> v;
     for (auto i = 0u; i < STR_SIZE; ++i) {

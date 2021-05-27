@@ -3,16 +3,16 @@
 #include "mmap_str.hpp"
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m0;
+mmap_lib::map<std::string_view, bool> mmap_lib::str<map_id>::m0;
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m1("lgdb/str_use", "strMap1");
+mmap_lib::map<std::string_view, bool> mmap_lib::str<map_id>::m1("lgdb/str_use", "strMap1");
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m2("lgdb/str_use", "strMap2");
+mmap_lib::map<std::string_view, bool> mmap_lib::str<map_id>::m2("lgdb/str_use", "strMap2");
 
 template <int map_id>
-mmap_lib::map<std::string_view, uint32_t> mmap_lib::str<map_id>::m3("lgdb/str_use", "strMap3");
+mmap_lib::map<std::string_view, bool> mmap_lib::str<map_id>::m3("lgdb/str_use", "strMap3");
 
 template class mmap_lib::str<0>;
 template class mmap_lib::str<1>;

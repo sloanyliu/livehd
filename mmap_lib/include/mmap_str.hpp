@@ -43,7 +43,7 @@ protected:
   constexpr char       isol8(uint32_t ps, uint8_t s) const { return (ps >> (s * 8)) & 0xff; }
   constexpr uint32_t   l8(uint32_t size, uint32_t i) const { return i + 10 - size; }
 
-  static mmap_lib::map<std::string_view, uint32_t> m0, m1, m2, m3;
+  static mmap_lib::map<std::string_view, bool> m0, m1, m2, m3;
 
 public:
   str() : ptr_or_start(0), e{0}, _size(0) {}       // constructor 0 (empty obj)
@@ -70,11 +70,11 @@ public:
     }
   }
 
-  mmap_lib::map<std::string_view, uint32_t> &map_ref() {
+  mmap_lib::map<std::string_view, bool> &map_ref() {
     return map_id == 1 ? m1 : map_id == 2 ? m2 : map_id == 3 ? m3 : m0;
   }
 
-  mmap_lib::map<std::string_view, uint32_t> &map_cref() const {
+  mmap_lib::map<std::string_view, bool> &map_cref() const {
     return map_id == 1 ? m1 : map_id == 2 ? m2 : map_id == 3 ? m3 : m0;
   }
 
@@ -173,7 +173,7 @@ public:
     std::cout << "StrMap{ ";
     for (auto it = map_cref().begin(), end = map_cref().end(); it != end; ++it) {
       std::string key   = std::string(map_cref().get_key(it));
-      uint32_t    value = map_cref().get(it);
+      bool    value = map_cref().get(it);
       std::cout << "<" << key << ", " << value << "> ";
     }
     std::cout << "}" << std::endl;
