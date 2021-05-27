@@ -572,10 +572,10 @@ TEST_F(Mmap_str_test, get_str_before_after) {
     std::cout << "ffo = " << ffo << " flo = " << flo << std::endl;
 #endif
 
-    mmap_lib::str<1> gsaf = hold.get_str_after_first(ch);
-    mmap_lib::str<1> gsbf = hold.get_str_before_first(ch);
-    mmap_lib::str<1> gsal = hold.get_str_after_last(ch);
-    mmap_lib::str<1> gsbl = hold.get_str_before_last(ch);
+    auto gsaf = hold.get_str_after_first(ch);
+    auto gsbf = hold.get_str_before_first(ch);
+    auto gsal = hold.get_str_after_last(ch);
+    auto gsbl = hold.get_str_before_last(ch);
 
 #if 0
     std::cout << "pstr gsaf: ";
@@ -589,8 +589,8 @@ TEST_F(Mmap_str_test, get_str_before_after) {
     std::string gsbl_stable = temp.substr(0, flo);
 
     mmap_lib::str<1> gsaf_ref(gsaf_stable);
-    mmap_lib::str<1> gsbf_ref(gsbf_stable);
-    mmap_lib::str<1> gsal_ref(gsal_stable);
+    mmap_lib::str<2> gsbf_ref(gsbf_stable);
+    mmap_lib::str<3> gsal_ref(gsal_stable);
     mmap_lib::str<1> gsbl_ref(gsbl_stable);
 
 #if 0

@@ -567,7 +567,7 @@ public:
     return append(mmap_lib::str<map_id>(hold));
   }
 
-
+  // str created from this will be whichever template we call this func from
   template<int m_id, int m_id2>
   static str concat(str<m_id> &a, const str<m_id2> &b) { 
     str<map_id> ret(a.to_s() + b.to_s());
@@ -594,6 +594,7 @@ public:
 
 
   // used as a tokenizing function
+  // all str's in the vec will be same template as original str
   std::vector<str> split(const char chr) {
     std::vector<str> vec;
     std::string      hold;
@@ -618,7 +619,7 @@ public:
     return vec;
   }
 
-
+  // str created from these will have same template as original str
   str get_str_after_last(const char chr) const {
     size_t      val = rfind(chr);
     std::string out;
@@ -667,7 +668,9 @@ public:
     return str<map_id>(out);
   }
 
- 
+
+
+  // str created from this function will be same template as original str
   str substr(size_t start) const { return substr(start, _size - start); }
 
   str substr(size_t start, size_t end) const {
