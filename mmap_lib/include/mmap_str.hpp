@@ -667,6 +667,7 @@ public:
     return str<map_id>(out);
   }
 
+ 
   str substr(size_t start) const { return substr(start, _size - start); }
 
   str substr(size_t start, size_t end) const {

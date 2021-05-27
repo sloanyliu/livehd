@@ -429,8 +429,8 @@ TEST_F(Mmap_str_test, find_rfind) {
     std::string_view c_sv     = stable_c;
     std::string_view n_sv     = stable_n;
     mmap_lib::str<1>    curr_str(curr);
-    mmap_lib::str<1>    next_str(next);
-    mmap_lib::str<1>    curr_sub(stable_c);
+    mmap_lib::str<2>    next_str(next);
+    mmap_lib::str<3>    curr_sub(stable_c);
     mmap_lib::str<1>    next_sub(stable_n);
 
 #if 0
@@ -483,12 +483,12 @@ TEST_F(Mmap_str_test, substr) {
 
     std::string   stable_c = curr.substr(start, end);
     std::string   stable_n = next.substr(start2, end2);
-    mmap_lib::str<2> curr_sub_ref(stable_c);
+    mmap_lib::str<1> curr_sub_ref(stable_c);
     mmap_lib::str<2> next_sub_ref(stable_n);
-    mmap_lib::str<2> curr_str(curr);
-    mmap_lib::str<2> next_str(next);
-    mmap_lib::str<2> curr_sub = curr_str.substr(start, end);
-    mmap_lib::str<2> next_sub = next_str.substr(start2, end2);
+    mmap_lib::str<3> curr_str(curr);
+    mmap_lib::str<1> next_str(next);
+    auto curr_sub = curr_str.substr(start, end);
+    auto next_sub = next_str.substr(start2, end2);
 
 #if 0
     std::cout << "curr_str: ";
