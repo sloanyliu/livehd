@@ -10,11 +10,11 @@
 #include "mmap_str.hpp"
 
 #define CTOR_TESTS        0
-#define NEEQ_TESTS        0
-#define AT_ISI            0
-#define STARTS_WITH       0
-#define BENCH             0
-#define WHITEBOARD        1
+#define NEEQ_TESTS        1
+#define AT_ISI            1
+#define STARTS_WITH       1
+#define BENCH             1
+#define WHITEBOARD        0
 
 #if CTOR_TESTS
 template<int m_id>
@@ -26,8 +26,6 @@ void test_ctor(mmap_lib::str<m_id> ts, const char* rs) {
   ts.print_e();
   std::cout << "  ";
   ts.print_StrMap();
-  std::cout << "  ";
-  ts.print_StrVec();
   std::cout << std::endl;
 }
 
@@ -498,7 +496,6 @@ void bench_str_cmp() {
 
     fmt::print("bench_str_cmp conta:{}\n", conta);
     mmap_lib::str<2>::clear_map();
-    mmap_lib::str<2>::clear_vec();
   }
 
   {
@@ -540,13 +537,9 @@ void whtbrd() {
 int main(int argc, char** argv) {
   printf("Hello World!\n");
 
-  //mmap_lib::str<1>::clear_map();
-  //mmap_lib::str<2>::clear_map();
-  //mmap_lib::str<3>::clear_map();
-  //mmap_lib::str<1>::clear_vec();
-  //mmap_lib::str<2>::clear_vec();
-  //mmap_lib::str<3>::clear_vec();
-
+  mmap_lib::str<1>::clear_map();
+  mmap_lib::str<2>::clear_map();
+  mmap_lib::str<3>::clear_map();
 
 #if CTOR_TESTS
   mmap_pstr_ctor_tests(); 

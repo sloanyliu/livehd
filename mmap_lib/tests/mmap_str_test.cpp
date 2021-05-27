@@ -20,9 +20,6 @@
 #define RUN 0
 
 
-#if 0
-
-
 /* ---------TEST FIXTURES---------
  * Test Name             Status   Description
  * _________             ______   ___________
@@ -91,11 +88,8 @@ public:
 
   void TearDown() override {
     mmap_lib::str<1>::clear_map();
-    mmap_lib::str<1>::clear_vec();
     mmap_lib::str<2>::clear_map();
-    mmap_lib::str<2>::clear_vec();
     mmap_lib::str<3>::clear_map();
-    mmap_lib::str<3>::clear_vec();
   }
 
   // wrapper for .at() since vectors are private
@@ -608,4 +602,3 @@ int main(int argc, char **argv) {
 #endif
 
 
-#endif

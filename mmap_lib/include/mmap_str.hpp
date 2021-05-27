@@ -209,6 +209,7 @@ public:
   [[nodiscard]] constexpr bool        empty() const { return 0 == _size; }
   [[nodiscard]] constexpr uint32_t    get_pos() const { return ptr_or_start; }
   [[nodiscard]] constexpr char        get_e(uint8_t i) const { return e[i]; }
+  [[nodiscard]] constexpr std::size_t e_size() const { return e.size(); }
 
 
   template <int m_id>
@@ -419,130 +420,140 @@ public:
     return rfind(str<map_id>(s), pos);
   }
   
-#if 0
-  template<int m_id>
-  str append(const str<m_id> &b) {
-    if (get_map_id() == b.get_map_id()) {
-      if (_size <= 13) {
-        if ((_size + b.size()) <= 13) {  // size and b size < = 13
-          if (_size <= 3) {
-            long unsigned int i     = 0;
-            uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
-            for (; i < b.size(); ++i) {
-              if (_size + i < 4) {
-                ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
-              } else {
-                e[e_ptr++] = b[i];
-              }
-            }
-          } else {
-            for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
-              if (static_cast<uint8_t>(j) >= b.size())
-                break;
-              e[i] = b[j];
-            }
-          }
-        } else {  // size and b size > 13
-          char    full[_size + b.size() - 10];
-          uint8_t indx = 2, b_indx = 0, e_indx = 2;
-          if (b.size() > 8) {
-            uint32_t i = 0;
-            for (; i < _size + b.size() - 10; ++i) {
-              if (indx <= _size - 1) {
-                full[i] = (*this)[indx++];
-              } else {
-                full[i] = b[b_indx++];
-              }
-            }
-            for (; i < _size + b.size() - 2; ++i) {
-              e[e_indx++] = b[b_indx++];
-            }
-            e[0] = (*this)[0];
-            e[1] = (*this)[1];
-          } else if (b.size() < 8) {
-            uint32_t i = 0;
-            for (; i < _size + b.size() - 10; ++i) {
-              full[i] = (*this)[indx++];
-            }
-            for (; i < _size + b.size() - 2; ++i) {
-              if (indx <= _size - 1) {
-                e[e_indx++] = (*this)[indx++];
-              } else {
-                e[e_indx++] = b[b_indx++];
-              }
-            }
-            e[0] = (*this)[0];
-            e[1] = (*this)[1];
-          } else if (b.size() == 8) {
-            uint32_t i = 0;
-            for (; i < _size + b.size() - 10; ++i) {
-              full[i] = (*this)[indx++];
-            }
-            for (; i < _size + b.size() - 2; ++i) {
-              e[e_indx++] = b[b_indx++];
-            }
-            e[0] = (*this)[0];
-            e[1] = (*this)[1];
-          }
-          std::pair<int, int> ret = insertfind(full, _size + b.size() - 10);
-          if (ret.second != -1) {
-            ptr_or_start = ret.first;
-          } else {
-            for (uint32_t i = 0; i < _size + b.size() - 10; i++) {
-              vec_ref().emplace_back(full[i]);
-            }
-            ptr_or_start = vec_ref().size() - (_size + b.size() - 10);
-          }
-        }
-      } else {
-        if ((ptr_or_start + (_size - 10)) == vec_ref().size()) {  // last one inserted
-          for (uint8_t k = 0; k < b.size(); ++k) {
-            if (b.size() >= 8) {
-              for (auto i = 2; i < 10; ++i) {
-                vec_ref().emplace_back(e[i]);
-              }
-              for (uint32_t i = 0; i < b.size() - 8; ++i) {
-                vec_ref().emplace_back(b[i]);
-              }
-              for (uint32_t i = b.size() - 8, j = 2; i < b.size(); ++i, ++j) {
-                if (j == 10)
-                  break;
-                e[j] = b[i];
-              }
-            } else {  // b._size < 8
-              for (uint32_t i = 2; i < b.size() + 2; ++i) {
-                vec_ref().emplace_back(e[i]);
-              }
-              uint32_t i = 2;
-              for (; i < b.size() + 2; ++i) {
-                e[i] = e[i + b.size()];
-              }  // overwrite e
-              for (uint8_t j = 0; j < b.size(); ++i, ++j) {
-                if (i == 10)
-                  break;
-                e[i] = b[j];
-              }
-            }
-          }
-          std::string full_str = this->to_s();  // n
-          full_str += b.to_s();                 // m
-          insertfind((full_str.substr(2, _size + b.size() - 10)).data(), _size + b.size() - 10);
-        } else {
-          std::string start = this->to_s();           // n
-          start += b.to_s();                          // m
-          str<map_id> temp_str = str<map_id>(start);  // n + m
-          ptr_or_start         = temp_str.ptr_or_start;
-          for (uint8_t i = 0; i < static_cast<uint8_t>((temp_str.e).size()); i++) {
-            e[i] = temp_str.e[i];
-          }
+  std::string to_s() const {  // convert to string
+    std::string out;
+    for (auto i = 0; i < _size; ++i) {
+      out += (*this)[i];
+    }
+    return out;
+  }
+  
+  int64_t to_i() const {  // convert to integer
+    if (is_i()) {
+      std::string temp = to_s();
+      return stoi(temp);
+    } else {
+      return 0;
+    }
+  }
+  
+  bool is_i() const {
+    if (_size < 14) {
+      int  temp  = (_size >= 4) ? 3 : (_size - 1);
+      char first = (ptr_or_start >> (8 * (temp))) & 0xFF;
+      if (first != '-' and (first < '0' or first > '9')) {
+        return false;
+      }
+      for (int i = 1; i < (_size > 4 ? 4 : _size); i++) {
+        switch ((ptr_or_start >> (8 * (temp - i))) & 0xFF) {
+          case '0' ... '9': break;
+          default: return false; break;
         }
       }
-      _size += b.size();
-      return *this;
+      for (int i = 0; i < (_size > 4 ? _size - 4 : 0); i++) {
+        switch (e[i]) {
+          case '0' ... '9': break;
+          default: return false; break;
+        }
+      }
     } else {
-      //FIXME: cross template usage
-      return false;
+      char first = e[0];
+      if (first != '-' and (first < '0' or first > '9')) {
+        return false;
+      }
+      for (int i = 1; i < 10; i++) {
+        switch (e[i]) {
+          case '0' ... '9': break;
+          default: return false; break;
+        }
+      }
+      auto my_sv = map_cref().get_sview(ptr_or_start);
+      for (int i = 0; i < _size - 10; i++) {
+        switch (static_cast<int>(my_sv[i])) {
+          case '0' ... '9': break;
+          default: return false; break;
+        }
+      }
     }
+    return true;
+  }
+  
+  template<int m_id>
+  str append(const str<m_id> &b) {
+    if (_size <= 13) {
+      if ((_size + b.size()) <= 13) {  // size and b size < = 13
+        if (_size <= 3) {
+          long unsigned int i     = 0;
+          uint8_t           e_ptr = _size <= 4 ? 0 : _size - 4;
+          for (; i < b.size(); ++i) {
+            if (_size + i < 4) {
+              ptr_or_start = (ptr_or_start << 8) | static_cast<uint8_t>(b[i]);
+            } else {
+              e[e_ptr++] = b[i];
+            }
+          }
+        } else {
+          for (auto i = _size - 4, j = 0; i < 10; ++i, ++j) {
+            if (static_cast<uint8_t>(j) >= b.size())
+              break;
+            e[i] = b[j];
+          }
+        }
+      } else {  // size and b size > 13
+        char    full[_size + b.size() - 10];
+        uint8_t indx = 2, b_indx = 0, e_indx = 2;
+        if (b.size() > 8) {
+          uint32_t i = 0;
+          for (; i < _size + b.size() - 10; ++i) {
+            if (indx <= _size - 1) {
+              full[i] = (*this)[indx++];
+            } else {
+              full[i] = b[b_indx++];
+            }
+          }
+          for (; i < _size + b.size() - 2; ++i) {
+            e[e_indx++] = b[b_indx++];
+          }
+          e[0] = (*this)[0];
+          e[1] = (*this)[1];
+        } else if (b.size() < 8) {
+          uint32_t i = 0;
+          for (; i < _size + b.size() - 10; ++i) {
+            full[i] = (*this)[indx++];
+          }
+          for (; i < _size + b.size() - 2; ++i) {
+            if (indx <= _size - 1) {
+              e[e_indx++] = (*this)[indx++];
+            } else {
+              e[e_indx++] = b[b_indx++];
+            }
+          }
+          e[0] = (*this)[0];
+          e[1] = (*this)[1];
+        } else if (b.size() == 8) {
+          uint32_t i = 0;
+          for (; i < _size + b.size() - 10; ++i) {
+            full[i] = (*this)[indx++];
+          }
+          for (; i < _size + b.size() - 2; ++i) {
+            e[e_indx++] = b[b_indx++];
+          }
+          e[0] = (*this)[0];
+          e[1] = (*this)[1];
+        }
+        ptr_or_start = insertfind(full, _size + b.size() - 10);
+      }
+    } else {
+      std::string start = this->to_s();           // n
+      start += b.to_s();                          // m
+      str<map_id> temp_str(start);  // n + m
+      ptr_or_start         = static_cast<uint32_t>(temp_str.get_pos());
+      for (uint8_t i = 0; i < static_cast<uint8_t>(temp_str.e_size()); i++) {
+        e[i] = temp_str.get_e(i);
+      }
+    }
+    _size += b.size();
+    return *this;
   }
 
   str append(std::string_view b) { return append(mmap_lib::str<map_id>(b)); }
@@ -556,6 +567,7 @@ public:
     std::string hold = std::to_string(b);
     return append(mmap_lib::str<map_id>(hold));
   }
+
 
   template<int m_id, int m_id2>
   static str concat(str<m_id> &a, const str<m_id2> &b) { return a.append(b); }
@@ -598,62 +610,6 @@ public:
     return vec;
   }
 
-  bool is_i() const {
-    if (_size < 14) {
-      int  temp  = (_size >= 4) ? 3 : (_size - 1);
-      char first = (ptr_or_start >> (8 * (temp))) & 0xFF;
-      if (first != '-' and (first < '0' or first > '9')) {
-        return false;
-      }
-      for (int i = 1; i < (_size > 4 ? 4 : _size); i++) {
-        switch ((ptr_or_start >> (8 * (temp - i))) & 0xFF) {
-          case '0' ... '9': break;
-          default: return false; break;
-        }
-      }
-      for (int i = 0; i < (_size > 4 ? _size - 4 : 0); i++) {
-        switch (e[i]) {
-          case '0' ... '9': break;
-          default: return false; break;
-        }
-      }
-    } else {
-      char first = e[0];
-      if (first != '-' and (first < '0' or first > '9')) {
-        return false;
-      }
-      for (int i = 1; i < 10; i++) {
-        switch (e[i]) {
-          case '0' ... '9': break;
-          default: return false; break;
-        }
-      }
-      for (int i = ptr_or_start; i < _size - 10; i++) {
-        switch (static_cast<int>(vec_cref()[i])) {
-          case '0' ... '9': break;
-          default: return false; break;
-        }
-      }
-    }
-    return true;
-  }
-
-  int64_t to_i() const {  // convert to integer
-    if (is_i()) {
-      std::string temp = to_s();
-      return stoi(temp);
-    } else {
-      return 0;
-    }
-  }
-
-  std::string to_s() const {  // convert to string
-    std::string out;
-    for (auto i = 0; i < _size; ++i) {
-      out += (*this)[i];
-    }
-    return out;
-  }
 
   str get_str_after_last(const char chr) const {
     size_t      val = rfind(chr);
@@ -717,7 +673,6 @@ public:
     return mmap_lib::str<map_id>(hold);
   }
 
-#endif
 };
 
 }  // namespace mmap_lib
