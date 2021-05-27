@@ -41,8 +41,7 @@ protected:
   constexpr uint8_t    posShifter(uint8_t s) const { return s < 4 ? (s - 1) : 3; }
   constexpr uint8_t    posStopper(uint8_t s) const { return s < 4 ? s : 4; }
   constexpr char       isol8(uint32_t ps, uint8_t s) const { return (ps >> (s * 8)) & 0xff; }
-  constexpr uint32_t   l8(uint32_t size, uint8_t i) const { return i - (size - 10); }
-
+  constexpr uint32_t   l8(uint32_t size, uint32_t i) const { return i + 10 - size; }
 
   static mmap_lib::map<std::string_view, uint32_t> m0, m1, m2, m3;
 
@@ -267,7 +266,15 @@ public:
       if (pos < 2) {
         return e[pos];
       } else if (pos >= static_cast<size_t>(_size - 8)) {
-        return e[l8(_size, pos)];
+        if (l8(_size, pos) >= e.size()) {
+          this->print_string();
+          std::cout << "\npos = " << pos << std::endl;
+          std::cout << "_size is: " << _size << std::endl;
+          std::cout << "l8 is: " << l8(_size, pos) << std::endl;
+          throw std::out_of_range("[] operator out of range.");
+        } else {
+          return e[l8(_size, pos)];
+        }
       } else {
         return map_cref().get_sview(ptr_or_start)[pos - 2];
         //return vec_cref()[mid(ptr_or_start, pos)];
