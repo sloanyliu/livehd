@@ -17,7 +17,11 @@
 #define MinNum 1
 
 // Set RUN to 1 when you want to run the tests
-#define RUN 1
+#define RUN 0
+
+
+#if 0
+
 
 /* ---------TEST FIXTURES---------
  * Test Name             Status   Description
@@ -601,4 +605,7 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+#endif
+
+
 #endif

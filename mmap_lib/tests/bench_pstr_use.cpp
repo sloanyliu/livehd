@@ -9,13 +9,12 @@
 #include "mmap_map.hpp"
 #include "mmap_str.hpp"
 
-#define CTOR_TESTS        1
-#define NEEQ_TESTS        1
-#define AT_ISI            1
-#define STARTS_WITH       1
-#define BENCH             1
-#define WHITEBOARD        0
-
+#define CTOR_TESTS        0
+#define NEEQ_TESTS        0
+#define AT_ISI            0
+#define STARTS_WITH       0
+#define BENCH             0
+#define WHITEBOARD        1
 
 #if CTOR_TESTS
 template<int m_id>
@@ -33,6 +32,30 @@ void test_ctor(mmap_lib::str<m_id> ts, const char* rs) {
 }
 
 void mmap_pstr_ctor_tests() {
+  std::cout << "Warming Up";
+
+  mmap_lib::str<0> baa("hello");
+  mmap_lib::str<0> bab("12-micro-34567890");
+  mmap_lib::str<0> bac("flower");
+  mmap_lib::str<0> bad("--foobarbazball!");
+  std::cout << ". ";
+  mmap_lib::str<1> bae("microarchitecture");
+  mmap_lib::str<1> baf("12-roach-34567890");
+  mmap_lib::str<1> bag("abcdefghijklmnop");
+  mmap_lib::str<1> bah("--Joker-34567890");
+  mmap_lib::str<1> bai("12-micro-34567890");
+  std::cout << ". ";
+  mmap_lib::str<2> baj("12-Andy-34567890");
+  mmap_lib::str<2> bak("12-Base-34567890");
+  mmap_lib::str<2> bal("12-Reed-34567890");
+  mmap_lib::str<2> bam("zyxwvutsrqponmlk");
+  std::cout << ". ";
+  mmap_lib::str<3> ban("12-Gorgon-34567890");
+  mmap_lib::str<3> bao("12-drums-34567890");
+  mmap_lib::str<3> bap("12-Johnathan-34567890");
+  mmap_lib::str<3> baq("zyxwvutsrqponmlk");
+  std::cout << ".\n";
+  
   std::cout << "================================ " << std::endl;
   std::cout << "Constructor 1 (size < 14) Tests: " << std::endl;
   std::cout << "================================ " << std::endl;
@@ -507,34 +530,23 @@ void bench_str_cmp() {
 }
 #endif
 
+#if WHITEBOARD
+void whtbrd() {
+  std::cout << "hello\n";
+}
+#endif
+
 
 int main(int argc, char** argv) {
   printf("Hello World!\n");
 
-  mmap_lib::str<1>::clear_map();
-  mmap_lib::str<2>::clear_map();
-  mmap_lib::str<3>::clear_map();
-  mmap_lib::str<1>::clear_vec();
-  mmap_lib::str<2>::clear_vec();
-  mmap_lib::str<3>::clear_vec();
+  //mmap_lib::str<1>::clear_map();
+  //mmap_lib::str<2>::clear_map();
+  //mmap_lib::str<3>::clear_map();
+  //mmap_lib::str<1>::clear_vec();
+  //mmap_lib::str<2>::clear_vec();
+  //mmap_lib::str<3>::clear_vec();
 
-  mmap_lib::str<0> baa("hello");
-  mmap_lib::str<0> bab("12-micro-34567890");
-  mmap_lib::str<0> bac("flower");
-  mmap_lib::str<0> bad("--foobarbazball!");
-  mmap_lib::str<1> bae("microarchitecture");
-  mmap_lib::str<1> baf("12-roach-34567890");
-  mmap_lib::str<1> bag("abcdefghijklmnop");
-  mmap_lib::str<1> bah("--Joker-34567890");
-  mmap_lib::str<1> bai("12-micro-34567890");
-  mmap_lib::str<2> baj("12-Andy-34567890");
-  mmap_lib::str<2> bak("12-Base-34567890");
-  mmap_lib::str<2> bal("12-Reed-34567890");
-  mmap_lib::str<2> bam("zyxwvutsrqponmlk");
-  mmap_lib::str<3> ban("12-Gorgon-34567890");
-  mmap_lib::str<3> bao("12-drums-34567890");
-  mmap_lib::str<3> bap("12-Johnathan-34567890");
-  mmap_lib::str<3> baq("zyxwvutsrqponmlk");
 
 #if CTOR_TESTS
   mmap_pstr_ctor_tests(); 
@@ -565,119 +577,11 @@ int main(int argc, char** argv) {
   bench_str_cmp();
 #endif
 
-  return 0;
-}
-
-
-#if 0
-
-
-
-
-#if WHITEBOARD
-void whtbrd() {
-  {
-    mmap_lib::str tmp;
-    mmap_lib::str::clear_map(); 
-    mmap_lib::str::clear_vector(); 
-    //tmp.clear_vector(); 
-    tmp.append('a');
-    tmp.append('b');
-    tmp.append('c');
-    tmp.append('d');
-    tmp.append('e');
-    tmp.append('f');
-    tmp.append('g');
-    tmp.append('h');
-    tmp.append('i');
-    tmp.append('j');
-    tmp.append('k');
-    tmp.append('l');
-    tmp.append('m');
-    tmp.append('n');
-    tmp.append('o');
-    tmp.append('p');
-    tmp.append('q');
-    tmp.append('r');
-
-    mmap_lib::str tmp2;
-    tmp2.append('1');
-    tmp2.append('2');
-    tmp2.append('3');
-    tmp2.append('4');
-    tmp2.append('5');
-    tmp2.append('6');
-    tmp2.append('7');
-    tmp2.append('8');
-    tmp2.append('9');
-    tmp2.append('0');
-    tmp2.append('9');
-    tmp2.append('8');
-    tmp2.append('7');
-    tmp2.append('6');
-    tmp2.append('5');
-    tmp2.append('4');
-    tmp2.append('3');
-    tmp2.append('2');
-
-    tmp.append('s');
-    tmp.append('t');
-    tmp.append('u');
-    tmp.append('v');
-    tmp.append('x');
-  }
-}
-#endif
-
-
-
-int main(int argc, char** argv) {
-#if BENCH
-  bench_str_cmp();
-  return 0;
-#endif
-
-#if CTOR_TESTS
-  mmap_pstr_ctor_tests();
-#endif
-
-#if NEEQ_TESTS
-  std::cout << "==========================" << std::endl;
-  pstrVchar_eqeq_tests();
-  pstrVchar_noeq_tests();
-  pstrVpstr_eqeq_tests();
-  pstrVpstr_noeq_tests();
-  pstrVcstr_eqeq_tests();
-  pstrVcstr_noeq_tests();
-  pstr_at_operator();
-  pstr_isI();
-  std::cout << "==========================" << std::endl;
-#endif
-
-#if FIND
-  mmap_lib::str one("abhimnopq");
-  mmap_lib::str two("hi");
-  int           result = one.rfind(two);
-  printf("The result is %d \n", result);
-#endif
-
-#if STARTS_WITH_TESTS
-  pstr_starts_with();
-#endif
-
 #if WHITEBOARD
   whtbrd();
 #endif
-  /*
-   mmap_lib::str ts("hello");
-   const char *t2 = "hello";
-   const char (&t3)[6] = "hello";
-   std::string t5 = "hello";
-   std::string_view t4("hello");
 
-   if (test_eq(ts, t5.c_str(), true)) { printf("match\n"); }
-   else { printf("miss\n"); }
-   */
   return 0;
 }
-#endif
+
+
