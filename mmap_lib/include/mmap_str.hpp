@@ -44,7 +44,6 @@ protected:
   constexpr uint32_t   l8(uint32_t size, uint8_t i) const { return i - (size - 10); }
 
 
-  //static mmap_lib::vector<int>                     vec0, vec1, vec2, vec3;
   static mmap_lib::map<std::string_view, uint32_t> m0, m1, m2, m3;
 
 public:
