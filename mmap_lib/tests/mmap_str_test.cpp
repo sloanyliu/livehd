@@ -104,9 +104,13 @@ TEST_F(Mmap_str_test, random_ctor_cmp) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string      c_st = s_get(i), n_st = s_get((i + 1) % RNDN);
     std::string_view c_sv = c_st, n_sv = n_st;
-    mmap_lib::str<1>    c_s1(c_st), n_s1(n_st);
-    mmap_lib::str<1>    c_s2(c_sv), n_s2(n_sv);
-    mmap_lib::str<1>    c_s3(c_st.c_str()), n_s3(n_st.c_str());
+    mmap_lib::str<1>    c_s1(c_st); 
+    mmap_lib::str<2>    n_s1(n_st);
+    mmap_lib::str<3>    c_s2(c_sv);
+    mmap_lib::str<1>    n_s2(n_sv);
+    mmap_lib::str<2>    c_s3(c_st.c_str());
+    mmap_lib::str<3>    n_s3(n_st.c_str());
+    
 
 #if 0
     std::cout << "str curr: " << c_st << std::endl;
@@ -323,9 +327,15 @@ TEST_F(Mmap_str_test, concat_append) {
   for (auto i = 0; i < RNDN; ++i) {
     std::string      one = s_get(i), two = s_get((i + 1) % RNDN);
     std::string_view sv1 = one, sv2 = two;
-    mmap_lib::str<3>    sone(one), stwo(two);
+    mmap_lib::str<1> sone(one); 
+    mmap_lib::str<2> stwo(two);
+    mmap_lib::str<3> sthree(one);
+    mmap_lib::str<1> sfour(two);
+    mmap_lib::str<2> sfive(one);
+    mmap_lib::str<3> ssix(two);
     std::string      three = one + two, three2 = two + one;
-    mmap_lib::str<3>    ref(three), ref2(three2);
+    mmap_lib::str<1> ref(three);
+    mmap_lib::str<2> ref2(three2);
 
 #if 0
     std::cout << one << "   " << two << "   " << three << std::endl;
@@ -354,7 +364,9 @@ TEST_F(Mmap_str_test, concat_append) {
 #endif
 
     sone.append(stwo);
-    //stwo.append(sone);
+    sfour.append(sthree);
+    auto yon = mmap_lib::str<3>::concat(sfive, ssix);
+    auto yok = mmap_lib::str<3>::concat(ssix, sfive);
 
     // mmap_lib::str    test  = mmap_lib::str::concat(sone, stwo);
     // mmap_lib::str    test2 = mmap_lib::str::concat(sv1, stwo);
@@ -374,7 +386,9 @@ TEST_F(Mmap_str_test, concat_append) {
 #endif
 
     EXPECT_EQ(ref, sone);
-    //EXPECT_EQ(ref2, stwo);
+    EXPECT_EQ(ref2, sfour);
+    EXPECT_EQ(ref, yon);
+    EXPECT_EQ(ref2, yok);
     /*
      EXPECT_EQ(ref, test);
      EXPECT_EQ(ref, test2);

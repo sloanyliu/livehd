@@ -569,19 +569,28 @@ public:
 
 
   template<int m_id, int m_id2>
-  static str concat(str<m_id> &a, const str<m_id2> &b) { return a.append(b); }
+  static str concat(str<m_id> &a, const str<m_id2> &b) { 
+    str<map_id> ret(a.to_s() + b.to_s());
+    return  ret;
+  }
 
   template<int m_id>
   static str concat(std::string_view a, const str<m_id> &b) {
-    mmap_lib::str<m_id> temp(a);
+    str<map_id> temp(a);
     return temp.append(b);
   }
 
   template<int m_id>
-  static str concat(str<m_id> &a, std::string_view b) { return a.append(b); }
+  static str concat(str<m_id> &a, std::string_view b) { 
+    str<map_id> temp(a.to_s() + b);  
+    return temp;
+  }
 
   template<int m_id>
-  static str concat(str<m_id> &a, int v) { return a.append(std::to_string(v)); }
+  static str concat(str<m_id> &a, int v) { 
+    str<map_id> temp(a.to_s() + std::to_string(v));
+    return temp;
+  }
 
 
   // used as a tokenizing function
