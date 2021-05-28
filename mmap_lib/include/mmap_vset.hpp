@@ -11,6 +11,106 @@ namespace mmap_lib {
 // data will be the BitMap (various numbers of different bits)
 // end() for now returns the Actual last element, need it to return AFTER last
 
+// one implementation is the easy mmap set
+// the other is the bitmap one, which can be improved and will be
+
+
+#if 0
+template<typename Obj>
+class set {
+  protected:
+    using setMap = typename mmap_lib::map<Obj, bool>;
+    using setIter = typename setMap::iterator;
+    using setCIter = typename setMap::const_iterator;
+    
+    setMap set_data;
+  public:
+    set(std::string_view _name): set_data(_name) {}
+    set(std::string_view _path, std::string_view _name): set_data(_path, _name) {}
+    ~set() { set_data.clear(); }
+
+    void clear() { set_data.clear(); }
+    size_t size() { set_data.size(); }    
+    bool empty() { set_data.empty(); }
+    size_t capacity() { set_data.capacity(); }
+    
+    setIter insert(Obj var) { 
+      return set_data.set(var, 0); 
+    }   
+
+    void erase(Obj var) {
+      if (set_data.find(var) != set_data.end()) {
+        set_data.erase(var);      
+      }
+    }
+
+    void erase(setIter it) { set_data.erase(it); }
+    void erase(setCIter it) { set_data.erase(it); }
+
+    setIter find(Obj var) { return set_data.find(var); }
+    setIter contains(Obj var) { return find(var); }
+
+    class sIter {
+      private:
+        setIter &owner;
+      public:
+        sIter(setIter &tmp) : owner(tmp) {}
+        ~sIter() { ; }
+        sIter &operator++() { 
+          ++owner;
+          return *this; 
+        }
+
+        sIter operator++(int other) { 
+          sIter temp = *this;
+          ++*this;
+          return temp; 
+        } //postfix ++
+
+        sIter &operator--() { 
+          --owner; 
+          return *this;
+        }
+
+        sIter operator--(int other) { 
+          sIter temp = *this;
+          --*this; 
+          return temp;
+        } //postfix --
+
+        bool operator==(sIter other) const {
+          return owner == other.owner;
+        }
+
+        bool operator!=(sIter other) const {
+          return owner != other.owner;
+        }
+
+        // Fix this to make the auto for loop work
+        //Obj operator*() const { return set_data.get_key(owner); }
+    };
+
+    sIter begin() { return sIter(set_data.begin()); }
+    sIter end() { return sIter(set_data.end()); }
+
+    //begin()
+    //end()
+    //rbegin()
+    //rend()
+    //cbegin()
+    //cend()
+    //crbegin()
+    //crend()
+    //max_size()
+    //insert(it, Obj)
+    //iter find(Obj)
+    //iter contains(Obj)
+    //emplace(Obj) --> only insert if unique
+
+};
+
+#else
+
 template <typename Key, typename T>
 class vset {
   // FIXME: info sentinel?
@@ -45,7 +145,7 @@ public:
   size_t num_buckets(size_t ln) { return (ln / (sizeof(T) * 8)); }
   //====
 
-  /* All the bucet_set() functions all returns const_iterator
+  /* All the bucket_set() functions all returns const_iterator
    * These functions set the ENTIRE bitmap at the key inputted
    * If I want to use these, I need to change bits outside of the set()
    */
@@ -492,5 +592,7 @@ public:
 
   [[nodiscard]] vIter contains(const T &&ele) { return vset::find(ele); }
 };
+
+#endif
 
 }  // namespace mmap_lib

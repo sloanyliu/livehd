@@ -510,6 +510,9 @@ void random_vector_set(int max) {
   printf("inserts random %d\n", conta);
 }
 
+
+#if 0
+
 /* Creates a vset from mmap_lib namespace
  */
 void random_mmap_vset(int max, std::string_view name) {
@@ -591,6 +594,8 @@ void random_mmap_vset(int max, std::string_view name) {
   b.sample("traversal dense");
   printf("inserts random %d\n", conta);
 }
+#endif
+
 
 #if 0
 void random_bm_set(int max) {
@@ -711,8 +716,8 @@ int main(int argc, char **argv) {
     }
 
     if (run_random_mmap_vset) {
-      random_mmap_vset(i, "");
-      random_mmap_vset(i, "mmap_map_set.data");
+      //random_mmap_vset(i, "");
+      //random_mmap_vset(i, "mmap_map_set.data");
     }
   }
 

@@ -19,6 +19,15 @@
 #define TD      1
 #define PROBLEM 1
 
+int main(int argc, char** argv) {
+  std::cout << "hello world!\n";
+  return 0;
+}
+
+
+
+#if 0
+
 void random_mmap_set(int max, std::string_view name) {
   Lrand<int>  rng;
   std::string type_test("mmap.map_set");
@@ -414,4 +423,6 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+#endif
+
 #endif
