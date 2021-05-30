@@ -474,81 +474,131 @@ void Inou_firrtl::InitMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl:
  * the Chirrtl later specifies read/write/read-write ports using MemoryPort
  * statement. Some defaults are given */
 void Inou_firrtl::InitCMemory(Lnast& lnast, Lnast_nid& parent_node, const firrtl::FirrtlPB_Statement_CMemory& cmem) {
-  auto cmem_name = lnast.add_string(absl::StrCat("#", cmem.id()));
+  // auto cmem_name = lnast.add_string(cmem.id());
 
-  // Specify __size
-  std::string_view      depth_str;
+  std::string_view      depth_str; // depth in firrtl = size in LiveHD
   firrtl::FirrtlPB_Type type;
   if (cmem.type_case() == firrtl::FirrtlPB_Statement_CMemory::kVectorType) {
     depth_str = lnast.add_string(std::to_string(cmem.vector_type().size()));
-    type      = cmem.vector_type().type();
+    // type      = cmem.vector_type().type();
   } else if (cmem.type_case() == firrtl::FirrtlPB_Statement_CMemory::kTypeAndDepth) {
     depth_str = lnast.add_string(ConvertBigIntToStr(cmem.type_and_depth().depth()));
-    type      = cmem.type_and_depth().data_type();
+    // type      = cmem.type_and_depth().data_type();
   } else {
     I(false);
   }
-  auto temp_var_s = create_tmp_var(lnast);
-  auto idx_dot_s  = lnast.add_child(parent_node, Lnast_node::create_select());
-  lnast.add_child(idx_dot_s, Lnast_node::create_ref(temp_var_s));
-  lnast.add_child(idx_dot_s, Lnast_node::create_ref(cmem_name));
-  lnast.add_child(idx_dot_s, Lnast_node::create_const("__size"));
-  auto idx_asg_s = lnast.add_child(parent_node, Lnast_node::create_assign());
-  lnast.add_child(idx_asg_s, Lnast_node::create_ref(temp_var_s));
-  lnast.add_child(idx_asg_s, Lnast_node::create_const(depth_str));
 
-  // Specify attributes and store into mem_props_map (used by Memory Port statements).
+  // auto bits = get_bit_count(type);
+
+  // Specify attributes 
   bool fwd = false;
   if (cmem.read_under_write() == firrtl::FirrtlPB_Statement_ReadUnderWrite::FirrtlPB_Statement_ReadUnderWrite_NEW) {
     fwd = true;
   }
-  std::string_view rd_lat;
-  if (cmem.sync_read()) {  // FIXME: Make sure this is correct (0 and 1 in right spot)
-    rd_lat = "1";
-  } else {
-    rd_lat = "0";
-  }
-  std::string_view wr_lat = "1";
 
-  mem_props_map[cmem.id()] = {fwd, rd_lat, wr_lat};
+  std::string_view rd_latency;
+  if (cmem.sync_read()) {  // FIXME: Make sure this is correct (0 and 1 in right spot)
+    rd_latency = "1";
+  } else {
+    rd_latency = "0";
+  }
+
+  std::string_view wr_latency = "1";
+
+  auto idx_ta_maddr = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  lnast.add_child(idx_ta_maddr, Lnast_node::create_ref(lnast.add_string(absl::StrCat(cmem.id(), "_addr"))));
+
+  auto idx_ta_mdin = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  lnast.add_child(idx_ta_mdin, Lnast_node::create_ref(lnast.add_string(absl::StrCat(cmem.id(), "_din"))));
+
+  auto idx_ta_mclock = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  lnast.add_child(idx_ta_mclock, Lnast_node::create_ref(lnast.add_string(absl::StrCat(cmem.id(), "_clock"))));
+
+  auto idx_asg_msize = lnast.add_child(parent_node, Lnast_node::create_assign());
+  lnast.add_child(idx_asg_msize, Lnast_node::create_ref(lnast.add_string(absl::StrCat(cmem.id(), "_size"))));
+  lnast.add_child(idx_asg_msize, Lnast_node::create_const(depth_str));
+
+  auto idx_asg_mfwd = lnast.add_child(parent_node, Lnast_node::create_assign());
+  lnast.add_child(idx_asg_mfwd, Lnast_node::create_ref(lnast.add_string(absl::StrCat(cmem.id(), "_fwd"))));
+  lnast.add_child(idx_asg_mfwd, Lnast_node::create_const(lnast.add_string(std::to_string(fwd))));
+
+  auto idx_ta_mlat = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  lnast.add_child(idx_ta_mlat, Lnast_node::create_ref(lnast.add_string(absl::StrCat(cmem.id(), "_latency"))));
+  lnast.add_child(idx_ta_mlat, Lnast_node::create_const(lnast.add_string(rd_latency)));
+  lnast.add_child(idx_ta_mlat, Lnast_node::create_const(lnast.add_string(wr_latency)));
+  
+  mem2port_cnt.insert_or_assign(cmem.id(), 0);
+
+  // auto idx_ta1 = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  // lnast.add_child(idx_ta1, Lnast_node::create_ref(cmem_name));
+  // lnast.add_child(idx_ta1, Lnast_node::create_const("bits"));
+  // lnast.add_child(idx_ta1, Lnast_node::create_const(lnast.add_string(std::to_string(bits))));
+
+
+
+  // auto idx_ta3 = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  // auto tmp_var = create_tmp_var(lnast);
+  // lnast.add_child(idx_ta3, Lnast_node::create_ref(tmp_var));
+  // lnast.add_child(idx_ta3, Lnast_node::create_const(lnast.add_string(rd_latency)));
+  // lnast.add_child(idx_ta3, Lnast_node::create_const(lnast.add_string(wr_latency)));
+
+
+  // auto idx_ta4 = lnast.add_child(parent_node, Lnast_node::create_tuple_add());
+  // lnast.add_child(idx_ta4, Lnast_node::create_ref(cmem_name));
+  // lnast.add_child(idx_ta4, Lnast_node::create_const("latency"));
+  // lnast.add_child(idx_ta4, Lnast_node::create_ref(tmp_var));
+
+
+  // auto temp_var_s = create_tmp_var(lnast);
+  // auto idx_dot_s  = lnast.add_child(parent_node, Lnast_node::create_select());
+  // lnast.add_child(idx_dot_s, Lnast_node::create_ref(temp_var_s));
+  // lnast.add_child(idx_dot_s, Lnast_node::create_ref(cmem_name));
+  // lnast.add_child(idx_dot_s, Lnast_node::create_const("__size"));
+  // auto idx_asg_s = lnast.add_child(parent_node, Lnast_node::create_assign());
+  // lnast.add_child(idx_asg_s, Lnast_node::create_ref(temp_var_s));
+  // lnast.add_child(idx_asg_s, Lnast_node::create_const(depth_str));
+
+
+  // mem_props_map[cmem.id()] = {fwd, rd_lat, wr_lat};
 
   // To save space in LNAST, only specify __bits info for 0th element of CMem.
   /* init_wire_dots(lnast, type, absl::StrCat(cmem_name, "[0]"), parent_node); */
-  init_wire_dots(lnast, type, absl::StrCat(cmem_name, ".0"), parent_node);
+  // init_wire_dots(lnast, type, absl::StrCat(cmem_name, ".0"), parent_node);
 }
 
 /* Because memory and memory ports can be declared inside of
  * a nested-scope but then used outside of that scope, I have
  * to go into any nested scope and pull all of the memory out.
  * NOTE: This is a pre-traversal and looks only for memories. */
-void Inou_firrtl::PreCheckForMem(Lnast& lnast, Lnast_nid& stmt_node, const firrtl::FirrtlPB_Statement& stmt) {
-  switch (stmt.statement_case()) {
-    case firrtl::FirrtlPB_Statement::kMemory: {
-      memory_names.insert(stmt.memory().id());
-      InitMemory(lnast, stmt_node, stmt.memory());
-      break;
-    }
-    case firrtl::FirrtlPB_Statement::kCmemory: {
-      memory_names.insert(stmt.cmemory().id());
-      InitCMemory(lnast, stmt_node, stmt.cmemory());
-      break;
-    }
-    case firrtl::FirrtlPB_Statement::kMemoryPort: {
-      HandleMemPortPre(lnast, stmt_node, stmt.memory_port());
-      break;
-    }
-    case firrtl::FirrtlPB_Statement::kWhen: {
-      for (int i = 0; i < stmt.when().consequent_size(); i++) {
-        PreCheckForMem(lnast, stmt_node, stmt.when().consequent(i));
-      }
-      for (int j = 0; j < stmt.when().otherwise_size(); j++) {
-        PreCheckForMem(lnast, stmt_node, stmt.when().otherwise(j));
-      }
-      break;
-    }
-    default: return;
-  }
-}
+// void Inou_firrtl::PreCheckForMem(Lnast& lnast, const firrtl::FirrtlPB_Statement& stmt, Lnast_nid& stmt_node) {
+//   switch (stmt.statement_case()) {
+//     case firrtl::FirrtlPB_Statement::kMemory: {
+//       memory_names.insert(stmt.memory().id());
+//       InitMemory(lnast, stmt_node, stmt.memory());
+//       break;
+//     }
+//     case firrtl::FirrtlPB_Statement::kCmemory: {
+//       memory_names.insert(stmt.cmemory().id());
+//       fmt::print("DEBUG0 cmemory:{}\n", stmt.cmemory().id());
+//       InitCMemory(lnast, stmt_node, stmt.cmemory());
+//       break;
+//     }
+//     case firrtl::FirrtlPB_Statement::kMemoryPort: {
+//       HandleMemPortPre(lnast, stmt_node, stmt.memory_port());
+//       break;
+//     }
+//     case firrtl::FirrtlPB_Statement::kWhen: {
+//       for (int i = 0; i < stmt.when().consequent_size(); i++) {
+//         PreCheckForMem(lnast, stmt.when().consequent(i), stmt_node);
+//       }
+//       for (int j = 0; j < stmt.when().otherwise_size(); j++) {
+//         PreCheckForMem(lnast, stmt.when().otherwise(j), stmt_node);
+//       }
+//       break;
+//     }
+//     default: return;
+//   }
+// }
 
 /* This is called during the pre-traversal when looking for
  * any memory ports to pull out of nested scopes. What this
@@ -690,10 +740,19 @@ void Inou_firrtl::HandleMemPortPre(Lnast& lnast, Lnast_nid& parent_node, const f
  * NOTE: The reason we couldn't do it at the highest scope is because
  * what is used for addr and/or clk could be variables local to this scope. */
 void Inou_firrtl::HandleMemPort(Lnast& lnast, Lnast_nid& parent_node, const firrtl::FirrtlPB_Statement_MemoryPort& mport) {
-  I(dangling_ports_map.contains(mport.id()));
+  // I(dangling_ports_map.contains(mport.id()));
+
+  fmt::print("DEBUG1 mport.memory_id:{}\n", mport.memory_id());
+  fmt::print("DEBUG1 mport.id:{}\n",        mport.id());
+  auto memory_name = mport.memory_id();
+  auto mport_name  = mport.id();
+  auto mport_dir   = mport.direction();
+  (void) mport_dir;
 
   auto clk_str = lnast.add_string(ReturnExprString(lnast, mport.expression(), parent_node, true));
   auto adr_str = lnast.add_string(ReturnExprString(lnast, mport.memory_index(), parent_node, true));
+
+
   // auto dir_case  = mport.direction();
   // auto mem_props = mem_props_map[mport.memory_id()];
   auto lhs_prefix = absl::StrCat(mport.memory_id(), "_", mport.id(), "_");
@@ -1027,8 +1086,7 @@ void Inou_firrtl::HandleTypeConvOp(Lnast& lnast, const firrtl::FirrtlPB_Expressi
  * NOTE: This return the first child of the last DOT/SELECT node made. */
 
 //FIXME:sh-> rewrite a clean code later
-std::string_view Inou_firrtl::HandleBundVecAcc(Lnast& ln, const firrtl::FirrtlPB_Expression expr, Lnast_nid& parent_node,
-                                               const bool is_rhs) {
+std::string_view Inou_firrtl::HandleBundVecAcc(Lnast& ln, const firrtl::FirrtlPB_Expression expr, Lnast_nid& parent_node, const bool is_rhs) {
   auto flattened_str  = FlattenExpression(ln, parent_node, expr);
   auto alter_full_str = get_full_name(flattened_str, is_rhs);  
 
@@ -1050,6 +1108,11 @@ std::string_view Inou_firrtl::HandleBundVecAcc(Lnast& ln, const firrtl::FirrtlPB
       flattened_str = absl::StrCat("#", flattened_str);
     }
   } else if (memory_names.count(alter_full_str.substr(0, alter_full_str.find(".")))) {
+    // Todo:
+    // (1) at the mport statement, record the mport to a set
+    // (2) here check if the first hier-name is a mport declared before
+    // (3) check WR/RD based on is_rhs 
+    // (4) hanlde MPORT usage based on wr/rd 
     // We found an access to some memory port.
     auto per1       = alter_full_str.find(".");
     auto per2       = alter_full_str.find(".", per1 + 1);
@@ -1298,24 +1361,10 @@ void Inou_firrtl::ListPortInfo(Lnast& lnast, const firrtl::FirrtlPB_Port& port, 
     std::string full_port_name;
     if (port_dir == firrtl::FirrtlPB_Port_Direction::FirrtlPB_Port_Direction_PORT_DIRECTION_IN) {
       input_names.insert(port_name);
-      /* if (port_name.find_first_of("[.") != std::string::npos) { */
-      // if (port_name.find(".") != std::string::npos) {
-      //   full_port_name = absl::StrCat("$inp_", port_name);
-      // } else {
-      //   full_port_name = absl::StrCat("$", port_name);
-      // }
       full_port_name = absl::StrCat("$", port_name);
     } else if (port_dir == firrtl::FirrtlPB_Port_Direction::FirrtlPB_Port_Direction_PORT_DIRECTION_OUT) {
       output_names.insert(port_name);
-      /* if (port_name.find_first_of("[.") != std::string::npos) { */
-      // if (port_name.find(".") != std::string::npos) {
-      //   full_port_name = absl::StrCat("%out_", port_name);
-      // } else {
-      //   full_port_name = absl::StrCat("%", port_name);
-      // }
       full_port_name = absl::StrCat("%", port_name);
-      // note: create output bits attr_set at the end of lnast to avoid firrtl_bits interference problem
-      output_name2port_info.insert_or_assign(full_port_name, std::make_tuple(parent_node, port_sign, port_bits));
     } else {
       Pass::error("Found IO port {} specified with unknown direction in Protobuf message.", port_name);
     }
@@ -1774,7 +1823,13 @@ void Inou_firrtl::ListStatementInfo(Lnast& lnast, const firrtl::FirrtlPB_Stateme
       break;
     }
     case firrtl::FirrtlPB_Statement::kCmemory: {  // CMemory
-      // Handled in pre-traversal (PreCheckForMem)
+      memory_names.insert(stmt.cmemory().id());
+      fmt::print("DEBUG0 cmemory:{}\n", stmt.cmemory().id());
+      InitCMemory(lnast, parent_node, stmt.cmemory());
+      break;
+    }
+    case firrtl::FirrtlPB_Statement::kMemoryPort: {  // MemoryPort
+      HandleMemPort(lnast, parent_node, stmt.memory_port());
       break;
     }
     case firrtl::FirrtlPB_Statement::kInstance: {  // Instance -- creating an instance of a module inside another
@@ -1886,10 +1941,6 @@ void Inou_firrtl::ListStatementInfo(Lnast& lnast, const firrtl::FirrtlPB_Stateme
       // Nothing to do.
       break;
     }
-    case firrtl::FirrtlPB_Statement::kMemoryPort: {  // MemoryPort
-      HandleMemPort(lnast, parent_node, stmt.memory_port());
-      break;
-    }
     case firrtl::FirrtlPB_Statement::kAttach: {  // Attach
       Pass::error("Attach statement not yet supported due to bidirectionality.");
       I(false);
@@ -1999,30 +2050,14 @@ void Inou_firrtl::ListUserModuleInfo(Eprp_var& var, const firrtl::FirrtlPB_Modul
   // Iterate over statements of the module.
   for (int j = 0; j < user_module.statement_size(); j++) {
     const firrtl::FirrtlPB_Statement& stmt = user_module.statement(j);
-    PreCheckForMem(*lnast, idx_stmts, stmt);
+    // PreCheckForMem(*lnast, stmt, idx_stmts);
     ListStatementInfo(*lnast, stmt, idx_stmts);
   }
 
-  // deprecated the reset insertion for the highest proority. 
-  // RegResetInitialization(*lnast, idx_stmts);
-
-  PerformLateMemAssigns(*lnast, idx_stmts);
+  // PerformLateMemAssigns(*lnast, idx_stmts);
   var.add(std::move(lnast));
 }
 
-// insert the reset initialization logic, which should be the highest priority and insert in the end
-// void Inou_firrtl::RegResetInitialization(Lnast& lnast, Lnast_nid& idx_stmts) {
-//   for (auto const& [reg_name, expr_pair] : reg_name2rst_init_expr) {
-//     auto resete = expr_pair.first;
-//     auto inite  = expr_pair.second;
-//     /* auto init_expr_str = lnast->add_string(ReturnExprString(*lnast, inite, idx_stmts, true)); */
-//     auto reset_expr_str = lnast.add_string(ReturnExprString(lnast, resete, idx_stmts, true));
-//     auto idx_mux_if     = lnast.add_child(idx_stmts, Lnast_node::create_if());
-//     lnast.add_child(idx_mux_if, Lnast_node::create_ref(reset_expr_str));  // from the firrtl spec, it's always reset high
-//     auto idx_stmt_tr = lnast.add_child(idx_mux_if, Lnast_node::create_stmts());
-//     InitialExprAdd(lnast, inite, idx_stmt_tr, reg_name);
-//   }
-// }
 
 void Inou_firrtl::ListModuleInfo(Eprp_var& var, const firrtl::FirrtlPB_Module& module, const std::string& file_name) {
   if (module.has_external_module()) {
@@ -2072,7 +2107,6 @@ Sub_node Inou_firrtl::AddModToLibrary(Eprp_var& var, const std::string& mod_name
 
   auto* library = Graph_library::instance(fpath);
   auto& sub     = library->reset_sub(mod_name, file_name);
-  // FIXME->sh: also add %/$ ?
   return sub;
 }
 
@@ -2219,7 +2253,7 @@ std::string Inou_firrtl::ConvertBigIntToStr(const firrtl::FirrtlPB_BigInt& bigin
     }
     bigint_val = absl::StrCat(bigint_val, bit_str);
   }
-  return absl::StrCat("0b", bigint_val, "s", bigint.value().length() * 8, "bits");
+  return absl::StrCat("0b", bigint_val);
 }
 
 void Inou_firrtl::IterateModules(Eprp_var& var, const firrtl::FirrtlPB_Circuit& circuit, const std::string& file_name) {
@@ -2246,7 +2280,6 @@ void Inou_firrtl::IterateModules(Eprp_var& var, const firrtl::FirrtlPB_Circuit& 
     dangling_ports_map.clear();
     late_assign_ports.clear();
     reg_name2rst_init_expr.clear();
-    output_name2port_info.clear();
 
     ListModuleInfo(var, circuit.module(i), file_name);
   }

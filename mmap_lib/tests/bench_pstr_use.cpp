@@ -468,7 +468,7 @@ void pstr_starts_with() {
 #endif
 
 #if BENCH
-#define STR_SIZE 1e5
+#define STR_SIZE 1e4
 void bench_str_cmp() {
   {
     Lbench b("bench_str_cmp");
