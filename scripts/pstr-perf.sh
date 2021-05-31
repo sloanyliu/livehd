@@ -4,15 +4,8 @@
 CXX=clang++ CC=clang bazel build -c opt //mmap_lib:all
 ./bazel-bin/mmap_lib/bench_pstr_use
 
-#for i in {1..10}
-#do
-#  echo "Test Number $i" >>strout
-#  for k in {2..50}
-#  do
-#    ./bazel-bin/mmap_lib/bench_pstr_use $k >>strout
-#  done
-#done
-
+# Make sure only DATACOLLECT is defined in bench_pstr_use first 
+#./bazel-bin/mmap_lib/bench_pstr_use 50 20
 
 exit 2
 

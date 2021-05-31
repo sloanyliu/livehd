@@ -13,9 +13,9 @@
 #define NEEQ_TESTS        0
 #define AT_ISI            0
 #define STARTS_WITH       0
-#define BENCH             0
+#define BENCH             1
 #define WHITEBOARD        0
-#define DATACOLLECT       1
+#define DATACOLLECT       0
 
 
 #if CTOR_TESTS
@@ -548,30 +548,34 @@ std::pair<int, int> bench_str_cmp(uint8_t l=20) {
  * compile average of all contas 
  *
  */
-#define TS 50
-  void data() {
-    int pstr_contas[TS-1];
-    int str_contas[TS-1];
+#define CONTA 0
+  void data(int ts=10, int tr=5) {
+#if CONTA
+    int pstr_contas[ts-1];
+    int str_contas[ts-1];
+#endif
     std::pair<int, int> hold(0,0);
-    for (int i = 0; i < 20; ++i) {
-      fmt::print("Test Num: {}\n", i+1);
-      for (int j = 2; j < TS+1; ++j) {
+    fmt::print("Tests: ");
+    for (int i = 0; i < tr; ++i) {
+      fmt::print("{} ", i+1);
+      for (int j = 2; j < ts+1; ++j) {
         hold = bench_str_cmp(static_cast<uint8_t>(j));
+#if CONTA
         if (i == 0) {
           pstr_contas[j-2] = hold.first;
           str_contas[j-2] = hold.second;
         }
         pstr_contas[j-2] += hold.first;
         str_contas[j-2] += hold.second;
-        if (i == 19) {
-          pstr_contas[j-2] /= 20;
-          str_contas[j-2] /= 20;
+        if (i == tr-1) {
+          pstr_contas[j-2] /= tr;
+          str_contas[j-2] /= tr;
           fmt::print("contas for max size: {} => ", j);
           fmt::print("pstr: {}, std: {}\n", pstr_contas[j-2], str_contas[j-2]);
         }
+#endif
       }
     }
-
   }
 #endif
 
@@ -616,7 +620,7 @@ int main(int argc, char** argv) {
 #endif
 
 #if BENCH
-  std::pair<int, int> yoy = bench_str_cmp();
+  std::pair<int, int> yoy = bench_str_cmp(2);
 #endif
 
 #if WHITEBOARD
@@ -624,7 +628,13 @@ int main(int argc, char** argv) {
 #endif
 
 #if DATACOLLECT
-  data();
+  if (argc == 1) {
+    data();
+  } else if (argc == 2) {
+    data(std::stoi(argv[1]));
+  } else if (argc == 3) {
+    data(std::stoi(argv[1]),std::stoi(argv[2]));
+  }
 #endif
   return 0;
 }
