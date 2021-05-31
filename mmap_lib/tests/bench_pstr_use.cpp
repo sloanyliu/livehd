@@ -13,8 +13,10 @@
 #define NEEQ_TESTS        0
 #define AT_ISI            0
 #define STARTS_WITH       0
-#define BENCH             1
+#define BENCH             0
 #define WHITEBOARD        0
+#define DATACOLLECT       1
+
 
 #if CTOR_TESTS
 template<int m_id>
@@ -467,19 +469,21 @@ void pstr_starts_with() {
 }
 #endif
 
-#if BENCH
+#if defined BENCH || defined DATA_COLLECT
 #define STR_SIZE 1e4
-void bench_str_cmp() {
+#define MAP_NUM  3
+std::pair<int, int> bench_str_cmp(uint8_t l=20) {
+  std::pair<int, int> ret(0,0);
   {
     Lbench b("bench_str_cmp");
 
     Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(1, 30);
+    Lrand_range<uint16_t> sz(1, l);
 
-    std::vector<mmap_lib::str<2>> v;
+    std::vector<mmap_lib::str<MAP_NUM>> v;
     for (auto i = 0u; i < STR_SIZE; ++i) {
       auto          s = sz.any();
-      mmap_lib::str<2> tmp;
+      mmap_lib::str<MAP_NUM> tmp;
       for (auto j = 0; j < s; ++j) {
         tmp.append(ch.any());
       }
@@ -493,16 +497,20 @@ void bench_str_cmp() {
           conta++;
       }
     }
-
+    
+#if BENCH
     fmt::print("bench_str_cmp conta:{}\n", conta);
-    mmap_lib::str<2>::clear_map();
+#else
+    ret.first = conta;
+#endif
+    mmap_lib::str<MAP_NUM>::clear_map();
   }
 
   {
     Lbench b("bench_string_cmp");
 
     Lrand_range<char>     ch(33, 126);
-    Lrand_range<uint16_t> sz(1, 30);
+    Lrand_range<uint16_t> sz(1, l);
 
     std::vector<std::string> v;
     for (auto i = 0u; i < STR_SIZE; ++i) {
@@ -521,11 +529,52 @@ void bench_str_cmp() {
           conta++;
       }
     }
-
+#if BENCH
     fmt::print("bench_string_cmp conta:{}\n", conta);
+#else
+    ret.second = conta;
+#endif
   }
+  return ret;
+
 }
 #endif
+
+
+#if DATACOLLECT
+
+/* 20 Trial runs
+ * Each trial run will run through lengths 2 to 60
+ * compile average of all contas 
+ *
+ */
+#define TS 50
+  void data() {
+    int pstr_contas[TS-1];
+    int str_contas[TS-1];
+    std::pair<int, int> hold(0,0);
+    for (int i = 0; i < 20; ++i) {
+      fmt::print("Test Num: {}\n", i+1);
+      for (int j = 2; j < TS+1; ++j) {
+        hold = bench_str_cmp(static_cast<uint8_t>(j));
+        if (i == 0) {
+          pstr_contas[j-2] = hold.first;
+          str_contas[j-2] = hold.second;
+        }
+        pstr_contas[j-2] += hold.first;
+        str_contas[j-2] += hold.second;
+        if (i == 19) {
+          pstr_contas[j-2] /= 20;
+          str_contas[j-2] /= 20;
+          fmt::print("contas for max size: {} => ", j);
+          fmt::print("pstr: {}, std: {}\n", pstr_contas[j-2], str_contas[j-2]);
+        }
+      }
+    }
+
+  }
+#endif
+
 
 #if WHITEBOARD
 void whtbrd() {
@@ -567,13 +616,16 @@ int main(int argc, char** argv) {
 #endif
 
 #if BENCH
-  bench_str_cmp();
+  std::pair<int, int> yoy = bench_str_cmp();
 #endif
 
 #if WHITEBOARD
   whtbrd();
 #endif
 
+#if DATACOLLECT
+  data();
+#endif
   return 0;
 }
 

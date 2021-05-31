@@ -1,0 +1,36 @@
+Test Number 2
+Hello World!
+bench_str_cmp conta:1085712
+bench_string_cmp conta:1083304
+Test Number 3
+Hello World!
+bench_str_cmp conta:280334
+bench_string_cmp conta:280562
+Test Number 4
+Hello World!
+bench_str_cmp conta:131404
+bench_string_cmp conta:125890
+Test Number 5
+Hello World!
+bench_str_cmp conta:78318
+bench_string_cmp conta:78004
+Test Number 6
+Hello World!
+bench_str_cmp conta:53420
+bench_string_cmp conta:54870
+Test Number 7
+Hello World!
+bench_str_cmp conta:40370
+bench_string_cmp conta:41014
+Test Number 8
+Hello World!
+bench_str_cmp conta:32302
+bench_string_cmp conta:33096
+Test Number 9
+Hello World!
+bench_str_cmp conta:26586
+bench_string_cmp conta:26962
+Test Number 10
+Hello World!
+bench_str_cmp conta:23428
+bench_string_cmp conta:23934
