@@ -13,9 +13,9 @@
 #define NEEQ_TESTS        0
 #define AT_ISI            0
 #define STARTS_WITH       0
-#define BENCH             1
 #define WHITEBOARD        0
-#define DATACOLLECT       0
+#define DATACOLLECT_CMP   0
+#define DATACOLLECT_SUB   1
 
 
 #if CTOR_TESTS
@@ -469,7 +469,8 @@ void pstr_starts_with() {
 }
 #endif
 
-#if defined BENCH || defined DATA_COLLECT
+
+#if DATACOLLECT_CMP
 #define STR_SIZE 1e4
 #define MAP_NUM  3
 std::pair<int, int> bench_str_cmp(uint8_t l=20) {
@@ -498,11 +499,7 @@ std::pair<int, int> bench_str_cmp(uint8_t l=20) {
       }
     }
     
-#if BENCH
-    fmt::print("bench_str_cmp conta:{}\n", conta);
-#else
     ret.first = conta;
-#endif
     mmap_lib::str<MAP_NUM>::clear_map();
   }
 
@@ -529,11 +526,7 @@ std::pair<int, int> bench_str_cmp(uint8_t l=20) {
           conta++;
       }
     }
-#if BENCH
-    fmt::print("bench_string_cmp conta:{}\n", conta);
-#else
     ret.second = conta;
-#endif
   }
   return ret;
 
@@ -541,43 +534,99 @@ std::pair<int, int> bench_str_cmp(uint8_t l=20) {
 #endif
 
 
-#if DATACOLLECT
+#if DATACOLLECT_SUB
+#define STR_SIZE 1e4
+#define MAP_NUM  3
+std::pair<int, int> bench_str_sub(uint8_t l=20) {
+  std::pair<int, int> ret(0,0);
+  {
+    Lbench b("bench_str_sub");
 
+    Lrand_range<char>     ch(33, 126);
+    Lrand_range<uint16_t> sz(1, l);
+
+    std::vector<mmap_lib::str<MAP_NUM>> v;
+    for (auto i = 0u; i < STR_SIZE; ++i) {
+      auto          s = sz.any();
+      mmap_lib::str<MAP_NUM> tmp;
+      for (auto j = 0; j < s; ++j) {
+        tmp.append(ch.any());
+      }
+      v.emplace_back(tmp);
+    }
+
+    int conta = 0;
+    for (auto i = 0u; i < STR_SIZE; ++i) {
+      if (v[i].size() > 2) { 
+        mmap_lib::str<MAP_NUM> foo = v[i].substr(0,2);
+        conta++;
+      }
+    }
+    
+    ret.first = conta;
+    mmap_lib::str<MAP_NUM>::clear_map();
+  }
+
+  {
+    Lbench b("bench_string_sub");
+
+    Lrand_range<char>     ch(33, 126);
+    Lrand_range<uint16_t> sz(1, l);
+
+    std::vector<std::string> v;
+    for (auto i = 0u; i < STR_SIZE; ++i) {
+      auto        s = sz.any();
+      std::string str;
+      for (auto j = 0; j < s; ++j) {
+        str.append(1, ch.any());
+      }
+      v.emplace_back(str);
+    }
+
+    int conta = 0;
+    for (auto i = 0u; i < STR_SIZE; ++i) {
+      if (v[i].size() > 2) { 
+        std::string foo = v[i].substr(0,2);
+        conta++;
+      }
+    }
+    ret.second = conta;
+  }
+  return ret;
+
+}
+#endif
+
+#if DATACOLLECT_CMP
 /* 20 Trial runs
- * Each trial run will run through lengths 2 to 60
- * compile average of all contas 
- *
+ * Each trial run will run through lengths 2 to 50
+ * compile average of all contas with CONTA
  */
-#define CONTA 0
   void data(int ts=10, int tr=5) {
-#if CONTA
-    int pstr_contas[ts-1];
-    int str_contas[ts-1];
-#endif
-    std::pair<int, int> hold(0,0);
-    fmt::print("Tests: ");
     for (int i = 0; i < tr; ++i) {
-      fmt::print("{} ", i+1);
+      fmt::print("Run {} \n", i+1);
       for (int j = 2; j < ts+1; ++j) {
-        hold = bench_str_cmp(static_cast<uint8_t>(j));
-#if CONTA
-        if (i == 0) {
-          pstr_contas[j-2] = hold.first;
-          str_contas[j-2] = hold.second;
-        }
-        pstr_contas[j-2] += hold.first;
-        str_contas[j-2] += hold.second;
-        if (i == tr-1) {
-          pstr_contas[j-2] /= tr;
-          str_contas[j-2] /= tr;
-          fmt::print("contas for max size: {} => ", j);
-          fmt::print("pstr: {}, std: {}\n", pstr_contas[j-2], str_contas[j-2]);
-        }
-#endif
+        bench_str_cmp(static_cast<uint8_t>(j));
       }
     }
   }
 #endif
+
+#if DATACOLLECT_SUB
+/* 20 Trial runs
+ * Each trial run will run through lengths 5 to 50
+ * compile average of all contas with CONTA
+ */
+  void data2(int ts=10, int tr=5) {
+    for (int i = 0; i < tr; ++i) {
+      fmt::print("Run {} \n", i+1);
+      for (int j = 5; j < ts+1; ++j) {
+        bench_str_sub(static_cast<uint8_t>(j));
+      }
+    }
+  }
+#endif
+
 
 
 #if WHITEBOARD
@@ -619,23 +668,30 @@ int main(int argc, char** argv) {
   pstr_starts_with();
 #endif
 
-#if BENCH
-  std::pair<int, int> yoy = bench_str_cmp(2);
-#endif
-
 #if WHITEBOARD
   whtbrd();
 #endif
 
-#if DATACOLLECT
   if (argc == 1) {
+#if DATACOLLECT_CMP
     data();
-  } else if (argc == 2) {
-    data(std::stoi(argv[1]));
-  } else if (argc == 3) {
-    data(std::stoi(argv[1]),std::stoi(argv[2]));
-  }
+#elif DATACOLLECT_SUB
+    data2();
 #endif
+  } else if (argc == 2) {
+#if DATACOLLECT_CMP
+    data(std::stoi(argv[1]));
+#elif DATACOLLECT_SUB
+    data2(std::stoi(argv[1]));
+#endif
+  } else if (argc == 3) {
+#if DATACOLLECT_CMP
+    data(std::stoi(argv[1]),std::stoi(argv[2]));
+#elif DATACOLLECT_SUB
+    data2(std::stoi(argv[1]),std::stoi(argv[2]));
+#endif
+  }
+  
   return 0;
 }
 
