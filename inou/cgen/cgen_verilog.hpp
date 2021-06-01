@@ -19,6 +19,7 @@ private:
 
   inline static absl::flat_hash_set< std::string>       reserved_keyword;
 
+  static std::string get_wire_or_const(const Node_pin &dpin);
   static std::string get_scaped_name(std::string_view wire_name);
   static std::string get_scaped_name(const std::string &name) {
     std::string_view name_sv{name};
@@ -36,6 +37,7 @@ private:
   void process_simple_node(std::string &buffer, Node &node);
 
   void create_module_io(std::string &buffer, Lgraph *lg);
+  void create_memories(std::string &buffer, Lgraph *lg);
   void create_subs(std::string &buffer, Lgraph *lg);
   void create_combinational(std::string &buffer, Lgraph *lg);
   void create_outputs(std::string &buffer, Lgraph *lg);
