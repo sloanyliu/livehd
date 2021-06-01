@@ -14,8 +14,8 @@
 #define AT_ISI            0
 #define STARTS_WITH       0
 #define WHITEBOARD        0
-#define DATACOLLECT_CMP   0
-#define DATACOLLECT_SUB   1
+#define DATACOLLECT_CMP   1
+#define DATACOLLECT_SUB   0
 
 
 #if CTOR_TESTS
@@ -672,26 +672,26 @@ int main(int argc, char** argv) {
   whtbrd();
 #endif
 
+#if DATACOLLECT_CMP
   if (argc == 1) {
-#if DATACOLLECT_CMP
     data();
-#elif DATACOLLECT_SUB
-    data2();
-#endif
   } else if (argc == 2) {
-#if DATACOLLECT_CMP
     data(std::stoi(argv[1]));
-#elif DATACOLLECT_SUB
-    data2(std::stoi(argv[1]));
-#endif
   } else if (argc == 3) {
-#if DATACOLLECT_CMP
     data(std::stoi(argv[1]),std::stoi(argv[2]));
-#elif DATACOLLECT_SUB
-    data2(std::stoi(argv[1]),std::stoi(argv[2]));
-#endif
   }
-  
+#endif
+
+#if DATACOLLECT_SUB
+  if (argc == 1) {
+    data2();
+  } else if (argc == 2) {
+    data2(std::stoi(argv[1]));
+  } else if (argc == 3) {
+    data2(std::stoi(argv[1]),std::stoi(argv[2]));
+  }
+#endif
+
   return 0;
 }
 
