@@ -14,8 +14,8 @@
 #define AT_ISI            0
 #define STARTS_WITH       0
 #define WHITEBOARD        0
-#define DATACOLLECT_CMP   1
-#define DATACOLLECT_SUB   0
+#define DATACOLLECT_CMP   0
+#define DATACOLLECT_SUB   1
 
 
 #if CTOR_TESTS
@@ -558,7 +558,7 @@ std::pair<int, int> bench_str_sub(uint8_t l=20) {
     int conta = 0;
     for (auto i = 0u; i < STR_SIZE; ++i) {
       if (v[i].size() > 2) { 
-        mmap_lib::str<MAP_NUM> foo = v[i].substr(0,2);
+        //mmap_lib::str<MAP_NUM> foo = v[i].substr(0,2);
         conta++;
       }
     }
@@ -586,7 +586,7 @@ std::pair<int, int> bench_str_sub(uint8_t l=20) {
     int conta = 0;
     for (auto i = 0u; i < STR_SIZE; ++i) {
       if (v[i].size() > 2) { 
-        std::string foo = v[i].substr(0,2);
+        //std::string foo = v[i].substr(0,2);
         conta++;
       }
     }

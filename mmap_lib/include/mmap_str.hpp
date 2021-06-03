@@ -220,7 +220,6 @@ public:
 #pragma GCC diagnostic pop
       return a[0] == b[0] && a[1] == b[1];  // 16byte compare
     } else {
-      //FIXME: cross template compare
       // compare first 2
       for (uint8_t i = 0; i < 10; ++i) {
         if (e[i] != rhs.get_e(i)) {
@@ -679,18 +678,39 @@ public:
 
   // str created from this function will be same template as original str
   str substr(size_t start) const { return substr(start, _size - start); }
-
-  str substr(size_t start, size_t end) const {
-    if (_size == 0 || start > static_cast<size_t>(_size - 1)) {
+  
+  str substr(size_t start, size_t step) const {
+    if (_size == 0 || start > static_cast<size_t>(_size - 1) || step == 0) {
       return mmap_lib::str<map_id>();
     }
-    std::string hold;
-    size_t      adj_end = (end > (_size - start)) ? (_size - start) : end;  // adjusting end for overflow
-    for (auto i = start; i < (start + adj_end); ++i) {
-      hold += (*this)[i];
+
+    size_t adj_step = (step > (_size - start)) ? (_size - start) : step; // djusting end
+    char hold[adj_step+1];
+    hold[adj_step] = '\0';
+    
+    if (_size <= 13 || adj_step == 1) { //SHORT, or single access
+      for (size_t i = start; i < (start + adj_step); ++i) {
+        hold[i - start] = (*this)[i];
+      }
+    } else if (_size > 13 && adj_step > 1) { //LONG and multi access
+      if (start < 2 && (adj_step + start) <= 2) { // only want first 2
+        hold[0] = e[0];
+        hold[1] = e[1];
+      } else if (start >= 2 && start < _size-8 && (adj_step+start) <= _size-8) { // only want middle
+        return mmap_lib::str<map_id>(map_cref().get_sview(ptr_or_start).substr(start-2, adj_step));
+      } else if (start >= _size - 8 && (adj_step + start) <= _size) { // only want last 8
+        for (size_t k = 0; k + start < (adj_step + start); ++k) {
+          hold[k] = e[l8(_size, k + start)];
+        }
+      } else {
+        for (size_t i = start, j = 0; i < (start + adj_step); ++i, ++j) {
+          hold[j] = (*this)[i];
+        }
+      }
     }
     return mmap_lib::str<map_id>(hold);
   }
+#endif
 
 };
 

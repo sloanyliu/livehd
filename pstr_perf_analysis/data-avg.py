@@ -3,20 +3,20 @@ import csv
 time_data_list = []
 ipc_data_list = []
 
-start = 2
+start = 5
 end = 50
 tests_per_run = end - start + 1 
 number_of_runs = 20
-filename = 'pstr-data2.trace'
-time_csv = 'time_plot_data2.csv'
-ipc_csv = 'ipc_plot_data2.csv'
+filename = 'pstr_perf_analysis/pstr-data2.trace'
+time_csv = 'pstr_perf_analysis/time_plot_data2.csv'
+ipc_csv = 'pstr_perf_analysis/ipc_plot_data2.csv'
 
 with open(filename, 'r') as file:
     for x in range(0,number_of_runs):
         for i in range(0,tests_per_run):                       # iterate through number of tests
             for j in range(0,2):                               # first is pstr, then std
                 line = file.readline()                         # save the line
-                if (line[0] == '<'):                           # skipping delimiter lines
+                if (line[0] == '<' or len(line) == 0 or len(line) == 1):  # skipping delimiter lines
                     line = file.readline()
                 time_indx = line.find("secs")                  # find where secs starts
                 ipc_indx = line.find("IPC")                    # find where IPC starts
@@ -48,7 +48,6 @@ with open(filename, 'r') as file:
 
 time_data_list.insert(0,["Max Length", "mmap_lib::str", "std::string"])
 ipc_data_list.insert(0,["Max Length", "mmap_lib::str", "std::string"])
-
 
 with open(time_csv, 'w', newline='') as file1:
     writer1 = csv.writer(file1)

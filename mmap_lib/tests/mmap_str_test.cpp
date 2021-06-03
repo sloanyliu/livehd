@@ -17,7 +17,7 @@
 #define MinNum 1
 
 // Set RUN to 1 when you want to run the tests
-#define RUN 0
+#define RUN 1
 
 
 /* ---------TEST FIXTURES---------
