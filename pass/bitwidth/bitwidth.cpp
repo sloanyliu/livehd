@@ -923,6 +923,7 @@ void Bitwidth::process_attr_set_dp_assign(Node &node_dp) {
   auto dpin_rhs = node_dp.get_sink_pin("value").get_driver_pin();
 
   auto it = flat_bwmap.find(dpin_lhs.get_compact_flat());
+
   if (it == flat_bwmap.end()) {
 #ifndef NDEBUG
     fmt::print("BW-> LHS isn't ready, wait for next iteration\n");
@@ -1003,6 +1004,7 @@ void Bitwidth::process_attr_set_new_attr(Node &node_attr, Fwd_edge_iterator::Fwd
 
       if (parent_pending)
         bw.set_ubits_range(val.to_i());
+
       insert_tposs_nodes(node_attr, val.to_i(), fwd_it);
     } else {  // Attr::Set_sbits
       if (bw.get_sbits() > (val.to_i()))
@@ -1066,6 +1068,17 @@ void Bitwidth::insert_tposs_nodes(Node &node_attr_hier, Bits_t ubits, Fwd_edge_i
       ntposs = node_attr.get_class_lgraph()->create_node(Ntype_op::Get_mask);
       ntposs.setup_sink_pin("mask").connect_driver(node_attr.create_const(mask));
       ntposs.setup_sink_pin("a").connect_driver(name_dpin);
+
+      auto sink_node = e.sink.get_node();
+      if (sink_node.get_type_op() == Ntype_op::AttrSet) {
+        auto dpin_key = sink_node.get_sink_pin("field").get_driver_pin();
+        auto key      = dpin_key.get_type_const().to_string();
+        auto attr     = get_key_attr(key);
+        if (attr == Attr::Set_dp_assign) {
+          auto range_const   = (Lconst(1UL) << Lconst(ubits)) - 1;
+          flat_bwmap.insert_or_assign(ntposs.setup_driver_pin().get_compact_flat(), Bitwidth_range(Lconst(0), range_const));
+        }
+      }
     }
 
     ntposs.setup_driver_pin().connect_sink(e.sink);
@@ -1473,3 +1486,4 @@ void Bitwidth::set_subgraph_boundary_bw(Node &node) {
     adjust_bw(top_dpin, bw);
   });
 }
+

@@ -25,7 +25,7 @@ if [ $# -eq 0 ]; then
   # FIRRTL_LEVEL='lo'
   FIRRTL_LEVEL='hi'
 
-  pts='VecShiftRegisterSimple VecShiftRegisterParam VecShiftRegister Cell_alone
+  pts='Test2 VecShiftRegisterSimple VecShiftRegisterParam VecShiftRegister Cell_alone
   Accumulator Coverage LFSR16 TrivialAdd VendingMachineSwitch
   VendingMachine Trivial Tail TrivialArith NotAnd Shifts Darken HiLoMultiplier
   AddNot GCD_3bits Test3 Register RegisterSimple Parity ResetShiftRegister
@@ -40,8 +40,8 @@ if [ $# -eq 0 ]; then
   # issue2: io_state_0 index _0 missing
   # pts='Life'                  
 
-  # issue3: wire vector initialize
-  # pts='Test2'
+  # issue3: memory
+  # pts='Router SmemStruct MaskedSmemStruct'
 
 else
   file=$(basename $1)
