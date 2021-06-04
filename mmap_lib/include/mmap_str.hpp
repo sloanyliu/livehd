@@ -710,7 +710,6 @@ public:
     }
     return mmap_lib::str<map_id>(hold);
   }
-#endif
 
 };
 
