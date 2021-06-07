@@ -684,26 +684,27 @@ public:
       return mmap_lib::str<map_id>();
     }
 
-    size_t adj_step = (step > (_size - start)) ? (_size - start) : step; // djusting end
-    char hold[adj_step+1];
-    hold[adj_step] = '\0';
+    size_t as = (step > (_size - start)) ? (_size - start) : step; // adjusting end
+    size_t sm8 = static_cast<size_t>(_size - 8);
+    char hold[as+1];
+    hold[as] = '\0';
     
-    if (_size <= 13 || adj_step == 1) { //SHORT, or single access
-      for (size_t i = start; i < (start + adj_step); ++i) {
+    if (_size <= 13 || as == 1) { //SHORT, or single access
+      for (size_t i = start; i < (start + as); ++i) {
         hold[i - start] = (*this)[i];
-      }
-    } else if (_size > 13 && adj_step > 1) { //LONG and multi access
-      if (start < 2 && (adj_step + start) <= 2) { // only want first 2
+      }  
+    } else if (_size > 13 && as > 1) { //LONG and multi access
+      if (start < 2 && (as + start) <= 2) { // only want first 2
         hold[0] = e[0];
         hold[1] = e[1];
-      } else if (start >= 2 && start < _size-8 && (adj_step+start) <= _size-8) { // only want middle
-        return mmap_lib::str<map_id>(map_cref().get_sview(ptr_or_start).substr(start-2, adj_step));
-      } else if (start >= _size - 8 && (adj_step + start) <= _size) { // only want last 8
-        for (size_t k = 0; k + start < (adj_step + start); ++k) {
+      } else if (start >= 2 && start < sm8 && as+start <= sm8) { //middle
+        return mmap_lib::str<map_id>(map_cref().get_sview(ptr_or_start).substr(start-2, as));
+      } else if (start >= sm8 && as + start <= _size) { // last 8
+        for (size_t k = 0; k + start < (start + as); ++k) {
           hold[k] = e[l8(_size, k + start)];
         }
       } else {
-        for (size_t i = start, j = 0; i < (start + adj_step); ++i, ++j) {
+        for (size_t i = start, j = 0; i < (start + as); ++i, ++j) {
           hold[j] = (*this)[i];
         }
       }
