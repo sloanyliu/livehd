@@ -33,7 +33,6 @@ if [ $# -eq 0 ]; then
   Decrementer Counter RegXor Mux4 Adder4 BundleConnect SubModule
   SingleEvenFilter Xor6Thread2 XorSelfThread1 PlusAnd '
 
-
   # issue1: run-time vector index
   # pts='Test1 VecSearch Mul'                 
 
@@ -41,7 +40,12 @@ if [ $# -eq 0 ]; then
   # pts='Life'                  
 
   # issue3: memory
-  # pts='Router SmemStruct MaskedSmemStruct'
+  # pts='Smem SmemStruct MaskedSmem MaskedSmemStruct Router ListBuffer'
+
+  # issue4: IO not begin with named io
+  # pts='IntXbar'
+
+  # issue5: partial connect
 
 else
   file=$(basename $1)

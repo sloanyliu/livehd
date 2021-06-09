@@ -45,16 +45,12 @@ protected:
   void     init_wire_dots(Lnast &lnast, const firrtl::FirrtlPB_Type &type, const std::string &id, Lnast_nid &parent_node);  
   void setup_register_bits(Lnast &lnast, const firrtl::FirrtlPB_Type &type, const std::string &id, Lnast_nid &parent_node);
   void setup_register_bits_scalar(Lnast &lnast, const std::string &id, uint32_t bitwidth, Lnast_nid &parent_node, bool sign);
-  void PreCheckForMem(Lnast &lnast, const firrtl::FirrtlPB_Statement &stmt, Lnast_nid &stmt_node);
-  void InitMemory(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_Memory &mem);
-  void InitCMemory(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_CMemory &cmem);
-  void HandleMemPortPre(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_MemoryPort &mport);
-  void HandleMport(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_MemoryPort &mport);
-  void PortDirInference(const std::string &port_name, const std::string &mem_name, const bool is_rhs);
   void create_module_inst(Lnast &lnast, const firrtl::FirrtlPB_Statement_Instance &inst, Lnast_nid &parent_node);
   void split_hier_name(std::string_view hier_name, std::vector<std::pair<std::string_view, Inou_firrtl::Leaf_type>> &hier_subnames);
+  void split_hier_name(std::string_view full_name, std::vector<std::string_view>& hier_subnames);
   void set_leaf_type(std::string_view subname, std::string_view hier_name, size_t prev,
                      std::vector<std::pair<std::string_view, Inou_firrtl::Leaf_type>> &hier_subnames);
+  void collect_memory_data_struct_hierarchy(const std::string& mem_name, const firrtl::FirrtlPB_Type& type_in, const std::string &hier_fields_concats);
 
   void HandleMuxAssign(Lnast &lnast, const firrtl::FirrtlPB_Expression &expr, Lnast_nid &parent_node,
                        const std::string &lhs_of_asg);
@@ -84,6 +80,10 @@ protected:
                                     const bool is_rhs);
   std::string_view CreateSelectsFromStr(Lnast &ln, Lnast_nid &parent_node, const std::string &flattened_str);
   std::string      FlattenExpression(Lnast &ln, Lnast_nid &parent_node, const firrtl::FirrtlPB_Expression &expr);
+  void InitCMemory(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_CMemory &cmem);
+  void HandleMportDeclaration(Lnast &lnast, Lnast_nid &parent_node, const firrtl::FirrtlPB_Statement_MemoryPort &mport);
+  void HandleRdMportUsage(Lnast &lnast, Lnast_nid &parent_node, const std::string &mport_name);
+  void HandleWrMportUsage(Lnast &lnast, Lnast_nid &parent_node, const std::string &mport_name);
 
   // void RegResetInitialization(Lnast &lnast, Lnast_nid &parent_node);
 
@@ -175,6 +175,7 @@ private:
   absl::flat_hash_set<std::string> register_names;
   absl::flat_hash_set<std::string> memory_names;
   absl::flat_hash_set<std::string> async_rst_names;
+  absl::flat_hash_set<std::string> mport_usage_visited;
 
   // Maps a register name to its q_pin
   absl::flat_hash_map<std::string, std::string> reg2qpin;
@@ -187,20 +188,15 @@ private:
   absl::flat_hash_map<std::string, absl::flat_hash_set<std::tuple<std::string, uint32_t, uint8_t, bool>>> mod_to_io_map;
   // Map used by external modules to indicate parameters names + values.
   absl::flat_hash_map<std::string, absl::flat_hash_set<std::pair<std::string, std::string>>> emod_to_param_map;
-  // Map name of memory to tuple of (__fwd true/false, read latency, write latency)
-  absl::flat_hash_map<std::string, std::tuple<bool, std::string_view, std::string_view>> mem_props_map;
-  // Map of memory port ids made in Memory Port statements to memory block name.
-  absl::flat_hash_map<std::string, std::string> dangling_ports_map;
-  // Map which holds all of the ports that need late assigns (and their direction).
-  enum MPORT_DIR { READ, WRITE, READ_WRITE, READP, WRITEP, READ_WRITEP, READI, WRITEI, READ_WRITEI, INFER };
-  absl::flat_hash_map<std::string, MPORT_DIR> late_assign_ports;
 
   absl::flat_hash_map<std::string, std::pair<firrtl::FirrtlPB_Expression, firrtl::FirrtlPB_Expression>> reg_name2rst_init_expr;
 
-  absl::flat_hash_map<std::string, int8_t>      mem2port_cnt;
-  absl::flat_hash_map<std::string, int8_t>      mem2enable_bitvec;
-  absl::flat_hash_map<std::string, std::string> mport2mem;
-
+  absl::flat_hash_map<std::string, int8_t>                   mem2port_cnt;
+  absl::flat_hash_map<std::string, int8_t>                   mem2wensize;
+  absl::flat_hash_map<std::string, uint8_t>                  mem2rd_latency;
+  absl::flat_hash_map<std::string, Lnast_nid>                mem2initial_idx;
+  absl::flat_hash_map<std::string, std::string>              mport2mem;
+  absl::flat_hash_map<std::string, std::vector<std::string>> mem2din_fields;
 
 
   uint32_t dummy_expr_node_cnt;

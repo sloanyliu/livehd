@@ -1287,9 +1287,14 @@ void Lnast::dump() const {
   for (const auto &it : depth_preorder()) {
     const auto &node = get_data(it);
     std::string indent{"    "};
-    for (int i = 0; i < it.level; ++i) indent += "    ";
+    for (int i = 0; i < it.level; ++i) 
+      indent += "    ";
 
-    fmt::print("{} {} {:>20} : {}\n", it.level, indent, node.type.to_s(), node.token.get_text());
+    if (node.type.is_ref()) { //only ref need/have ssa info
+      fmt::print("{} {} {:<8} {}({})\n", it.level, indent, absl::StrCat(node.type.to_s(), ":"), node.token.get_text(), node.subs);
+    } else {
+      fmt::print("{} {} {:<8} {}    \n", it.level, indent, absl::StrCat(node.type.to_s(), ":"), node.token.get_text());
+    }
   }
 }
 

@@ -54,10 +54,6 @@ cc_test(
 cc_test(
     name = "traversal_hierarchy_test",
     srcs = ["tests/traversal_hierarchy_test.cpp"],
-    tags = [
-        "fixme",
-        "flaky",
-    ],
     deps = [
         ":tree_lgdb_test",
     ],
@@ -75,9 +71,10 @@ cc_test(
 cc_test(
     name = "graph_core_test",
     srcs = ["tests/graph_core_test.cpp"],
-    tags = ["fixme"],
+    #tags = ["fixme"],
     deps = [
         ":core",
+        "@boost//:graph",
         "@com_google_googletest//:gtest_main",
     ],
 )
