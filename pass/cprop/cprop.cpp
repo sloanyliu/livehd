@@ -909,6 +909,7 @@ void Cprop::tuple_subgraph(const Node &node) {
           Pass::error("Structural Lgraph does not allow sub graphs as node");
         }
         auto node_tup = std::make_shared<Lgtuple>(sub_name);
+        std::vector<bool> read_map;
         if (cell_ntype == Ntype_op::Memory) {
           auto n_ports    = 0u;
           auto n_rd_ports = 0u;
@@ -934,8 +935,12 @@ void Cprop::tuple_subgraph(const Node &node) {
                   if (!v.is_i()) {
                     Pass::error("Memory {} rdport:{} must be a constant bitmask (1 rd, 0 wr)", node.debug_name(), v.to_pyrope());
                   }
-                  if (!v.is_false())
+                  if (v.is_false()) {
+                    read_map.emplace_back(false);
+                  }else{
+                    read_map.emplace_back(true);
                     ++n_rd_ports;
+                  }
                 }
               }
             }
@@ -944,10 +949,14 @@ void Cprop::tuple_subgraph(const Node &node) {
             Pass::info("Memory {} still can not figure out ports. (Maybe more iterations)", node.debug_name());
             node_tup->set_issue();
           }else{
-            fmt::print("found a memory {} with {} rd ports\n", node.debug_name(), n_rd_ports);
-            for(auto i=0u;i<n_rd_ports;++i) {
-              node_tup->add(std::to_string(i), node.setup_driver_pin_raw(i));
+            fmt::print("found a memory {} with {} rd ports at ", node.debug_name(), n_rd_ports);
+            for(auto i=0u;i<read_map.size();++i) {
+              if (read_map[i]) {
+                fmt::print(" {}",i);
+                node_tup->add(std::to_string(i), node.setup_driver_pin_raw(i));
+              }
             }
+            fmt::print("\n");
           }
         }else{
           node_tup->add(node.setup_driver_pin_raw(0));
@@ -1378,6 +1387,7 @@ void Cprop::reconnect_sub_as_cell(Node &node, Ntype_op cell_ntype) {
 
   I(cell_ntype != Ntype_op::Sub);  // structural is not allowed with subs
   if (cell_ntype == Ntype_op::Memory) {
+    connect_clock_pin_if_needed(node);
     // memories should have the outputs already connected
   }else{
     auto sink_list = node.out_sinks();
@@ -1689,6 +1699,38 @@ void Cprop::scalar_pass(Lgraph *lg) {
   }
 }
 
+void Cprop::connect_clock_pin_if_needed(Node &node) {
+  auto spin_clock = node.setup_sink_pin("clock");
+  if (spin_clock.is_connected())
+    return;
+
+  auto *lg = node.get_class_lgraph();
+
+  Node_pin clock_pin;
+  if (lg->has_graph_input("clock")) {
+    clock_pin = lg->get_graph_input("clock");
+  } else {
+    clock_pin = lg->add_graph_input("clock", Port_invalid, 1);
+  }
+  spin_clock.connect_driver(clock_pin);
+}
+
+void Cprop::connect_reset_pin_if_needed(Node &node) {
+  auto spin_reset = node.setup_sink_pin("reset");
+  if (spin_reset.is_connected())
+    return;
+
+  auto *lg = node.get_class_lgraph();
+
+  Node_pin reset_pin;
+  if (lg->has_graph_input("reset")) {
+    reset_pin = lg->get_graph_input("reset");
+  } else {
+    reset_pin = lg->add_graph_input("reset", Port_invalid, 1);
+  }
+  spin_reset.connect_driver(reset_pin);
+}
+
 void Cprop::tuple_pass(Lgraph *lg) {
   node2tuple.clear();
   tuple_done.clear();
@@ -1760,9 +1802,6 @@ void Cprop::tuple_pass(Lgraph *lg) {
   if (tuple_issues)
     return;
 
-  Node_pin clock_pin;
-  Node_pin reset_pin;
-
   // tuple chain clean up and connect default flop pins
   for (auto node : lg->fast()) {
     auto op = node.get_type_op();
@@ -1774,32 +1813,8 @@ void Cprop::tuple_pass(Lgraph *lg) {
     } else if (op == Ntype_op::Sub) {
       reconnect_tuple_sub(node);
     } else if (op == Ntype_op::Flop) {
-      {
-        auto spin_clock = node.setup_sink_pin("clock");
-        if (!spin_clock.is_connected()) {
-          if (clock_pin.is_invalid()) {
-            if (lg->has_graph_input("clock")) {
-              clock_pin = lg->get_graph_input("clock");
-            } else {
-              clock_pin = lg->add_graph_input("clock", Port_invalid, 1);
-            }
-          }
-          spin_clock.connect_driver(clock_pin);
-        }
-      }
-      {
-        auto spin_reset = node.setup_sink_pin("reset");
-        if (!spin_reset.is_connected()) {
-          if (reset_pin.is_invalid()) {
-            if (lg->has_graph_input("reset")) {
-              reset_pin = lg->get_graph_input("reset");
-            } else {
-              reset_pin = lg->add_graph_input("reset", Port_invalid, 1);
-            }
-          }
-          spin_reset.connect_driver(reset_pin);
-        }
-      }
+      connect_clock_pin_if_needed(node);
+      connect_reset_pin_if_needed(node);
     } else if (op == Ntype_op::Get_mask) {
       tuple_get_mask_mut(node);
     }
