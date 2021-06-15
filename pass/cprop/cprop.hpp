@@ -61,6 +61,7 @@ protected:
                                       std::shared_ptr<Lgtuple const> node_tup);
 
   // handle tuple issues but allowed to "mutate" the node
+  void tuple_shl_mut(Node &node);
   void tuple_mux_mut(Node &node);
   void tuple_flop_mut(Node &node);
   void tuple_get_mask_mut(Node &node);
@@ -71,6 +72,7 @@ protected:
   bool tuple_tuple_get(const Node &node);
   void tuple_attr_set(const Node &node);
 
+  bool scalar_mux(Node &node, XEdge_iterator &inp_edges_ordered);
   void scalar_sext(Node &node, XEdge_iterator &inp_edges_ordered);
 
   // io construction

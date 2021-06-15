@@ -139,7 +139,7 @@ void Cprop::collapse_forward_sum(Node &node, XEdge_iterator &inp_edges_ordered) 
   }
 }
 
-// Collase forward single node but only for pid!=0 (not reduction ops)
+// Collase forward single node
 void Cprop::collapse_forward_always_pin0(Node &node, XEdge_iterator &inp_edges_ordered) {
   auto op = node.get_type_op();
 
@@ -327,12 +327,25 @@ void Cprop::replace_part_inputs_const(Node &node, XEdge_iterator &inp_edges_orde
       if (!(op == Ntype_op::Sum && edge_it2[0].sink.get_pin_name() == "B"))
         collapse_forward_always_pin0(node, edge_it2);
     }
-  } else if (op == Ntype_op::SRA || op == Ntype_op::SHL) {
+  } else if (op == Ntype_op::SRA) {
     auto amt_node = inp_edges_ordered[1].driver.get_node();
     I(amt_node == node.get_sink_pin("b").get_driver_node());
 
     if (amt_node.is_type_const() && amt_node.get_type_const() == 0) {
       collapse_forward_for_pin(node, inp_edges_ordered[0].driver);
+    }
+  } else if (op == Ntype_op::SHL) {
+    if (inp_edges_ordered.size() == 2) {
+      auto amt_node = inp_edges_ordered[1].driver.get_node();
+      I(amt_node == node.get_sink_pin("B").get_driver_node());
+
+      if (amt_node.is_type_const() && amt_node.get_type_const() == 0) {
+        collapse_forward_for_pin(node, inp_edges_ordered[0].driver);
+      }
+    }else{
+      // res = val << (B.0, B.1, B.2)
+      // res = (val <<B.0) | (val<<B.1) | (val<<B.2)
+      fmt::print("FIXME: OPT the inputs in B if they are constants\n");
     }
   }
 }
@@ -342,11 +355,14 @@ void Cprop::replace_all_inputs_const(Node &node, XEdge_iterator &inp_edges_order
   auto op = node.get_type_op();
   if (op == Ntype_op::SHL) {
     Lconst val = node.get_sink_pin("a").get_driver_node().get_type_const();
-    Lconst amt = node.get_sink_pin("b").get_driver_node().get_type_const();
 
-    Lconst result = val << amt;
+    Lconst result(0);
 
-    TRACE(fmt::print("cprop: shl to {} ({}<<{})\n", result.to_pyrope(), val.to_pyrope(), amt.to_pyrope()));
+    for(auto &amt_dpin:node.get_sink_pin("B").inp_drivers()) {
+      Lconst amt = amt_dpin.get_type_const();
+
+      result = result.or_op(val << amt);
+    }
 
     replace_node(node, result);
   } else if (op == Ntype_op::Get_mask) {
@@ -604,6 +620,27 @@ std::tuple<std::string, std::string> Cprop::get_tuple_name_key(const Node &node)
   return std::make_tuple(tup_name, key_name);
 }
 
+void Cprop::tuple_shl_mut(Node &node) {
+  // SHL can have a tuple in B port. E.g: 1<<(2,3). Any data pin gets expanded directly
+  auto spin_amount = node.get_sink_pin("B");
+
+  for(auto &dpin:spin_amount.inp_drivers()) {
+    auto tup = find_lgtuple(dpin);
+    if (tup==nullptr)
+      continue;
+    if (!tup->is_correct() || tuple_issues) // conservative in expansion
+      continue;
+
+    XEdge::del_edge(dpin, spin_amount);
+    for(auto e:tup->get_map()) {
+      if (Lgtuple::is_attribute(e.first))
+        continue;
+
+      spin_amount.connect_driver(e.second);
+    }
+  }
+}
+
 void Cprop::tuple_mux_mut(Node &node) {
   auto inp_edges_ordered = node.inp_edges_ordered();
 
@@ -654,7 +691,7 @@ void Cprop::tuple_mux_mut(Node &node) {
     node2tuple[node.get_compact()] = tup;
   }
 
-  if (tuple_issues)
+  if (tup == nullptr && tuple_issues)
     return;
 
   if (pending_iterations) {
@@ -667,9 +704,11 @@ void Cprop::tuple_mux_mut(Node &node) {
   }
 
   if (!tup) {
-    tuple_done.insert(node.get_compact());
+    if (!tuple_issues)
+      tuple_done.insert(node.get_compact());
     return;
   }
+  I(tup->is_correct());
 
   auto cmux_list                 = tup->make_mux(node, sel_dpin, tup_list);
   node2tuple[node.get_compact()] = tup;
@@ -701,9 +740,7 @@ void Cprop::tuple_flop_mut(Node &node) {
   if (!din_tup->is_correct()) {
     I(tuple_issues);
     din_tup->dump();
-    fmt::print("flop:{} tuple:{} has issues (this may be OK with more iterations)\n",
-               node.debug_name(),
-               din_tup->get_name());
+    fmt::print("flop:{} tuple:{} has issues (this may be OK with more iterations)\n", node.debug_name(), din_tup->get_name());
     return;
   }
 
@@ -895,9 +932,9 @@ void Cprop::tuple_get_mask_mut(Node &node) {
 }
 
 void Cprop::tuple_subgraph(const Node &node) {
-  const auto &sub    = node.get_type_sub_node();
+  const auto &sub = node.get_type_sub_node();
 
-  auto *      sub_lg = node.ref_library()->try_find_lgraph(sub.get_lgid());
+  auto *sub_lg = node.ref_library()->try_find_lgraph(sub.get_lgid());
   if (sub_lg == nullptr || sub_lg->is_empty()) {
     std::string sub_name{sub.get_name()};
     if (sub_name.size() > 2 && sub_name.substr(0, 2) == "__") {
@@ -908,27 +945,27 @@ void Cprop::tuple_subgraph(const Node &node) {
           node.dump();
           Pass::error("Structural Lgraph does not allow sub graphs as node");
         }
-        auto node_tup = std::make_shared<Lgtuple>(sub_name);
+        auto              node_tup = std::make_shared<Lgtuple>(sub_name);
         std::vector<bool> read_map;
         if (cell_ntype == Ntype_op::Memory) {
-          auto n_ports    = 0u;
-          auto n_rd_ports = 0u;
+          auto n_ports         = 0u;
+          auto n_rd_ports      = 0u;
           auto node_input_spin = node.get_sink_pin("$");
           if (node_input_spin.is_connected()) {
             auto parent_node = node_input_spin.get_driver_node();
             auto parent_tup  = find_lgtuple(parent_node);
             if (parent_tup) {
-              for(const auto &e:parent_tup->get_map()) {
+              for (const auto &e : parent_tup->get_map()) {
                 if (Lgtuple::is_attribute(e.first))
                   continue;
 
                 auto l = Lgtuple::get_first_level_name(e.first);
-                if (strncasecmp(l.data(), "addr", l.size())==0) {
+                if (strncasecmp(l.data(), "addr", l.size()) == 0) {
                   ++n_ports;
-                }else if (strncasecmp(l.data(), "rdport", l.size())==0) {
+                } else if (strncasecmp(l.data(), "rdport", l.size()) == 0) {
                   if (!e.second.is_type_const()) {
                     node_tup->set_issue();
-                    continue; // Maybe later
+                    continue;  // Maybe later
                   }
 
                   auto v = e.second.get_type_const();
@@ -937,7 +974,7 @@ void Cprop::tuple_subgraph(const Node &node) {
                   }
                   if (v.is_false()) {
                     read_map.emplace_back(false);
-                  }else{
+                  } else {
                     read_map.emplace_back(true);
                     ++n_rd_ports;
                   }
@@ -945,20 +982,20 @@ void Cprop::tuple_subgraph(const Node &node) {
               }
             }
           }
-          if (n_ports==0 || n_rd_ports<=0 || !node_tup->is_correct()) {
+          if (n_ports == 0 || n_rd_ports <= 0 || !node_tup->is_correct()) {
             Pass::info("Memory {} still can not figure out ports. (Maybe more iterations)", node.debug_name());
             node_tup->set_issue();
-          }else{
+          } else {
             fmt::print("found a memory {} with {} rd ports at ", node.debug_name(), n_rd_ports);
-            for(auto i=0u;i<read_map.size();++i) {
+            for (auto i = 0u; i < read_map.size(); ++i) {
               if (read_map[i]) {
-                fmt::print(" {}",i);
+                fmt::print(" {}", i);
                 node_tup->add(std::to_string(i), node.setup_driver_pin_raw(i));
               }
             }
             fmt::print("\n");
           }
-        }else{
+        } else {
           node_tup->add(node.setup_driver_pin_raw(0));
         }
         node2tuple[node.get_compact()] = node_tup;
@@ -1321,13 +1358,83 @@ void Cprop::tuple_attr_set(const Node &node) {
   }
 }
 
+bool Cprop::scalar_mux(Node &node, XEdge_iterator &inp_edges_ordered) {
+  if (inp_edges_ordered.size() != 3)
+    return false;  // Maybe future optimizations
+
+  if (inp_edges_ordered[1].driver == inp_edges_ordered[2].driver) {
+    collapse_forward_for_pin(node, inp_edges_ordered[1].driver);
+    return true;
+  }
+
+  bool false_path_zero = false;
+  bool false_path_one  = false;
+  if (inp_edges_ordered[1].driver.is_type_const()) {
+    auto v          = inp_edges_ordered[1].driver.get_type_const();
+    false_path_zero = (v == Lconst(0));
+    false_path_one  = (v == Lconst(1));
+  }
+
+  bool true_path_zero = false;
+  bool true_path_one  = false;
+  if (inp_edges_ordered[2].driver.is_type_const()) {
+    auto v         = inp_edges_ordered[2].driver.get_type_const();
+    true_path_zero = (v == Lconst(0));
+    true_path_one  = (v == Lconst(1) || v == Lconst(-1));
+  }
+
+  bool false_path_sel = inp_edges_ordered[0].driver == inp_edges_ordered[1].driver;
+  bool true_path_sel  = inp_edges_ordered[0].driver == inp_edges_ordered[2].driver;
+
+  if ((false_path_zero && true_path_sel)        // mux(sel,0  ,sel) -> sel
+      || (false_path_sel && true_path_one)      // mux(sel,sel,  1) -> sel
+      || (false_path_zero && true_path_one)) {  // mux(sel,0  ,  1) -> sel
+    collapse_forward_for_pin(node, inp_edges_ordered[0].driver);
+    return true;
+  }
+
+  if (false_path_sel && true_path_zero) {  // mux(sel,sel,0) -> !sel
+    auto not_node = node.create(Ntype_op::Not);
+    not_node.connect_sink(inp_edges_ordered[0].driver);
+    auto not_dpin = not_node.setup_driver_pin();
+    collapse_forward_for_pin(node, not_dpin);
+    return true;
+  }
+
+  if (false_path_one && true_path_sel) {  // mux(sel,1,sel) -> 1
+    collapse_forward_for_pin(node, inp_edges_ordered[1].driver);
+    return true;
+  }
+
+  return false;
+}
+
 void Cprop::scalar_sext(Node &node, XEdge_iterator &inp_edges_ordered) {
   const auto &pos_dpin = inp_edges_ordered[1].driver;
   if (!pos_dpin.is_type_const()) {
     return;  // not much to do
   }
 
+  int64_t self_pos;
+  {
+    auto v = pos_dpin.get_type_const();
+    if (!v.is_i())
+      return;
+
+    self_pos = v.to_i();
+  }
+
   const auto &wire_dpin = inp_edges_ordered[0].driver;
+
+  if (self_pos == 1) {
+    for (auto &e : node.out_edges()) {
+      if (e.sink.is_type(Ntype_op::Mux)) {
+        e.sink.connect_driver(wire_dpin);
+        e.del_edge();
+      }
+    }
+  }
+
   if (wire_dpin.get_type_op() != Ntype_op::Sext)
     return;
 
@@ -1337,7 +1444,6 @@ void Cprop::scalar_sext(Node &node, XEdge_iterator &inp_edges_ordered) {
   if (!parent_pos_dpin.is_type_const())
     return;
 
-  auto self_pos   = pos_dpin.get_type_const().to_i();
   auto parent_pos = parent_pos_dpin.get_type_const().to_i();
 
   auto b = std::min(self_pos, parent_pos);
@@ -1389,7 +1495,7 @@ void Cprop::reconnect_sub_as_cell(Node &node, Ntype_op cell_ntype) {
   if (cell_ntype == Ntype_op::Memory) {
     connect_clock_pin_if_needed(node);
     // memories should have the outputs already connected
-  }else{
+  } else {
     auto sink_list = node.out_sinks();
     if (!sink_list.empty()) {
       for (auto &dp : node.out_connected_pins()) {
@@ -1434,16 +1540,16 @@ void Cprop::reconnect_sub_as_cell(Node &node, Ntype_op cell_ntype) {
       if (spin.is_connected() && Ntype::is_single_driver_per_pin(cell_ntype)) {
         if (cell_ntype != Ntype_op::Memory) {
           Pass::error("node:{} with cell:{} pin:{} can not have multiple drivers",
-              node.debug_name(),
-              Ntype::get_name(cell_ntype),
-              pin_name);
+                      node.debug_name(),
+                      Ntype::get_name(cell_ntype),
+                      pin_name);
           return;
         }
-        int delta_pid=0;
-        do{
+        int delta_pid = 0;
+        do {
           delta_pid += 11;
           spin = node.setup_sink_pin_raw(pin_pid + delta_pid);
-        }while(spin.is_connected());
+        } while (spin.is_connected());
       }
       XEdge_iterator out_edges;  // Empty list
       auto           dpin = expand_data_and_attributes(node, e.first, out_edges, tup);
@@ -1550,7 +1656,7 @@ void Cprop::reconnect_tuple_add(Node &node) {
       auto sub_node = e.sink.get_node();
       try_connect_tuple_to_sub(node_tup, sub_node, node);
     } else if (sink_type == Ntype_op::Get_mask || sink_type == Ntype_op::TupAdd || sink_type == Ntype_op::Mux
-               || sink_type == Ntype_op::TupGet) {
+               || sink_type == Ntype_op::TupGet || sink_type == Ntype_op::SHL) {
     } else {
       pending_out_edges.emplace_back(e);
     }
@@ -1681,6 +1787,10 @@ void Cprop::scalar_pass(Lgraph *lg) {
 
     if (op == Ntype_op::Sext) {
       scalar_sext(node, inp_edges_ordered);
+    } else if (op == Ntype_op::Mux) {
+      bool del = scalar_mux(node, inp_edges_ordered);
+      if (del)
+        continue;
     } else if (!node.has_outputs()) {
       bwd_del_node(node);
       continue;
@@ -1762,6 +1872,8 @@ void Cprop::tuple_pass(Lgraph *lg) {
 #ifndef NDEBUG
         fmt::print("cprop FIXME node:{} (similar to flop)\n", node.debug_name());
 #endif
+      } else if (op == Ntype_op::SHL) {
+        tuple_shl_mut(node);
       } else if (op == Ntype_op::Flop) {
         tuple_flop_mut(node);
       } else if (op == Ntype_op::Sub) {

@@ -111,6 +111,8 @@ void Code_gen::do_stmts(const mmap_lib::Tree_index& stmt_node_index) {
       do_tuple(curr_index);
     } else if (curr_node_type.is_select() || curr_node_type.is_tuple_add() || curr_node_type.is_attr_get()) {
       do_select(curr_index, "selc");
+    } else if (curr_node_type.is_attr_set()) {
+      Pass::error("Error in BitWidth Pass in LGraph optimization.\n");
     } else if (curr_node_type.is_tuple_get()) {
       do_select(curr_index, "tuple_get");
     } else if (curr_node_type.is_func_def()) {
@@ -686,7 +688,7 @@ void Code_gen::do_select(const mmap_lib::Tree_index& select_node_index, const st
     if (is_temp_var(key)) {
       ref_map.insert(std::pair<std::string_view, std::string>(key, value));
     } else {
-      fmt::print("ERROR:\n\t\t------CHECK THE NODE TYPE IN THIS IF -----!!\n");
+      fmt::print("ERROR:\n\t\t------CHECK THE NODE TYPE IN THIS TUPLE_GET -----!!\n");
     }
 
   } else if (is_pos_int(sel_str_vect.back())) {  // do not treat like dot operator
@@ -719,7 +721,8 @@ void Code_gen::do_select(const mmap_lib::Tree_index& select_node_index, const st
       // std::string value = absl::StrCat(sel_str_vect[1], "[", ref, "]");
       ref_map.insert(std::pair<std::string_view, std::string>(key, value));
     } else {
-      fmt::print("ERROR:\n\t\t------CHECK THE NODE TYPE IN THIS IF -----!!\n");
+      fmt::print("ERROR:\n\t\t------CHECK THE NODE TYPE IN THIS {} -----!!\n", select_type);
+      do_dot(select_node_index);
     }
   } else {
     I(false, "Unexpected node. Please check.");

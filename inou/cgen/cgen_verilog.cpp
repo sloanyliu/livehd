@@ -246,7 +246,7 @@ void Cgen_verilog::process_memory(std::string &buffer, Node &node) {
 
         auto id = std::to_string(n_rd_pos);
 
-        absl::StrAppend(&buffer, ",.rd_enable_", id, "(", get_wire_or_const(p.din), ")\n");
+        absl::StrAppend(&buffer, ",.rd_enable_", id, "(", get_wire_or_const(p.enable), ")\n");
         if (!single_clock) {
           absl::StrAppend(&buffer, ",.rd_clock_", id, "(", get_wire_or_const(p.clock), ")\n");
         }
@@ -443,10 +443,14 @@ void Cgen_verilog::process_simple_node(std::string &buffer, Node &node) {
     }
   } else if (op == Ntype_op::SHL) {
     auto val_expr = get_expression(node.get_sink_pin("a").get_driver_pin());
-    auto amt_expr = get_expression(node.get_sink_pin("b").get_driver_pin());
-
-    final_expr = absl::StrCat(val_expr, " << ", amt_expr);
-
+    std::string onehot;
+    bool first=true;
+    for(auto &amt_dpin:node.get_sink_pin("B").inp_drivers()) {
+      auto amt_expr = get_expression(amt_dpin);
+      absl::StrAppend(&onehot, first?"(":" | (", val_expr, " << ", amt_expr, ")");
+      first = false;
+    }
+    final_expr = onehot;
   } else if (op == Ntype_op::SRA) {
     auto val_expr = get_expression(node.get_sink_pin("a").get_driver_pin());
     auto amt_expr = get_expression(node.get_sink_pin("b").get_driver_pin());

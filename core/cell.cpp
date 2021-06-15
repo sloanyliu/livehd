@@ -113,12 +113,18 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
       break;
     case Ntype_op::Sext:
     case Ntype_op::Div:
-    case Ntype_op::SHL:
     case Ntype_op::SRA:
       if (pid == 0)
         return "a";
       else if (pid == 1)
         return "b";
+      return "invalid";
+      break;
+    case Ntype_op::SHL: // n<<(a,b) == (n<<a)|(n<<b) : useful for onehot encoding for lgtuple inputs
+      if (pid == 0)
+        return "a";
+      else if (pid == 1)
+        return "B";
       return "invalid";
       break;
     case Ntype_op::Const:  // No drivers to Constants
@@ -197,14 +203,14 @@ constexpr std::string_view Ntype::get_sink_name_slow(Ntype_op op, int pid) {
       break;
     case Ntype_op::Get_mask:
       switch (pid) {
-        case 0: return "a";     // pass through wire
+        case 0: return "a";     // input net to get bits
         case 2: return "mask";  // bit position
         default: return "invalid";
       }
       break;
     case Ntype_op::Set_mask:
       switch (pid) {
-        case 0: return "a";     // pass through wire
+        case 0: return "a";     // input net to set bits
         case 2: return "mask";  // bit position
         case 4: return "value";
         default: return "invalid";

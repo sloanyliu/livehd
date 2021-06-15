@@ -259,14 +259,25 @@ void Lnast_tolg::nary_node_rhs_connections(Lgraph *lg, Node &opr_node, const std
         opr_node.setup_sink_pin("mask").connect_driver(opds[1]);
       }
     } break;
+    case Ntype_op::Set_mask: {
+      I(opds.size()==3);
+      opr_node.setup_sink_pin("a").connect_driver(opds[0]);
+      opr_node.setup_sink_pin("mask").connect_driver(opds[1]);
+      opr_node.setup_sink_pin("value").connect_driver(opds[2]);
+    } break;
     case Ntype_op::Div:
-    case Ntype_op::SHL:
     case Ntype_op::Sext:
     case Ntype_op::SRA: {
       I(opds.size() == 2);  // val<<amount
       lg->add_edge(opds[0], opr_node.setup_sink_pin("a"));
       lg->add_edge(opds[1], opr_node.setup_sink_pin("b"));
     } break;
+    case Ntype_op::SHL: {
+      I(opds.size() == 2);  // val<<amount
+      lg->add_edge(opds[0], opr_node.setup_sink_pin("a"));
+      lg->add_edge(opds[1], opr_node.setup_sink_pin("B"));
+    } break;
+
     default: {
       I(opr_node.get_type_op() != Ntype_op::Mux);
       I(opr_node.get_type_op() != Ntype_op::Flop);
@@ -1116,6 +1127,9 @@ Ntype_op Lnast_tolg::decode_lnast_op(const Lnast_nid &lnidx_opr) {
 }
 
 Node_pin Lnast_tolg::create_const(Lgraph *lg, std::string_view const_str) {
+#if 0
+  return lg->create_node_const(Lconst(const_str)).setup_driver_pin();
+#else
   if (const_str.find("bits") == std::string_view::npos)
     return lg->create_node_const(Lconst(const_str)).setup_driver_pin();
 
@@ -1124,6 +1138,7 @@ Node_pin Lnast_tolg::create_const(Lgraph *lg, std::string_view const_str) {
   auto lg_fir_const_node = lg->create_node_sub("__fir_const");
   lg_fir_const_node.setup_driver_pin("Y").set_name(const_str);
   return lg_fir_const_node.setup_driver_pin("Y");
+#endif
 }
 
 void Lnast_tolg::process_ast_attr_set_op(Lgraph *lg, const Lnast_nid &lnidx_aset) {
@@ -1698,6 +1713,7 @@ void Lnast_tolg::setup_lnast_to_lgraph_primitive_type_mapping() {
   primitive_type_lnast2lg[Lnast_ntype::Lnast_ntype_shl]       = Ntype_op::SHL;
 
   primitive_type_lnast2lg[Lnast_ntype::Lnast_ntype_get_mask] = Ntype_op::Get_mask;
+  primitive_type_lnast2lg[Lnast_ntype::Lnast_ntype_set_mask] = Ntype_op::Set_mask;
 
   primitive_type_lnast2lg[Lnast_ntype::Lnast_ntype_sext] = Ntype_op::Sext;
   // FIXME->sh: to be extended ...
