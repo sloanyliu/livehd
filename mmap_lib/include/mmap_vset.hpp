@@ -7,6 +7,20 @@
 
 namespace mmap_lib {
 
+// This set is optimized for spatial locality.
+// Meaning: numbers that are close to each other in VALUE,
+// will be made 'close' to each other from quick and easy access.
+// 
+// We accomplish by: having a mmap that holds <number, neighborhood>
+// -> each number will be an actual value that is stored with all its bits.
+// -> each neighborhood will represent bits around the number, as a bitmap.
+//   -> **Note: have not decided where the numbers sits in the neighborhood.
+//   -> could be in the front, back, middle (probably harder)
+// -> each access to values near number, will access the neighborhood.
+
+
+
+
 // vset will have a Key to identify each BitMap
 // data will be the BitMap (various numbers of different bits)
 // end() for now returns the Actual last element, need it to return AFTER last
@@ -15,15 +29,14 @@ namespace mmap_lib {
 // the other is the bitmap one, which can be improved and will be
 
 
-#if 0
-template<typename Obj>
+template<typename num, typename neighbors>
 class set {
   protected:
-    using setMap = typename mmap_lib::map<Obj, bool>;
+    using setMap = typename mmap_lib::map<num, neighbors>;
     using setIter = typename setMap::iterator;
-    using setCIter = typename setMap::const_iterator;
+    using setConstIter = typename setMap::const_iterator;
     
-    setMap set_data;
+    setMap set_data; // mmap_lib::map<num, neighbors> set_data
   public:
     set(std::string_view _name): set_data(_name) {}
     set(std::string_view _path, std::string_view _name): set_data(_path, _name) {}
@@ -35,10 +48,12 @@ class set {
     size_t capacity() { set_data.capacity(); }
     
     setIter insert(Obj var) { 
+      //TODO: add case where the var already exists
       return set_data.set(var, 0); 
     }   
 
     void erase(Obj var) {
+      //TODO: add case where the var already exists as well
       if (set_data.find(var) != set_data.end()) {
         set_data.erase(var);      
       }
@@ -109,8 +124,9 @@ class set {
 
 };
 
-#else
+///////////////////////////////////////////////
 
+#if 0
 template <typename Key, typename T>
 class vset {
   // FIXME: info sentinel?
