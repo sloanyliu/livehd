@@ -567,8 +567,8 @@ public:
   // str created from this will be whichever template we call this func from
   template<int m_id, int m_id2>
   static str concat(str<m_id> &a, const str<m_id2> &b) { 
-    //str<map_id> ret(a.to_s() + b.to_s());
-    return  a.append(b);
+    str<map_id> ret(a.to_s() + b.to_s());
+    return  ret;
   }
 
   template<int m_id>
@@ -579,13 +579,11 @@ public:
 
   template<int m_id>
   static str concat(str<m_id> &a, std::string_view b) { 
-    //str<map_id> temp(a.to_s() + b);  
     return a.append(b);
   }
 
   template<int m_id>
   static str concat(str<m_id> &a, int v) { 
-    //str<map_id> temp(a.to_s() + std::to_string(v));
     return a.append(v);
   }
 

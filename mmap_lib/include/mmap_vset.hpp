@@ -28,7 +28,7 @@ namespace mmap_lib {
 // one implementation is the easy mmap set
 // the other is the bitmap one, which can be improved and will be
 
-
+#if 0
 template<typename num, typename neighbors>
 class set {
   protected:
@@ -125,6 +125,9 @@ class set {
 };
 
 ///////////////////////////////////////////////
+#endif
+
+
 
 #if 0
 template <typename Key, typename T>
