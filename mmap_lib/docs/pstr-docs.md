@@ -11,7 +11,7 @@
 
 ### II. Memory-mapped  Persistence
 
-![](C:\Users\sloan\Desktop\MASC\pstr_first_pass\pstr_structure.png)
+![](./pstr_structure.png)
 
 ---
 
