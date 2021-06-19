@@ -18,6 +18,8 @@ public:
   virtual std::string_view get_lang_type() const                        = 0;
   virtual std::string_view debug_name_lang(Lnast_ntype node_type) const = 0;
   std::string_view         dot_type_op() const { return "."; };
+  std::string_view         str_qoute(bool is_str) const { return is_str? "" : "\""; };
+  std::string_view         gmask_op() const { return "@";}
   virtual std::string_view start_else_if() const = 0;
 
   virtual std::string_view end_else_if() const { return ("}"); }
@@ -71,12 +73,16 @@ public:
   std::string_view select_init(const std::string &select_type) const {
     if (select_type == "bit")
       return "[[";
+    else if (select_type == "tuple_add")
+      return "(";
     else
       return "[";
   }
   std::string_view select_end(const std::string &select_type) const {
     if (select_type == "bit")
       return "]]";
+    else if (select_type == "tuple_add")
+      return ")";
     else
       return "]";
   }

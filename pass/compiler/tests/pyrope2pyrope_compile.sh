@@ -10,15 +10,15 @@ pts_long_time='firrtl_gcd'
 pts_after_micro='hier_tuple4 tuple_reg3 '
 
 
-pts='hier_tuple reg_bits_set bits_rhs reg__q_pin hier_tuple_io hier_tuple3
+pts='hier_tuple reg_bits_set reg__q_pin hier_tuple_io hier_tuple3
 hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2 lhs_wire
 tuple_copy if hier_tuple_nested_if2 lhs_wire2 tuple_copy2 counter lhs_wire
-adder_stage capricious_bits4 logic capricious_bits2
-scalar_reg_out_pre_declare firrtl_tail2 hier_tuple_nested_if
-hier_tuple_nested_if3 hier_tuple_nested_if4 hier_tuple_nested_if5
-hier_tuple_nested_if6 hier_tuple_nested_if7 firrtl_tail firrtl_gcd_3bits
-nested_if firrtl_tail3 counter_nested_if tuple_empty_attr tuple_reg tuple_reg2
-struct_flop tuple_nested1 tuple_nested2 get_mask1 vec_shift_register_param capricious_bits'
+adder_stage capricious_bits4 logic capricious_bits2 tuple_reg 
+scalar_reg_out_pre_declare firrtl_tail2 firrtl_tail firrtl_gcd_3bits 
+hier_tuple_nested_if3 hier_tuple_nested_if hier_tuple_nested_if4 
+hier_tuple_nested_if6 hier_tuple_nested_if7 bits_rhs hier_tuple_nested_if5
+nested_if counter_nested_if tuple_empty_attr tuple_reg2 get_mask1
+tuple_nested1 capricious_bits firrtl_tail3 struct_flop tuple_nested2 vec_shift_register_param'
 
 #FIXME:
 #pts = 'scalar_tuple'
@@ -141,6 +141,7 @@ Pyrope_compile_hier_HL_LN () {
 
   declare pts_concat
   declare top_module
+  declare tmp_pts_concat
 
   for pt in $1
   do
@@ -161,15 +162,25 @@ Pyrope_compile_hier_HL_LN () {
     else
       pts_concat="${pts_concat}, ${PATTERN_PATH}/${pt}.prp"
     fi
+
+    if [ -z "${tmp_pts_concat}" ]; then
+      tmp_pts_concat="tmp_prp/${pt}.prp"
+    else
+      tmp_pts_concat="${tmp_pts_concat}, tmp_prp/${pt}.prp"
+    fi
   done
 
-
   ${LGSHELL} "inou.pyrope files:${pts_concat} |> inou.code_gen.prp odir:tmp_prp"
-  ${LGSHELL} "inou.pyrope files:tmp_prp/${pt}.prp |> pass.compiler gviz:true top:${top_module}"
-  #${LGSHELL} "inou.pyrope files:${pts_concat} |> pass.compiler top:${top_module}"
   ret_val=$?
   if [ $ret_val -ne 0 ]; then
     echo "ERROR: could not compile with pattern: ${pts_concat}.prp!"
+    exit $ret_val
+  fi
+  ${LGSHELL} "inou.pyrope files:${tmp_pts_concat} |> pass.compiler gviz:true top:${top_module}"
+  #${LGSHELL} "inou.pyrope files:${pts_concat} |> pass.compiler top:${top_module}"
+  ret_val=$?
+  if [ $ret_val -ne 0 ]; then
+    echo "ERROR: could not compile with pattern: ${tmp_pts_concat}.prp!"
     exit $ret_val
   fi
 
@@ -185,12 +196,12 @@ Pyrope_compile_hier_HL_LN () {
     echo "----------------------------------------------------"
 
     #${LGSHELL} "lgraph.open name:${pt} |> inou.yosys.fromlg hier:true"
-    ${LGSHELL} "lgraph.open name:${pt} |> inou.cgen.verilog "
+    ${LGSHELL} "lgraph.open name:${pt} |> inou.cgen.verilog"
     if [ $? -eq 0 ] && [ -f ${pt}.v ]; then
         echo "Successfully generate Verilog: ${pt}.v"
         rm -f  yosys_script.*
     else
-        echo "ERROR: Pyrope compiler failed: verilog generation, testcase: ${PATTERN_PATH}/${pt}.prp"
+        echo "ERROR: Pyrope compiler failed: verilog generation, testcase: tmp_prp/${pt}.prp"
         exit 1
     fi
   done
@@ -221,10 +232,10 @@ Pyrope_compile_hier_HL_LN () {
   fi
 }
 
-#rm -rf ./lgdb
-#Pyrope_compile_hier_HL_LN "$pts_hier1"
-#rm -rf ./lgdb
-#Pyrope_compile_hier_HL_LN "$pts_hier2"
+rm -rf ./lgdb
+Pyrope_compile_hier_HL_LN "$pts_hier1"
+rm -rf ./lgdb
+Pyrope_compile_hier_HL_LN "$pts_hier2"
 rm -rf ./lgdb
 Pyrope_compile_HL_LN "$pts"
  

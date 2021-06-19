@@ -516,9 +516,101 @@ void Bitwidth::process_mult(Node &node, XEdge_iterator &inp_edges) {
 }
 
 void Bitwidth::process_set_mask(Node &node) {
-  (void)node;
-  I(false);  // FIXME:
-  not_finished = true;
+  auto a_dpin = node.get_sink_pin("a").get_driver_pin();
+  if (a_dpin.is_invalid()) {
+    node.dump();
+    Pass::error("set_mask can not have an undefined input");
+  }
+
+  auto it = flat_bwmap.find(a_dpin.get_compact_flat());
+  if (it == flat_bwmap.end()) {
+    debug_unconstrained_msg(node, a_dpin);
+    not_finished = true;
+    return;
+  }
+  Bitwidth_range bw{it->second};
+
+  auto mask_dpin = node.get_sink_pin("mask").get_driver_pin();
+  if (mask_dpin.is_invalid()) {
+    node.dump();
+    Pass::error("set_mask can not have an undefined mask");
+  }
+
+  if (!mask_dpin.is_type_const()) {
+    node.dump();
+    Pass::info("set_mask can not have a non-constant mask");
+    not_finished = true;
+    return;
+  }
+
+  auto mask = mask_dpin.get_type_const();
+
+  auto value_dpin = node.get_sink_pin("value").get_driver_pin();
+  if (value_dpin.is_invalid()) {
+    node.dump();
+    Pass::error("set_mask can not have an undefined value");
+  }
+
+  auto   it2 = flat_bwmap.find(value_dpin.get_compact_flat());
+  Bitwidth_range value_bw;
+  if (it2 == flat_bwmap.end()) {
+    if (value_dpin.is_type_const()) {
+      value_bw.set_range(Lconst(0), value_dpin.get_type_const());
+    }else if (mask.is_negative()) {
+      debug_unconstrained_msg(node, value_dpin);
+      not_finished = true;
+      return;
+    }else{
+      Pass::info("bw pin:{} is not constrained but constraining to mask size", value_dpin.debug_name());
+      value_bw.set_range(Lconst(0), mask);
+    }
+  }else{
+    value_bw = it2->second;
+  }
+
+	if (mask == Lconst(-1)) { // Just pick all the bits from value
+		adjust_bw(node.get_driver_pin(), value_bw);
+		return;
+	}
+	if (mask == Lconst(0)) { // just do not pick anything and keep "a"
+		adjust_bw(node.get_driver_pin(), bw);
+		return;
+	}
+
+  auto max_val = value_bw.get_max();
+  auto min_val = value_bw.get_min();
+	{
+		auto mask_bits = mask.get_bits();
+		if (!mask.is_negative()) { // drop upper bits from value if non negative mask
+			if (mask_bits<max_val.get_bits()) {
+				max_val = max_val.rsh_op(max_val.get_bits()-mask_bits);
+			}
+			if (mask_bits<min_val.get_bits()) {
+				min_val = min_val.rsh_op(min_val.get_bits()-mask_bits);
+			}
+		}
+	}
+	{
+		size_t n_zeroes_in_mask;
+		if (mask.is_negative()) { // Keep full value bits and shift left as much as mask zeroes
+			auto not_mask = mask.not_op();
+			I(!not_mask.is_negative());
+			n_zeroes_in_mask = not_mask.popcount();
+
+		}else{
+			n_zeroes_in_mask = mask.get_trailing_zeroes(); // mask_affects_sign, so -1
+		}
+
+		max_val = max_val.lsh_op(n_zeroes_in_mask);
+		min_val = min_val.lsh_op(n_zeroes_in_mask);
+	}
+
+	if (mask.is_negative()) {
+		adjust_bw(node.get_driver_pin(), Bitwidth_range(min_val, max_val));
+	}else{
+		bw.set_wider_range(min_val, max_val);
+		adjust_bw(node.get_driver_pin(), bw);
+	}
 }
 
 void Bitwidth::process_get_mask(Node &node) {
@@ -1188,15 +1280,13 @@ void Bitwidth::set_graph_boundary(const Node_pin &dpin, Node_pin &spin) {
 
 void Bitwidth::debug_unconstrained_msg(Node &node, Node_pin &dpin) {
   (void)node;
+#ifndef NDEBUG
   if (dpin.has_name()) {
-#ifndef NDEBUG
     fmt::print("BW-> gate:{} has input pin:{} unconstrained\n", node.debug_name(), dpin.debug_name());
-#endif
   } else {
-#ifndef NDEBUG
     fmt::print("BW-> gate:{} has some inputs unconstrained\n", node.debug_name());
-#endif
   }
+#endif
 }
 
 void Bitwidth::bw_pass(Lgraph *lg) {
