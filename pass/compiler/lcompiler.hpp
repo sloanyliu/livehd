@@ -20,10 +20,6 @@
 #include "lnast_tolg.hpp"
 #include "thread_pool.hpp"
 
-// FIXME->sh: centralized bwmap won't work in the multi-threaded compilation, mimic the new
-//            firbits/map design
-using BWMap_flat = absl::flat_hash_map<Node_pin::Compact_flat, Bitwidth_range>;
-using BWMap_hier = absl::flat_hash_map<Node_pin::Compact, Bitwidth_range>;
 
 class Lcompiler {
 private:
@@ -31,10 +27,6 @@ private:
   const std::string      odir;  // FIXME->sh: why not use string_view?
   const std::string_view top;
   const bool             gviz;
-
-  // FIXME->sh: centralized bwmap won't work in the multi-threaded compilation, mimic the new firbits/map design
-  BWMap_flat global_flat_bwmap;
-  BWMap_hier global_hier_bwmap;
 
   // firrtl only tables
   absl::node_hash_map<uint32_t, FBMap>   fbmaps;         // Lg_type_id -> fbmap
@@ -51,14 +43,12 @@ public:
   Lcompiler(std::string_view path, std::string_view odir, std::string_view top, bool gviz);
 
   void local_bitwidth_inference();
-  void global_io_connection();
   void global_bitwidth_inference();
   void add_pyrope_thread(std::shared_ptr<Lnast> lnast);
 
   void do_prp_lnast2lgraph(std::vector<std::shared_ptr<Lnast>>);
   void do_local_cprop_bitwidth();
   void prp_thread_ln2lg(std::shared_ptr<Lnast> lnast);
-  void prp_thread_local_cprop_bitwidth(Lgraph *lg, Cprop &cp, Bitwidth &bw);
 
   void do_fir_lnast2lgraph(std::vector<std::shared_ptr<Lnast>>);
   void do_cprop();

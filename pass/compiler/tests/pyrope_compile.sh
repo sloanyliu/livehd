@@ -7,28 +7,31 @@ pts_tuple_dbg='lhs_wire3 funcall_unnamed2
 pts_long_time='firrtl_gcd'
 
 # pts_tbd='tup_out1 tup_out2'
-pts_after_micro='hier_tuple4 tuple_reg3 '
+pts_after_micro='hier_tuple4 tuple_reg3'
 
 
-pts='flatten_bundle partial hier_tuple reg_bits_set bits_rhs reg__q_pin hier_tuple_io hier_tuple3
-hier_tuple2 tuple_if ssa_rhs out_ssa attr_set if2 lhs_wire
-tuple_copy if hier_tuple_nested_if2 lhs_wire2 tuple_copy2 counter lhs_wire
-adder_stage capricious_bits4 logic capricious_bits2
-scalar_reg_out_pre_declare firrtl_tail2 hier_tuple_nested_if
-hier_tuple_nested_if3 hier_tuple_nested_if4 hier_tuple_nested_if5
-hier_tuple_nested_if6 hier_tuple_nested_if7 firrtl_tail firrtl_gcd_3bits
-nested_if firrtl_tail3 counter_nested_if tuple_empty_attr tuple_reg tuple_reg2
-struct_flop tuple_nested1 tuple_nested2 get_mask1 vec_shift_register_param capricious_bits'
+pts='flatten_bundle partial hier_tuple reg_bits_set bits_rhs reg__q_pin
+hier_tuple_io hier_tuple3 tuple_if ssa_rhs out_ssa attr_set lhs_wire tuple_copy
+if lhs_wire2 tuple_copy2 counter adder_stage logic tuple_empty_attr if2
+scalar_reg_out_pre_declare firrtl_tail2 hier_tuple_nested_if3
+hier_tuple_nested_if5 hier_tuple_nested_if6 hier_tuple_nested_if7 firrtl_tail
+nested_if counter_nested_if tuple_reg tuple_reg2 tuple_nested1 tuple_nested2
+get_mask1 vec_shift_register_param hier_tuple2 capricious_bits
+capricious_bits2 capricious_bits4 hier_tuple_nested_if hier_tuple_nested_if2
+struct_flop hier_tuple_nested_if4 firrtl_gcd_3bits firrtl_tail3 
+'
 
-#FIXME:
+
+# FIXME->Jose: these are the patterns require an extra cprop after bitwidth?
+# pts='hier_tuple2 capricious_bits capricious_bits2 capricious_bits4'
+
+# FIXME:
 # pts='scalar_tuple'
 # FIXME: extra flop left around!! (the test fails because this extra flop has no name and cgen creates incorrect verilog)
-# pts ='counter_mix'  
-
-# pts='lhs_wire2'
+# pts='counter_mix'  
 # pts='memory_1rd1wr'
+# pts='masked_smem'
 # pts='pp'
-# pts='hier_tuple'
 # pts='memory_1rd1wr'
 # pts='pp2'
 # pts='vector'
@@ -63,7 +66,8 @@ Pyrope_compile () {
   echo "Pyrope Full Compilation"
   echo "===================================================="
 
-
+# $1 = top sum
+# $1 = sum top
   for pt in $1
   do
     if [ ! -f ${PATTERN_PATH}/${pt}.prp ]; then
@@ -71,8 +75,8 @@ Pyrope_compile () {
         exit 1
     fi
 
-    ${LGSHELL} "inou.pyrope files:${PATTERN_PATH}/${pt}.prp |> pass.compiler gviz:true top:${pt}"
-    #${LGSHELL} "inou.pyrope files:${PATTERN_PATH}/${pt}.prp |> pass.compiler top:${pt}"
+    ${LGSHELL} "inou.pyrope files:${PATTERN_PATH}/${pt}.prp |> pass.compiler gviz:true"
+    # ${LGSHELL} "inou.pyrope files:${PATTERN_PATH}/${pt}.prp |> pass.compiler gviz:true top:${pt}"
     ret_val=$?
     if [ $ret_val -ne 0 ]; then
       echo "ERROR: could not compile with pattern: ${pt}.prp!"
@@ -159,7 +163,6 @@ Pyrope_compile_hier () {
 
 
   ${LGSHELL} "inou.pyrope files:${pts_concat} |> pass.compiler gviz:true top:${top_module}"
-  #${LGSHELL} "inou.pyrope files:${pts_concat} |> pass.compiler top:${top_module}"
   ret_val=$?
   if [ $ret_val -ne 0 ]; then
     echo "ERROR: could not compile with pattern: ${pts_concat}.prp!"
