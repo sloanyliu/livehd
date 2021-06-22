@@ -2,8 +2,9 @@
 
 #pragma once
 #include <string_view>
-
+#include <typeinfo>
 #include "mmap_map.hpp"
+
 
 namespace mmap_lib {
 
@@ -14,9 +15,114 @@ namespace mmap_lib {
 // We accomplish by: having a mmap that holds <number, neighborhood>
 // -> each number will be an actual value that is stored with all its bits.
 // -> each neighborhood will represent bits around the number, as a bitmap.
-//   -> **Note: have not decided where the numbers sits in the neighborhood.
+//   -> the number will sit in the neighborhood.
 //   -> could be in the front, back, middle (probably harder)
 // -> each access to values near number, will access the neighborhood.
+
+
+template<typename prsn, typename neighbors>
+class set {
+  protected:
+    mmap_lib::map<prsn, neighbors> stown;
+  public:
+    set(std::string_view _name): stown(_name) {}
+    set(std::string_view _path, std::string_view _name): stown(_path, _name) {}
+    ~set() { set_data.clear(); }
+
+    [[nodiscard]] void clear() { stown.clear(); }
+    [[nodiscard]] size_t size() { stown.size(); }    
+    [[nodiscard]] bool empty() { stown.empty(); }
+    [[nodiscard]] size_t capacity() { stown.capacity(); }
+    
+    //insert()
+    //Duplicate inserts are not allowed for now
+    //TODO: Maybe enable an option for duplicate inserts
+    //TODO: 
+    uint32_t insert(prsn var) {
+      if () {
+
+      } else {
+
+      }
+      prsn adj_var = (prsn % );
+      auto it = stown.find(var);
+      if (it == stown.end()) {
+        auto insert_pos = stown.set(var, 0);
+        return static_cast<uint32_t>(insert_pos->first);
+      } else {
+        
+      }
+    } 
+
+    //erase()
+    void erase(prsn var) {
+    
+    }
+
+    //find()
+    //contains()
+    //begin()
+    //end()
+    //rbegin()
+    //rend()
+    //cbegin()
+    //cend()
+    //crbegin()
+    //crend()
+    //max_size()
+    //insert(it, Obj)
+    //iter find(Obj)
+    //iter contains(Obj)
+    //emplace(Obj) --> only insert if unique
+
+    class sIter {
+      private:
+        setIter &owner;
+      public:
+        sIter(setIter &tmp) : owner(tmp) {}
+        ~sIter() { ; }
+
+        /*
+        sIter &operator++() { 
+          ++owner;
+          return *this; 
+        }
+
+        sIter operator++(int other) { 
+          sIter temp = *this;
+          ++*this;
+          return temp; 
+        } //postfix ++
+
+        sIter &operator--() { 
+          --owner; 
+          return *this;
+        }
+
+        sIter operator--(int other) { 
+          sIter temp = *this;
+          --*this; 
+          return temp;
+        } //postfix --
+
+        bool operator==(sIter other) const {
+          return owner == other.owner;
+        }
+
+        bool operator!=(sIter other) const {
+          return owner != other.owner;
+        }
+        */
+
+        //operator++()
+        //operator--()
+        //operator==()
+        //operator!=()
+        //Obj operator*() const { return set_data.get_key(owner); }
+    };
+
+
+};
 
 
 
